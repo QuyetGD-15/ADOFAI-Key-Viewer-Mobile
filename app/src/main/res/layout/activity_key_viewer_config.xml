@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/config_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="false"
+    android:background="#B3000000">
+
+    <!-- Khu vực Preview bên trái -->
+    <FrameLayout
+        android:id="@+id/viewerContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#22FFFFFF"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <include layout="@layout/overlay_view" />
+    </FrameLayout>
+
+    <!-- Khu vực Menu bên phải có thanh cuộn -->
+    <ScrollView
+        android:id="@+id/menuScroll"
+        android:layout_width="280dp"
+        android:layout_height="match_parent"
+        android:background="#E61A1A1A"
+        android:elevation="8dp"
+        android:scrollbars="none"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:id="@+id/menuContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:text="CÀI ĐẶT KEY VIEWER"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:text="1. KEY"
+                android:textColor="#FFEB3B"
+                android:textStyle="bold" />
+
+            <!-- Vị trí X -->
+            <TextView
+                android:id="@+id/tvPosXLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Vị trí X: 0"
+                android:textColor="#FFFFFF" />
+
+            <SeekBar
+                android:id="@+id/seekPosX"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Vị trí Y -->
+            <TextView
+                android:id="@+id/tvPosYLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Vị trí Y: 0"
+                android:textColor="#FFFFFF" />
+
+            <SeekBar
+                android:id="@+id/seekPosY"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Chỉnh Độ lớn -->
+            <TextView
+                android:id="@+id/tvScaleLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Độ lớn: 1.0"
+                android:textColor="#FFFFFF" />
+
+            <SeekBar
+                android:id="@+id/seekScale"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="20dp"
+                android:max="200"
+                android:progress="100" />
+
+            <!-- Chiều rộng phím -->
+            <TextView
+                android:id="@+id/tvKeyWidthLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Chiều rộng phím: 60"
+                android:textColor="#FFFFFF" />
+
+            <SeekBar
+                android:id="@+id/seekKeyWidth"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="20dp"
+                android:max="70"
+                android:progress="30" />
+
+            <!-- Chiều cao phím -->
+            <TextView
+                android:id="@+id/tvKeyHeightLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Chiều cao phím: 60"
+                android:textColor="#FFFFFF" />
+
+            <SeekBar
+                android:id="@+id/seekKeyHeight"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="20dp"
+                android:max="70"
+                android:progress="30" />
+
+            <!-- Khoảng cách phím -->
+            <TextView
+                android:id="@+id/tvKeySpacingLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Khoảng cách: 0"
+                android:textColor="#FFFFFF" />
+
+            <SeekBar
+                android:id="@+id/seekKeySpacing"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="24dp"
+                android:max="20"
+                android:progress="0" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:text="2. KEY RAIN"
+                android:textColor="#FFEB3B"
+                android:textStyle="bold" />
+
+            <!-- Chỉnh Tốc độ -->
+            <TextView
+                android:id="@+id/tvSpeedLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tốc độ: 1.0"
+                android:textColor="#FFFFFF" />
+
+            <SeekBar
+                android:id="@+id/seekSpeed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="20dp"
+                android:max="200"
+                android:progress="100" />
+
+            <!-- Chỉnh Giới hạn độ cao -->
+            <TextView
+                android:id="@+id/tvLimitLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Giới hạn bay: 300"
+                android:textColor="#FFFFFF" />
+
+            <SeekBar
+                android:id="@+id/seekLimit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="20dp"
+                android:max="210"
+                android:progress="130" />
+
+            <!-- Nút Lưu & Đặt lại -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnResetViewer"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:text="Đặt lại"
+                    android:textColor="#FF5252" />
+
+                <Button
+                    android:id="@+id/btnSaveViewer"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Lưu" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btnResetTotal"
+                style="?android:attr/borderlessButtonStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="RESET TOTAL"
+                android:textColor="#FF5252"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
