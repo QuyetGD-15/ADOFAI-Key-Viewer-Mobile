@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Key Viewer Overlay</string>
+    <string name="accessibility_desc">Cho phép Key Viewer hiển thị điểm chạm xuyên thấu trên game</string>
+</resources>
