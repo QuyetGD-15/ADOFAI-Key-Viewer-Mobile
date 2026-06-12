@@ -105,7 +105,7 @@ class HitboxConfigActivity : AppCompatActivity() {
             }
             apply()
         }
-        Toast.makeText(this, "Đã lưu cấu hình", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, getString(R.string.toast_config_saved), Toast.LENGTH_SHORT).show()
 
         // Gửi tín hiệu dừng chỉnh sửa trước khi đóng
         sendBroadcast(Intent(OverlayService.ACTION_STOP_EDIT).setPackage(packageName))
@@ -180,7 +180,7 @@ class HitboxConfigActivity : AppCompatActivity() {
             editor.putInt("hitbox_${id}_h", viewHeight.toInt())
         }
         editor.apply()
-        Toast.makeText(this, "Đã chia khít 6 Hitbox lấp đầy màn hình", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, getString(R.string.toast_hitbox_reset), Toast.LENGTH_SHORT).show()
     }
     override fun onDestroy() {
         super.onDestroy()

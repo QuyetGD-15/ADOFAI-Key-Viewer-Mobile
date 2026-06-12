@@ -7,13 +7,44 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <LinearLayout
+        android:id="@+id/layoutLanguage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/tvCurrentLanguage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="@string/current_language"
+            android:textSize="12sp" />
+
+        <Button
+            android:id="@+id/btnToggleLanguage"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:padding="8dp"
+            android:text="@string/switch_language"
+            android:textSize="12sp"
+            app:rippleColor="#22FFFFFF" />
+    </LinearLayout>
+
     <TextView
         android:id="@+id/tvStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="center"
         android:padding="16dp"
-        android:text="BẢNG ĐIỀU KHIỂN"
+        android:text="@string/control_panel"
         android:textSize="24sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@+id/btnCheck"
@@ -28,7 +59,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="Kiểm tra Shizuku"
+        android:text="@string/check_shizuku"
         app:layout_constraintBottom_toTopOf="@+id/tvShizukuStatus"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -39,7 +70,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:text="Trạng thái: Đang kiểm tra..."
+        android:text="@string/shizuku_status_checking"
         android:textColor="#88FFFFFF"
         android:textSize="12sp"
         app:layout_constraintBottom_toTopOf="@+id/switchOverlay"
@@ -54,7 +85,7 @@
         android:layout_marginHorizontal="32dp"
         android:layout_marginTop="24dp"
         android:gravity="center"
-        android:text="Bật/Tắt Overlay"
+        android:text="@string/toggle_overlay"
         android:textSize="18sp"
         app:layout_constraintBottom_toTopOf="@+id/btnConfigHitbox"
         app:layout_constraintEnd_toEndOf="parent"
@@ -67,7 +98,7 @@
         android:layout_width="200dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
-        android:text="Cài đặt Hitbox"
+        android:text="@string/config_hitbox"
         app:layout_constraintBottom_toTopOf="@+id/btnConfigKeyViewer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -79,7 +110,7 @@
         android:layout_width="200dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="Cài đặt Key Viewer"
+        android:text="@string/config_key_viewer"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -104,7 +135,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             android:gravity="center"
-            android:text="YÊU CẦU QUYỀN TRỢ NĂNG"
+            android:text="@string/accessibility_requirement_title"
             android:textColor="#000000"
             android:textSize="20sp"
             android:textStyle="bold" />
@@ -113,7 +144,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            android:text="Tại sao Key Viewer cần quyền này?\n\nHệ thống (đặc biệt là Game Turbo) thường tự động khóa cảm ứng xuyên thấu khi phát hiện lớp phủ toàn màn hình đè lên game.\n\nĐể vẽ các 'Điểm chạm' mượt mà thời gian thực và cho phép bạn nhấn xuyên thấu không bị trễ, ứng dụng cần dùng đặc quyền hiển thị của Trợ Năng (Accessibility).\n\n🔒 CAM KẾT BẢO MẬT:\nỨng dụng không đọc nội dung màn hình, không thu thập dữ liệu cá nhân. Quyền này chỉ dùng duy nhất để vẽ đồ họa điểm chạm."
+            android:text="@string/accessibility_requirement_desc"
             android:textColor="#333333"
             android:textSize="14sp" />
 
@@ -122,14 +153,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
-            android:text="CẤP QUYỀN NGAY" />
+            android:text="@string/grant_permission_now" />
 
         <Button
             android:id="@+id/btnCancelAccessibility"
             style="?android:attr/borderlessButtonStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="QUAY LẠI"
+            android:text="@string/go_back"
             android:textColor="#777777" />
     </LinearLayout>
 

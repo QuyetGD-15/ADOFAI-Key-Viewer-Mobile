@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/overlay_root"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
@@ -105,7 +106,8 @@
             android:background="@drawable/bg_key_normal"
             android:gravity="center"
             android:padding="4dp"
-            android:text="KPS\n0"
+            android:text="@string/kps_label"
+            tools:text="KPS\n0"
             android:textColor="#FFFFFF"
             android:textSize="12sp"
             android:textStyle="bold" />
@@ -118,7 +120,8 @@
             android:background="@drawable/bg_key_normal"
             android:gravity="center"
             android:padding="4dp"
-            android:text="Total\n0"
+            android:text="@string/total_label"
+            tools:text="Total\n0"
             android:textColor="#FFFFFF"
             android:textSize="12sp"
             android:textStyle="bold" />

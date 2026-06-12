@@ -1,4 +1,69 @@
 <resources>
     <string name="app_name">Key Viewer Overlay</string>
-    <string name="accessibility_desc">Cho phép Key Viewer hiển thị điểm chạm xuyên thấu trên game</string>
+    <string name="accessibility_desc">Dịch vụ nhận diện điểm chạm màn hình cho Key Viewer Overlay</string>
+    <!-- MainActivity -->
+    <string name="control_panel">BẢNG ĐIỀU KHIỂN</string>
+    <string name="check_shizuku">Kiểm tra Shizuku</string>
+    <string name="shizuku_status_checking">Trạng thái: Đang kiểm tra...</string>
+    <string name="toggle_overlay">Bật/Tắt Overlay</string>
+    <string name="config_hitbox">Cài đặt Hitbox</string>
+    <string name="config_key_viewer">Cài đặt Key Viewer</string>
+    <string name="shizuku_permission_granted">Đã được cấp quyền Shizuku!</string>
+    <string name="shizuku_permission_denied">Bạn đã từ chối quyền Shizuku.</string>
+    <string name="shizuku_disconnected">Shizuku đã mất kết nối!</string>
+    <string name="overlay_use_notification">Dùng thanh thông báo</string>
+    <string name="overlay_start_hint">Nhấn vào đây để bắt đầu</string>
+    <string name="shizuku_running">Trạng thái: Shizuku đang hoạt động</string>
+    <string name="shizuku_not_connected_or_no_permission">Trạng thái: Shizuku chưa kết nối hoặc thiếu quyền</string>
+    <string name="shizuku_not_running">Trạng thái: Shizuku chưa chạy</string>
+    <string name="shizuku_error">Trạng thái: Lỗi kết nối Shizuku</string>
+    <string name="shizuku_not_found">Chưa thấy Shizuku chạy</string>
+    <string name="shizuku_ready">Shizuku đã sẵn sàng!</string>
+    <string name="shizuku_requesting_permission">Đang yêu cầu cấp quyền...</string>
+
+    <!-- Accessibility Prompt -->
+    <string name="accessibility_requirement_title">YÊU CẦU QUYỀN TRỢ NĂNG</string>
+    <string name="accessibility_requirement_desc">Tại sao Key Viewer cần quyền này?\n\nHệ thống (đặc biệt là Game Turbo) thường tự động khóa cảm ứng xuyên thấu khi phát hiện lớp phủ toàn màn hình đè lên game.\n\nĐể vẽ các \'Điểm chạm\' mượt mà thời gian thực và cho phép bạn nhấn xuyên thấu không bị trễ, ứng dụng cần dùng đặc quyền hiển thị của Trợ Năng (Accessibility).\n\n🔒 CAM KẾT BẢO MẬT:\nỨng dụng không đọc nội dung màn hình, không thu thập dữ liệu cá nhân. Quyền này chỉ dùng duy nhất để vẽ đồ họa điểm chạm.</string>
+    <string name="grant_permission_now">CẤP QUYỀN NGAY</string>
+    <string name="go_back">QUAY LẠI</string>
+
+    <!-- OverlayService -->
+    <string name="toast_enter_game">Hãy vào game rồi mở keyviewer</string>
+    <string name="toast_landscape_only">Keyviewer overlay chỉ hoạt động ở màn hình ngang</string>
+    <string name="notif_toggle_on">TẮT KEY VIEWER</string>
+    <string name="notif_toggle_off">BẬT KEY VIEWER</string>
+    <string name="notif_show_touches">HIỆN NHẤN</string>
+    <string name="notif_hide_touches">ẨN NHẤN</string>
+    <string name="notif_open_app">MỞ APP</string>
+    <string name="notif_content_title">Key Viewer Overlay</string>
+    <string name="notif_content_text">Sử dụng các nút bên dưới để điều khiển.</string>
+    <string name="kps_label">KPS</string>
+    <string name="total_label">Total</string>
+    <string name="notif_channel_name">Overlay Service Channel</string>
+
+    <!-- HitboxConfigActivity -->
+    <string name="toast_config_saved">Đã lưu cấu hình</string>
+    <string name="toast_hitbox_reset">Đã chia khít 6 Hitbox lấp đầy màn hình</string>
+    <string name="hitbox_config_hint">Kéo thả vùng giữa để di chuyển, kéo 4 góc để thay đổi kích thước</string>
+    <string name="reset_default">Đặt lại mặc định</string>
+    <string name="save">Lưu</string>
+
+    <!-- KeyViewerConfigActivity -->
+    <string name="key_viewer_config_title">CÀI ĐẶT KEY VIEWER</string>
+    <string name="section_key">1. KEY</string>
+    <string name="pos_x_label">Vị trí X: %d</string>
+    <string name="pos_y_label">Vị trí Y: %d</string>
+    <string name="scale_label">Độ lớn: %.1f</string>
+    <string name="key_width_label">Chiều rộng phím: %d</string>
+    <string name="key_height_label">Chiều cao phím: %d</string>
+    <string name="spacing_label">Khoảng cách: %d</string>
+    <string name="section_key_rain">2. KEY RAIN</string>
+    <string name="speed_label">Tốc độ: %.1f</string>
+    <string name="limit_label">Giới hạn bay: %d</string>
+    <string name="reset">Đặt lại</string>
+    <string name="reset_total">RESET TOTAL</string>
+    <string name="toast_total_reset">Đã reset Total về 0</string>
+    <string name="toast_reset_default">Đã đưa về mặc định chuẩn</string>
+    <string name="current_language">Ngôn ngữ: Tiếng Việt</string>
+    <string name="switch_language">English</string>
 </resources>

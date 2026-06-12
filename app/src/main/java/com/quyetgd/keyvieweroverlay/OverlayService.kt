@@ -540,7 +540,7 @@ class OverlayService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val serviceChannel = NotificationChannel(CHANNEL_ID, "Overlay Service Channel", NotificationManager.IMPORTANCE_LOW)
+            val serviceChannel = NotificationChannel(CHANNEL_ID, getString(R.string.notif_channel_name), NotificationManager.IMPORTANCE_LOW)
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(serviceChannel)
         }
@@ -551,8 +551,8 @@ class OverlayService : Service() {
     }
 
     private fun updateNotification() {
-        val keyViewerText = if (isKeyViewerOn) "TẮT KEY VIEWER" else "BẬT KEY VIEWER"
-        val showTouchesText = if (isShowTouchesOn) "ẨN NHẤN" else "HIỆN NHẤN"
+        val keyViewerText = if (isKeyViewerOn) getString(R.string.notif_toggle_on) else getString(R.string.notif_toggle_off)
+        val showTouchesText = if (isShowTouchesOn) getString(R.string.notif_hide_touches) else getString(R.string.notif_show_touches)
 
         val flag = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
 
@@ -580,13 +580,13 @@ class OverlayService : Service() {
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification_key)
-            .setContentTitle("Key Viewer Overlay")
-            .setContentText("Sử dụng các nút bên dưới để điều khiển.")
+            .setContentTitle(getString(R.string.notif_content_title))
+            .setContentText(getString(R.string.notif_content_text))
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .addAction(0, keyViewerText, pendingKeyViewer)
             .addAction(0, showTouchesText, pendingTouches)
-            .addAction(0, "MỞ APP", pendingOpenApp)
+            .addAction(0, getString(R.string.notif_open_app), pendingOpenApp)
             .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -598,12 +598,12 @@ class OverlayService : Service() {
 
     private fun tryShowOverlay(): Boolean {
         if (AppState.isAppVisible) {
-            Toast.makeText(this, "Hãy vào game rồi mở keyviewer", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.toast_enter_game), Toast.LENGTH_SHORT).show()
             return false
         }
 
         if (resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE) {
-            Toast.makeText(this, "Keyviewer overlay chỉ hoạt động ở màn hình ngang", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.toast_landscape_only), Toast.LENGTH_SHORT).show()
             return false
         }
 
@@ -694,8 +694,8 @@ class OverlayService : Service() {
             try {
                 val tvKps = viewerContainer.findViewById<TextView>(R.id.tvKps)
                 val tvTotal = viewerContainer.findViewById<TextView>(R.id.tvTotal)
-                tvKps?.text = "KPS\n$kps"
-                tvTotal?.text = "Total\n$total"
+                tvKps?.text = "${getString(R.string.kps_label)}\n$kps"
+                tvTotal?.text = "${getString(R.string.total_label)}\n$total"
             } catch (e: Exception) {
                 // UI update error
             }

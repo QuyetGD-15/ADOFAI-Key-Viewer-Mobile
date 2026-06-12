@@ -41,7 +41,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="24dp"
-                android:text="CÀI ĐẶT KEY VIEWER"
+                android:text="@string/key_viewer_config_title"
                 android:textColor="#FFFFFF"
                 android:textSize="18sp"
                 android:textStyle="bold" />
@@ -50,7 +50,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:text="1. KEY"
+                android:text="@string/section_key"
                 android:textColor="#FFEB3B"
                 android:textStyle="bold" />
 
@@ -59,7 +59,7 @@
                 android:id="@+id/tvPosXLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Vị trí X: 0"
+                android:text="@string/pos_x_label"
                 android:textColor="#FFFFFF" />
 
             <SeekBar
@@ -74,7 +74,7 @@
                 android:id="@+id/tvPosYLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Vị trí Y: 0"
+                android:text="@string/pos_y_label"
                 android:textColor="#FFFFFF" />
 
             <SeekBar
@@ -89,7 +89,7 @@
                 android:id="@+id/tvScaleLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Độ lớn: 1.0"
+                android:text="@string/scale_label"
                 android:textColor="#FFFFFF" />
 
             <SeekBar
@@ -106,7 +106,7 @@
                 android:id="@+id/tvKeyWidthLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Chiều rộng phím: 60"
+                android:text="@string/key_width_label"
                 android:textColor="#FFFFFF" />
 
             <SeekBar
@@ -123,7 +123,7 @@
                 android:id="@+id/tvKeyHeightLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Chiều cao phím: 60"
+                android:text="@string/key_height_label"
                 android:textColor="#FFFFFF" />
 
             <SeekBar
@@ -140,7 +140,7 @@
                 android:id="@+id/tvKeySpacingLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Khoảng cách: 0"
+                android:text="@string/spacing_label"
                 android:textColor="#FFFFFF" />
 
             <SeekBar
@@ -156,7 +156,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:text="2. KEY RAIN"
+                android:text="@string/section_key_rain"
                 android:textColor="#FFEB3B"
                 android:textStyle="bold" />
 
@@ -165,7 +165,7 @@
                 android:id="@+id/tvSpeedLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Tốc độ: 1.0"
+                android:text="@string/speed_label"
                 android:textColor="#FFFFFF" />
 
             <SeekBar
@@ -182,7 +182,7 @@
                 android:id="@+id/tvLimitLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Giới hạn bay: 300"
+                android:text="@string/limit_label"
                 android:textColor="#FFFFFF" />
 
             <SeekBar
@@ -208,7 +208,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
                     android:layout_weight="1"
-                    android:text="Đặt lại"
+                    android:text="@string/reset"
                     android:textColor="#FF5252" />
 
                 <Button
@@ -216,7 +216,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Lưu" />
+                    android:text="@string/save" />
             </LinearLayout>
 
             <Button
@@ -225,7 +225,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="RESET TOTAL"
+                android:text="@string/reset_total"
                 android:textColor="#FF5252"
                 android:textStyle="bold" />
 

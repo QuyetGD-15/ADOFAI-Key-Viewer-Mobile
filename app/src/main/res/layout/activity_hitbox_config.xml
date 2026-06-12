@@ -51,7 +51,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center_horizontal"
         android:layout_marginBottom="50dp"
-        android:text="Kéo thả vùng giữa để di chuyển, kéo 4 góc để thay đổi kích thước"
+        android:text="@string/hitbox_config_hint"
         android:textColor="#FFFFFF"
         android:textSize="18sp"
         android:textStyle="bold" />
@@ -68,13 +68,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
-            android:text="Đặt lại mặc định" />
+            android:text="@string/reset_default" />
 
         <Button
             android:id="@+id/btnSaveHitbox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Lưu" />
+            android:text="@string/save" />
     </LinearLayout>
 
 </FrameLayout>

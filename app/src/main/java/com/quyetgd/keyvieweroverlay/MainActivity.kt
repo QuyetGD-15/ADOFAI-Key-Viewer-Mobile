@@ -17,7 +17,9 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.SwitchCompat
+import androidx.core.os.LocaleListCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import rikka.shizuku.Shizuku
@@ -30,6 +32,8 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
     private lateinit var switchOverlay: SwitchCompat
     private lateinit var btnConfigHitbox: Button
     private lateinit var btnConfigKeyViewer: Button
+    private lateinit var tvCurrentLanguage: TextView
+    private lateinit var btnToggleLanguage: Button
     private var layoutAccessibilityPrompt: View? = null
     
     private val SHIZUKU_ACTION = "moe.shizuku.privileged.api.intent.action.BINDER_RECEIVED"
@@ -62,14 +66,14 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
     override fun onRequestPermissionResult(requestCode: Int, grantResult: Int) {
         if (grantResult == PackageManager.PERMISSION_GRANTED) {
-            updateStatus("Đã được cấp quyền Shizuku!")
+            updateStatus(getString(R.string.shizuku_permission_granted))
         } else {
-            updateStatus("Bạn đã từ chối quyền Shizuku.")
+            updateStatus(getString(R.string.shizuku_permission_denied))
         }
     }
 
     private val BINDER_DEAD_LISTENER = Shizuku.OnBinderDeadListener {
-        updateStatus("Shizuku đã mất kết nối!")
+        updateStatus(getString(R.string.shizuku_disconnected))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -132,6 +136,8 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         switchOverlay = findViewById(R.id.switchOverlay)
         btnConfigHitbox = findViewById(R.id.btnConfigHitbox)
         btnConfigKeyViewer = findViewById(R.id.btnConfigKeyViewer)
+        tvCurrentLanguage = findViewById(R.id.tvCurrentLanguage)
+        btnToggleLanguage = findViewById(R.id.btnToggleLanguage)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -145,7 +151,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         }
 
         setupSwitchListener()
-        switchOverlay.text = if (OverlayService.isRunning) "Dùng thanh thông báo" else "Nhấn vào đây để bắt đầu"
+        switchOverlay.text = if (OverlayService.isRunning) getString(R.string.overlay_use_notification) else getString(R.string.overlay_start_hint)
 
         btnConfigHitbox.setOnClickListener {
             startActivity(Intent(this, HitboxConfigActivity::class.java))
@@ -172,7 +178,18 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
             layoutAccessibilityPrompt?.visibility = View.GONE
         }
 
+        updateLanguageUI()
+        btnToggleLanguage.setOnClickListener {
+            val currentLocales = AppCompatDelegate.getApplicationLocales()
+            val newLocale = if (currentLocales.toLanguageTags() == "en") "vi" else "en"
+            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(newLocale))
+        }
+
         handleIncomingIntent(intent)
+    }
+
+    private fun updateLanguageUI() {
+        tvCurrentLanguage.text = getString(R.string.current_language)
     }
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
@@ -227,10 +244,10 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                     startService(intent)
                 }
                 
-                switchOverlay.text = "Dùng thanh thông báo"
+                switchOverlay.text = getString(R.string.overlay_use_notification)
             } else {
                 stopService(Intent(this, OverlayService::class.java))
-                switchOverlay.text = "Nhấn vào đây để bắt đầu"
+                switchOverlay.text = getString(R.string.overlay_start_hint)
             }
         }
     }
@@ -273,7 +290,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
             }
 
             if (isConnected && hasPermission) {
-                tvShizukuStatus.text = "Trạng thái: Shizuku đang hoạt động"
+                tvShizukuStatus.text = getString(R.string.shizuku_running)
                 tvShizukuStatus.setTextColor(Color.GREEN)
 
                 // Đã sẵn sàng: Mở khóa và khôi phục độ sáng 100%
@@ -282,9 +299,9 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                 (switchOverlay.parent as? View)?.alpha = 1.0f
             } else {
                 if (isConnected) {
-                    tvShizukuStatus.text = "Trạng thái: Shizuku chưa kết nối hoặc thiếu quyền"
+                    tvShizukuStatus.text = getString(R.string.shizuku_not_connected_or_no_permission)
                 } else {
-                    tvShizukuStatus.text = "Trạng thái: Shizuku chưa chạy"
+                    tvShizukuStatus.text = getString(R.string.shizuku_not_running)
                 }
                 tvShizukuStatus.setTextColor(Color.RED)
 
@@ -305,10 +322,10 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
             }
 
             // Cập nhật text của công tắc
-            switchOverlay.text = if (OverlayService.isRunning) "Dùng thanh thông báo" else "Nhấn vào đây để bắt đầu"
+            switchOverlay.text = if (OverlayService.isRunning) getString(R.string.overlay_use_notification) else getString(R.string.overlay_start_hint)
 
         } catch (e: Exception) {
-            tvShizukuStatus.text = "Trạng thái: Lỗi kết nối Shizuku"
+            tvShizukuStatus.text = getString(R.string.shizuku_error)
             tvShizukuStatus.setTextColor(Color.RED)
 
             // Bắt lỗi cũng khóa cứng công tắc luôn
@@ -324,21 +341,21 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
             if (OverlayService.isRunning) {
                 stopService(Intent(this, OverlayService::class.java))
             }
-            switchOverlay.text = "Nhấn vào đây để bắt đầu"
+            switchOverlay.text = getString(R.string.overlay_start_hint)
         }
     }
 
     private fun checkShizukuPermission(): Boolean {
         if (!Shizuku.pingBinder()) {
-            updateStatus("Chưa thấy Shizuku chạy")
+            updateStatus(getString(R.string.shizuku_not_found))
             return false
         }
         val isGranted = Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
         if (isGranted) {
-            updateStatus("Shizuku đã sẵn sàng!")
+            updateStatus(getString(R.string.shizuku_ready))
             return true
         }
-        updateStatus("Đang yêu cầu cấp quyền...")
+        updateStatus(getString(R.string.shizuku_requesting_permission))
         Shizuku.requestPermission(100)
         return false
     }

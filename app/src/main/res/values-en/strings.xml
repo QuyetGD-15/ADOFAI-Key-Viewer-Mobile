@@ -1,0 +1,70 @@
+<resources>
+    <string name="app_name">Key Viewer Overlay</string>
+    <string name="accessibility_desc">Touch detection service for Key Viewer Overlay</string>
+
+    <!-- MainActivity -->
+    <string name="control_panel">CONTROL PANEL</string>
+    <string name="check_shizuku">Check Shizuku</string>
+    <string name="shizuku_status_checking">Status: Checking...</string>
+    <string name="toggle_overlay">Toggle Overlay</string>
+    <string name="config_hitbox">Hitbox Settings</string>
+    <string name="config_key_viewer">Key Viewer Settings</string>
+    <string name="shizuku_permission_granted">Shizuku permission granted!</string>
+    <string name="shizuku_permission_denied">Shizuku permission denied.</string>
+    <string name="shizuku_disconnected">Shizuku disconnected!</string>
+    <string name="overlay_use_notification">Use notification bar</string>
+    <string name="overlay_start_hint">Tap here to start</string>
+    <string name="shizuku_running">Status: Shizuku is running</string>
+    <string name="shizuku_not_connected_or_no_permission">Status: Shizuku not connected or lacks permission</string>
+    <string name="shizuku_not_running">Status: Shizuku is not running</string>
+    <string name="shizuku_error">Status: Shizuku connection error</string>
+    <string name="shizuku_not_found">Shizuku not found</string>
+    <string name="shizuku_ready">Shizuku is ready!</string>
+    <string name="shizuku_requesting_permission">Requesting permission...</string>
+
+    <!-- Accessibility Prompt -->
+    <string name="accessibility_requirement_title">ACCESSIBILITY PERMISSION REQUIRED</string>
+    <string name="accessibility_requirement_desc">Why does Key Viewer need this permission?\n\nThe system (especially Game Turbo) often automatically blocks touch-through when it detects a full-screen overlay on top of the game.\n\nTo draw smooth real-time \'Touch points\' and allow you to touch through without lag, the app needs to use the display privileges of Accessibility.\n\n🔒 PRIVACY COMMITMENT:\nThe app does not read screen content or collect personal data. This permission is used solely for drawing touch point graphics.</string>
+    <string name="grant_permission_now">GRANT PERMISSION NOW</string>
+    <string name="go_back">GO BACK</string>
+
+    <!-- OverlayService -->
+    <string name="toast_enter_game">Please enter the game then open keyviewer</string>
+    <string name="toast_landscape_only">Keyviewer overlay only works in landscape mode</string>
+    <string name="notif_toggle_on">TURN OFF KEY VIEWER</string>
+    <string name="notif_toggle_off">TURN ON KEY VIEWER</string>
+    <string name="notif_show_touches">SHOW TOUCHES</string>
+    <string name="notif_hide_touches">HIDE TOUCHES</string>
+    <string name="notif_open_app">OPEN APP</string>
+    <string name="notif_content_title">Key Viewer Overlay</string>
+    <string name="notif_content_text">Use the buttons below to control.</string>
+    <string name="kps_label">KPS</string>
+    <string name="total_label">Total</string>
+    <string name="notif_channel_name">Overlay Service Channel</string>
+
+    <!-- HitboxConfigActivity -->
+    <string name="toast_config_saved">Configuration saved</string>
+    <string name="toast_hitbox_reset">Divided 6 Hitboxes to fill the screen</string>
+    <string name="hitbox_config_hint">Drag the center to move, drag 4 corners to resize</string>
+    <string name="reset_default">Reset to Default</string>
+    <string name="save">Save</string>
+
+    <!-- KeyViewerConfigActivity -->
+    <string name="key_viewer_config_title">KEY VIEWER SETTINGS</string>
+    <string name="section_key">1. KEY</string>
+    <string name="pos_x_label">Position X: %d</string>
+    <string name="pos_y_label">Position Y: %d</string>
+    <string name="scale_label">Scale: %.1f</string>
+    <string name="key_width_label">Key Width: %d</string>
+    <string name="key_height_label">Key Height: %d</string>
+    <string name="spacing_label">Spacing: %d</string>
+    <string name="section_key_rain">2. KEY RAIN</string>
+    <string name="speed_label">Speed: %.1f</string>
+    <string name="limit_label">Flight Limit: %d</string>
+    <string name="reset">Reset</string>
+    <string name="reset_total">RESET TOTAL</string>
+    <string name="toast_total_reset">Total clicks reset to 0</string>
+    <string name="toast_reset_default">Reset to standard default</string>
+    <string name="current_language">Language: English</string>
+    <string name="switch_language">Tiếng Việt</string>
+</resources>

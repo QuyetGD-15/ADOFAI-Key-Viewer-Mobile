@@ -254,7 +254,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnResetTotal)?.setOnClickListener {
             getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE).edit().putInt("TOTAL_CLICKS", 0).apply()
             sendBroadcast(Intent("ACTION_RESET_TOTAL"))
-            Toast.makeText(this, "Đã reset Total về 0", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.toast_total_reset), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -282,6 +282,10 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         bottomCountersContainer.layoutParams = counterParams
 
         val tvKps = findViewById<TextView>(R.id.tvKps)
+        val tvTotal = findViewById<TextView>(R.id.tvTotal)
+        tvKps?.text = "${getString(R.string.kps_label)}\n0"
+        tvTotal?.text = "${getString(R.string.total_label)}\n0"
+
         val kpsParams = tvKps.layoutParams as ViewGroup.MarginLayoutParams
         kpsParams.rightMargin = spacingPx
         tvKps.layoutParams = kpsParams
@@ -310,14 +314,14 @@ class KeyViewerConfigActivity : AppCompatActivity() {
     }
 
     private fun updateLabels() {
-        tvPosXLabel.text = "Vị trí X: ${viewerContainer.x.toInt()}"
-        tvPosYLabel.text = "Vị trí Y: ${viewerContainer.y.toInt()}"
-        tvScaleLabel.text = "Độ lớn: %.1f".format(currentScale)
-        tvSpeedLabel.text = "Tốc độ: %.1f".format(currentSpeed)
-        tvLimitLabel.text = "Giới hạn bay: %d".format(currentLimit)
-        tvKeyWidthLabel.text = "Chiều rộng phím: %d".format(currentKeyWidth)
-        tvKeyHeightLabel.text = "Chiều cao phím: %d".format(currentKeyHeight)
-        tvKeySpacingLabel.text = "Khoảng cách: %d".format(currentKeySpacing)
+        tvPosXLabel.text = getString(R.string.pos_x_label, viewerContainer.x.toInt())
+        tvPosYLabel.text = getString(R.string.pos_y_label, viewerContainer.y.toInt())
+        tvScaleLabel.text = getString(R.string.scale_label, currentScale)
+        tvSpeedLabel.text = getString(R.string.speed_label, currentSpeed)
+        tvLimitLabel.text = getString(R.string.limit_label, currentLimit)
+        tvKeyWidthLabel.text = getString(R.string.key_width_label, currentKeyWidth)
+        tvKeyHeightLabel.text = getString(R.string.key_height_label, currentKeyHeight)
+        tvKeySpacingLabel.text = getString(R.string.spacing_label, currentKeySpacing)
     }
 
     private fun saveAndExit() {
@@ -339,7 +343,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             apply()
         }
         
-        Toast.makeText(this, "Đã lưu cấu hình", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, getString(R.string.toast_config_saved), Toast.LENGTH_SHORT).show()
         finish()
     }
 
@@ -388,7 +392,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             apply()
         }
 
-        Toast.makeText(this, "Đã đưa về mặc định chuẩn", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, getString(R.string.toast_reset_default), Toast.LENGTH_SHORT).show()
     }
 
     private fun hideSystemUI() {
