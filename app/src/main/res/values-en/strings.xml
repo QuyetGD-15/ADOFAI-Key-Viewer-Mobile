@@ -31,11 +31,11 @@
     <!-- OverlayService -->
     <string name="toast_enter_game">Please enter the game then open keyviewer</string>
     <string name="toast_landscape_only">Keyviewer overlay only works in landscape mode</string>
-    <string name="notif_toggle_on">TURN OFF KEY VIEWER</string>
-    <string name="notif_toggle_off">TURN ON KEY VIEWER</string>
-    <string name="notif_show_touches">SHOW TOUCHES</string>
-    <string name="notif_hide_touches">HIDE TOUCHES</string>
-    <string name="notif_open_app">OPEN APP</string>
+    <string name="notif_toggle_on">TURN OFF KEY</string>
+    <string name="notif_toggle_off">TURN ON KEY</string>
+    <string name="notif_show_touches">SHOW TOUCH</string>
+    <string name="notif_hide_touches">HIDE TOUCH</string>
+    <string name="notif_open_app">APP</string>
     <string name="notif_content_title">Key Viewer Overlay</string>
     <string name="notif_content_text">Use the buttons below to control.</string>
     <string name="kps_label">KPS</string>

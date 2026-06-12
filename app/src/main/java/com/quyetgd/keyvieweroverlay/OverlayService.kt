@@ -258,15 +258,15 @@ class OverlayService : Service() {
         mainHandler.post(object : Runnable {
             override fun run() {
                 val currentTime = System.currentTimeMillis()
+
+                // Tính toán KPS giảm dần
                 while (kpsQueue.isNotEmpty() && currentTime - kpsQueue.first() > 1000) {
                     kpsQueue.removeFirst()
                 }
 
-                // ĐẢO NGƯỢC TỐI ƯU: Bỏ điều kiện `if (changed)`.
-                // Ép hệ thống luôn cập nhật UI và lưu SharedPreferences mỗi 100ms
-                // để chỉ số KPS giảm xuống mượt mà theo thời gian thực.
+                // CHỈ cập nhật Giao diện (UI) để số nhảy mượt mà mỗi 100ms.
+                // TUYỆT ĐỐI KHÔNG ghi file SharedPreferences ở đây để tránh cháy ổ cứng và lag game.
                 updateKpsTotalUI(kpsQueue.size, totalClicks)
-                sharedPrefs.edit().putInt("TOTAL_CLICKS", totalClicks).apply()
 
                 mainHandler.postDelayed(this, 100)
             }
@@ -473,6 +473,12 @@ class OverlayService : Service() {
                         val currentTime = System.currentTimeMillis()
                         kpsQueue.addLast(currentTime)
                         totalClicks++
+
+                        // ĐÃ XÓA lệnh sharedPrefs ở đây! Chỉ lưu trên RAM (biến totalClicks).
+                        // Ép UI nảy số tức thì:
+                        mainHandler.post {
+                            updateKpsTotalUI(kpsQueue.size, totalClicks)
+                        }
 
                         while (kpsQueue.isNotEmpty() && currentTime - kpsQueue.first() > 1000) {
                             kpsQueue.removeFirst()
@@ -729,6 +735,9 @@ class OverlayService : Service() {
 
     private fun hideOverlay() {
         if (isOverlayShowing) {
+            // Chốt sổ: Lưu tổng click của cả phiên chơi vào ổ cứng ngay khi ẩn Overlay
+            sharedPrefs.edit().putInt("TOTAL_CLICKS", totalClicks).apply()
+
             mainHandler.post {
                 try {
                     if (wrapper.parent != null) windowManager.removeView(wrapper)
@@ -791,7 +800,13 @@ class OverlayService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         isRunning = false
+
+        // Chốt sổ phòng hờ: Nếu người dùng tắt hẳn App/Service
+        sharedPrefs.edit().putInt("TOTAL_CLICKS", totalClicks).apply()
+
+        // Dọn dẹp vòng lặp trên luồng chính
         mainHandler.removeCallbacks(autoShowRunnable)
+
         stopReadingTouchEvents()
         try { unregisterReceiver(editReceiver) } catch (e: Exception) { }
         try { unregisterReceiver(resetTotalReceiver) } catch (e: Exception) { }
