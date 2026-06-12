@@ -72,4 +72,11 @@
     <string name="header_recommended">⭐ Nên dùng</string>
     <string name="header_others">📱 Các app còn lại</string>
     <string name="cancel">Hủy</string>
+
+    <!-- Xiaomi Warning -->
+    <string name="xiaomi_warning_title">⚠️ Lưu ý cho máy Xiaomi/POCO</string>
+    <string name="xiaomi_warning_msg">Để tính năng Auto Show bám app chính xác trên MIUI/HyperOS, bạn bắt buộc phải tắt tiết kiệm pin cho ứng dụng này.\n\nNhấn \'Đi tới Cài đặt\' -> Chọn mục \'Power\' (hoặc Pin / Tiết kiệm pin) -> Chọn \'Không hạn chế\' (No restrictions).</string>
+    <string name="xiaomi_warning_settings">Đi tới Cài đặt</string>
+    <string name="xiaomi_warning_cancel">Hủy</string>
+    <string name="xiaomi_warning_continue">Đã tắt, tiếp tục</string>
 </resources>

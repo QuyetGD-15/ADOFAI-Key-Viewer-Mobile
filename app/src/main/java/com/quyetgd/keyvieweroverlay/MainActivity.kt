@@ -284,17 +284,19 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         }
 
         btnSelectApps.setOnClickListener {
-            if (!hasUsageStatsPermission()) {
-                Toast.makeText(this, getString(R.string.usage_stats_required), Toast.LENGTH_LONG).show()
-                startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
-            } else {
-                lifecycleScope.launch {
-                    showLoading()
-                    val result = withContext(Dispatchers.IO) {
-                        loadAndCategorizeApps()
+            checkAndShowXiaomiWarning {
+                if (!hasUsageStatsPermission()) {
+                    Toast.makeText(this, getString(R.string.usage_stats_required), Toast.LENGTH_LONG).show()
+                    startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+                } else {
+                    lifecycleScope.launch {
+                        showLoading()
+                        val result = withContext(Dispatchers.IO) {
+                            loadAndCategorizeApps()
+                        }
+                        hideLoading()
+                        showAppSelectionDialog(result.first, result.second)
                     }
-                    hideLoading()
-                    showAppSelectionDialog(result.first, result.second)
                 }
             }
         }
@@ -592,6 +594,39 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                 getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE).edit().putStringSet("allowed_apps", selectedSet).apply()
             }
             .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun isXiaomiDevice(): Boolean {
+        val manufacturer = Build.MANUFACTURER.lowercase()
+        val brand = Build.BRAND.lowercase()
+        val xiaomiBrands = listOf("xiaomi", "redmi", "poco", "blackshark")
+        return xiaomiBrands.any { manufacturer.contains(it) || brand.contains(it) }
+    }
+
+    private fun checkAndShowXiaomiWarning(onProceed: () -> Unit) {
+        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+        val isDismissed = pref.getBoolean("xiaomi_battery_warning_dismissed", false)
+
+        if (!isXiaomiDevice() || isDismissed) {
+            onProceed()
+            return
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.xiaomi_warning_title))
+            .setMessage(getString(R.string.xiaomi_warning_msg))
+            .setPositiveButton(getString(R.string.xiaomi_warning_settings)) { _, _ ->
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", packageName, null)
+                }
+                startActivity(intent)
+            }
+            .setNegativeButton(getString(R.string.xiaomi_warning_cancel), null)
+            .setNeutralButton(getString(R.string.xiaomi_warning_continue)) { _, _ ->
+                pref.edit().putBoolean("xiaomi_battery_warning_dismissed", true).apply()
+                onProceed()
+            }
             .show()
     }
 

@@ -73,4 +73,11 @@
     <string name="header_recommended">⭐ Recommended</string>
     <string name="header_others">📱 Other Apps</string>
     <string name="cancel">Cancel</string>
+
+    <!-- Xiaomi Warning -->
+    <string name="xiaomi_warning_title">⚠️ Xiaomi/POCO Device Notice</string>
+    <string name="xiaomi_warning_msg">To make Auto Show work correctly on MIUI/HyperOS, you must disable battery optimization for this app.\n\nClick \'Go to settings\' -> Select \'Power\' or Battery -> Choose \'No restrictions\'.</string>
+    <string name="xiaomi_warning_settings">Go to settings</string>
+    <string name="xiaomi_warning_cancel">Cancel</string>
+    <string name="xiaomi_warning_continue">Already disabled, continue</string>
 </resources>
