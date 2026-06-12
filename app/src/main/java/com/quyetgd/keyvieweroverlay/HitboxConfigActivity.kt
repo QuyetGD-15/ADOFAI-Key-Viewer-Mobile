@@ -148,12 +148,20 @@ class HitboxConfigActivity : AppCompatActivity() {
         val sharedPref = getSharedPreferences("HitboxPrefs", Context.MODE_PRIVATE)
         val editor = sharedPref.edit()
 
+        // Khai báo tỉ lệ vàng: 10% - 15% - 25% - 25% - 15% - 10%
+        val w1 = screenWidth * 0.10f
+        val w2 = screenWidth * 0.15f
+        val w3 = screenWidth * 0.25f
+        val widths = floatArrayOf(w1, w2, w3, w3, w2, w1)
+
+        var currentX = 0f
+
         hitboxes.forEachIndexed { index, view ->
             val id = index + 1
 
-            // Tính toán kích thước KHUNG XANH THẬT
-            val startX = (index * screenWidth / 6f).toInt()
-            val endX = ((index + 1) * screenWidth / 6f).toInt()
+            // Tính toán kích thước KHUNG XANH THẬT dựa theo mảng tỉ lệ
+            val startX = currentX.toInt()
+            val endX = (currentX + widths[index]).toInt()
 
             val trueBoxWidth = endX - startX
             val trueBoxHeight = screenHeight.toInt()
@@ -178,6 +186,9 @@ class HitboxConfigActivity : AppCompatActivity() {
             editor.putFloat("hitbox_${id}_y", viewY)
             editor.putInt("hitbox_${id}_w", viewWidth.toInt())
             editor.putInt("hitbox_${id}_h", viewHeight.toInt())
+
+            // Cộng dồn tọa độ X cho box tiếp theo
+            currentX += widths[index]
         }
         editor.apply()
         Toast.makeText(this, getString(R.string.toast_hitbox_reset), Toast.LENGTH_SHORT).show()

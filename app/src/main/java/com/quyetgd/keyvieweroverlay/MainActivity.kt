@@ -203,7 +203,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
             }.apply()
         }
 
-        // 2. Cài đặt mặc định cho Hitbox (ĐÃ ĐỒNG BỘ CÔNG THỨC BÙ TRỪ 20px GIẤU CHẤM ĐỎ)
+        // 2. Cài đặt mặc định cho Hitbox (ĐÃ ĐỒNG BỘ CÔNG THỨC TỈ LỆ VÀNG & BÙ TRỪ 20px)
         val hitboxPref = getSharedPreferences("HitboxPrefs", Context.MODE_PRIVATE)
         if (hitboxPref.getBoolean("is_first_run", true)) {
             val realMetrics = android.util.DisplayMetrics()
@@ -214,10 +214,17 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
             val screenHeight = kotlin.math.min(realMetrics.widthPixels, realMetrics.heightPixels).toFloat()
             val dotOffset = 20f
 
+            // Khai báo tỉ lệ vàng: 10% - 15% - 25% - 25% - 15% - 10%
+            val w1 = screenWidth * 0.10f
+            val w2 = screenWidth * 0.15f
+            val w3 = screenWidth * 0.25f
+            val widths = floatArrayOf(w1, w2, w3, w3, w2, w1)
+
             hitboxPref.edit().apply {
+                var currentX = 0f
                 for (i in 0 until 6) {
-                    val startX = (i * screenWidth / 6f).toInt()
-                    val endX = ((i + 1) * screenWidth / 6f).toInt()
+                    val startX = currentX.toInt()
+                    val endX = (currentX + widths[i]).toInt()
 
                     val trueBoxWidth = endX - startX
                     val trueBoxHeight = screenHeight.toInt()
@@ -231,6 +238,9 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                     putFloat("hitbox_${i + 1}_y", viewY)
                     putInt("hitbox_${i + 1}_w", viewWidth.toInt())
                     putInt("hitbox_${i + 1}_h", viewHeight.toInt())
+
+                    // Cộng dồn tọa độ X
+                    currentX += widths[i]
                 }
                 putBoolean("is_first_run", false)
             }.apply()
