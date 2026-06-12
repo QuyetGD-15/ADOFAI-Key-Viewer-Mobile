@@ -52,6 +52,9 @@ class OverlayService : Service() {
         const val ACTION_STOP_EDIT = "com.quyetgd.keyvieweroverlay.ACTION_STOP_EDIT"
         const val ACTION_UPDATE_CONFIG = "com.quyetgd.keyvieweroverlay.UPDATE_OVERLAY_CONFIG"
         const val ACTION_VISIBILITY = "com.quyetgd.keyvieweroverlay.VISIBILITY_OVERLAY"
+        // THÊM: Action để lắng nghe sự kiện xóa thông báo
+        const val ACTION_NOTIFICATION_DISMISSED = "com.quyetgd.keyvieweroverlay.ACTION_NOTIFICATION_DISMISSED"
+
         const val CHANNEL_ID = "overlay_service_channel"
         const val NOTIFICATION_ID = 1
     }
@@ -81,7 +84,7 @@ class OverlayService : Service() {
     private var maxRawX = 1f
     private var maxRawY = 1f
 
-    // THÊM: Biến Cache để giảm tải CPU
+    // Biến Cache để giảm tải CPU
     private var cachedScreenWidth = -1f
     private var cachedScreenHeight = -1f
     private var cachedRotation = -1
@@ -298,7 +301,6 @@ class OverlayService : Service() {
     }
 
     private fun processSync() {
-        // TỐI ƯU HÓA: Dùng cache thay vì gọi API của hệ thống liên tục
         if (cachedRotation == -1) {
             val metrics = resources.displayMetrics
             cachedScreenWidth = kotlin.math.max(metrics.widthPixels, metrics.heightPixels).toFloat()
@@ -388,7 +390,6 @@ class OverlayService : Service() {
             }
         }
 
-        // TỐI ƯU HÓA: Chỉ vẽ lại khi có bật công tắc hiện chạm
         if (isShowTouchesOn) {
             SharedTouchData.invalidateCallback?.invoke()
         }
@@ -444,8 +445,7 @@ class OverlayService : Service() {
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                    WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED, // BẬT TĂNG TỐC PHẦN CỨNG BẰNG GPU
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
@@ -568,12 +568,17 @@ class OverlayService : Service() {
         }
         val pendingOpenApp = PendingIntent.getActivity(this, 3, intentOpenApp, flag)
 
+        // THÊM: Intent lắng nghe sự kiện xóa
+        val intentDismiss = Intent(this, OverlayService::class.java).apply { action = ACTION_NOTIFICATION_DISMISSED }
+        val pendingDismiss = PendingIntent.getService(this, 4, intentDismiss, flag)
+
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification_key)
             .setContentTitle("Key Viewer Overlay")
             .setContentText("Sử dụng các nút bên dưới để điều khiển.")
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setDeleteIntent(pendingDismiss) // THÊM: Gắn bùa hồi sinh
             .addAction(0, keyViewerText, pendingKeyViewer)
             .addAction(0, showTouchesText, pendingTouches)
             .addAction(0, "MỞ APP", pendingOpenApp)
@@ -625,7 +630,6 @@ class OverlayService : Service() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        // Reset lại cache khi có sự kiện xoay màn hình
         cachedRotation = -1
 
         if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
@@ -645,6 +649,12 @@ class OverlayService : Service() {
         when (intent?.action) {
             ACTION_START_FOREGROUND -> {
                 startServiceAsForeground()
+            }
+            // THÊM: Xử lý sự kiện hồi sinh thông báo
+            ACTION_NOTIFICATION_DISMISSED -> {
+                if (isRunning) {
+                    updateNotification()
+                }
             }
             ACTION_TOGGLE_KEY_VIEWER -> {
                 if (isKeyViewerOn) {
