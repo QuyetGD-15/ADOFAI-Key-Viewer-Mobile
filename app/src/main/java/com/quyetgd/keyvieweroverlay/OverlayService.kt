@@ -257,16 +257,17 @@ class OverlayService : Service() {
 
         mainHandler.post(object : Runnable {
             override fun run() {
-                var changed = false
                 val currentTime = System.currentTimeMillis()
                 while (kpsQueue.isNotEmpty() && currentTime - kpsQueue.first() > 1000) {
                     kpsQueue.removeFirst()
-                    changed = true
                 }
-                if (changed) {
-                    updateKpsTotalUI(kpsQueue.size, totalClicks)
-                    sharedPrefs.edit().putInt("TOTAL_CLICKS", totalClicks).apply()
-                }
+
+                // ĐẢO NGƯỢC TỐI ƯU: Bỏ điều kiện `if (changed)`.
+                // Ép hệ thống luôn cập nhật UI và lưu SharedPreferences mỗi 100ms
+                // để chỉ số KPS giảm xuống mượt mà theo thời gian thực.
+                updateKpsTotalUI(kpsQueue.size, totalClicks)
+                sharedPrefs.edit().putInt("TOTAL_CLICKS", totalClicks).apply()
+
                 mainHandler.postDelayed(this, 100)
             }
         })
