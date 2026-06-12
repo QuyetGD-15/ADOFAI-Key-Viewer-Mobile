@@ -12,19 +12,123 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.View
-import android.widget.Button
-import android.widget.TextView
+import android.view.ViewGroup
+import android.widget.*
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.os.LocaleListCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import rikka.shizuku.Shizuku
 
 class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListener {
+
+    private data class AppItem(
+        val label: String,
+        val packageName: String,
+        val icon: android.graphics.drawable.Drawable?,
+        var isChecked: Boolean = false,
+        val isHeader: Boolean = false,
+        val headerTitle: String = ""
+    )
+
+    private inner class AppAdapter(
+        val items: List<AppItem>,
+        val onCheckedChange: (Int, Boolean) -> Unit
+    ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+        override fun getItemViewType(position: Int): Int = if (items[position].isHeader) 0 else 1
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+            return if (viewType == 0) {
+                val tv = TextView(parent.context).apply {
+                    layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                    setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(8))
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                    setTextColor(Color.YELLOW)
+                }
+                object : RecyclerView.ViewHolder(tv) {}
+            } else {
+                val layout = LinearLayout(parent.context).apply {
+                    layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    setPadding(dpToPx(16), dpToPx(8), dpToPx(16), dpToPx(8))
+                    isClickable = true
+                    isFocusable = true
+                    val outValue = TypedValue()
+                    context.theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
+                    setBackgroundResource(outValue.resourceId)
+                }
+                
+                val icon = ImageView(parent.context).apply {
+                    id = View.generateViewId()
+                    layoutParams = LinearLayout.LayoutParams(dpToPx(40), dpToPx(40))
+                }
+                
+                val name = TextView(parent.context).apply {
+                    id = View.generateViewId()
+                    layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                        marginStart = dpToPx(12)
+                    }
+                    setTextColor(Color.WHITE)
+                }
+                
+                val cb = CheckBox(parent.context).apply {
+                    id = View.generateViewId()
+                    isFocusable = false
+                    isClickable = false
+                }
+                
+                layout.addView(icon)
+                layout.addView(name)
+                layout.addView(cb)
+                
+                layout.setTag(R.id.hitbox1, icon) // Temporary storage
+                layout.setTag(R.id.hitbox2, name)
+                layout.setTag(R.id.hitbox3, cb)
+                
+                object : RecyclerView.ViewHolder(layout) {}
+            }
+        }
+
+        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            val item = items[position]
+            if (item.isHeader) {
+                (holder.itemView as TextView).text = item.headerTitle
+            } else {
+                val icon = holder.itemView.getTag(R.id.hitbox1) as ImageView
+                val name = holder.itemView.getTag(R.id.hitbox2) as TextView
+                val cb = holder.itemView.getTag(R.id.hitbox3) as CheckBox
+                
+                icon.setImageDrawable(item.icon)
+                name.text = item.label
+                cb.isChecked = item.isChecked
+                
+                holder.itemView.setOnClickListener {
+                    item.isChecked = !item.isChecked
+                    cb.isChecked = item.isChecked
+                    onCheckedChange(position, item.isChecked)
+                }
+            }
+        }
+
+        override fun getItemCount(): Int = items.size
+        private fun dpToPx(dp: Int): Int = (dp * resources.displayMetrics.density).toInt()
+    }
 
     private lateinit var tvStatus: TextView
     private lateinit var tvShizukuStatus: TextView
@@ -32,9 +136,11 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
     private lateinit var switchOverlay: SwitchCompat
     private lateinit var btnConfigHitbox: Button
     private lateinit var btnConfigKeyViewer: Button
+    private lateinit var btnSelectApps: Button
     private lateinit var tvCurrentLanguage: TextView
     private lateinit var btnToggleLanguage: Button
     private var layoutAccessibilityPrompt: View? = null
+    private var loadingDialog: android.app.Dialog? = null
     
     private val SHIZUKU_ACTION = "moe.shizuku.privileged.api.intent.action.BINDER_RECEIVED"
 
@@ -136,6 +242,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         switchOverlay = findViewById(R.id.switchOverlay)
         btnConfigHitbox = findViewById(R.id.btnConfigHitbox)
         btnConfigKeyViewer = findViewById(R.id.btnConfigKeyViewer)
+        btnSelectApps = findViewById(R.id.btnSelectApps)
         tvCurrentLanguage = findViewById(R.id.tvCurrentLanguage)
         btnToggleLanguage = findViewById(R.id.btnToggleLanguage)
 
@@ -154,14 +261,32 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         switchOverlay.text = if (OverlayService.isRunning) getString(R.string.overlay_use_notification) else getString(R.string.overlay_start_hint)
 
         btnConfigHitbox.setOnClickListener {
+            showLoading()
             startActivity(Intent(this, HitboxConfigActivity::class.java))
         }
 
         btnConfigKeyViewer.setOnClickListener {
+            showLoading()
             if (OverlayService.isRunning) {
                 stopService(Intent(this, OverlayService::class.java))
             }
             startActivity(Intent(this, KeyViewerConfigActivity::class.java))
+        }
+
+        btnSelectApps.setOnClickListener {
+            if (!hasUsageStatsPermission()) {
+                Toast.makeText(this, getString(R.string.usage_stats_required), Toast.LENGTH_LONG).show()
+                startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+            } else {
+                lifecycleScope.launch {
+                    showLoading()
+                    val result = withContext(Dispatchers.IO) {
+                        loadAndCategorizeApps()
+                    }
+                    hideLoading()
+                    showAppSelectionDialog(result.first, result.second)
+                }
+            }
         }
 
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
@@ -180,12 +305,28 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
         updateLanguageUI()
         btnToggleLanguage.setOnClickListener {
+            showLoading()
             val currentLocales = AppCompatDelegate.getApplicationLocales()
             val newLocale = if (currentLocales.toLanguageTags() == "en") "vi" else "en"
             AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(newLocale))
         }
 
         handleIncomingIntent(intent)
+    }
+
+    private fun showLoading() {
+        if (loadingDialog?.isShowing == true) return
+        loadingDialog = android.app.Dialog(this).apply {
+            requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
+            setCancelable(false)
+            setContentView(ProgressBar(this@MainActivity))
+            window?.setBackgroundDrawableResource(android.R.color.transparent)
+            show()
+        }
+    }
+
+    private fun hideLoading() {
+        loadingDialog?.let { if (it.isShowing) it.dismiss() }
     }
 
     private fun updateLanguageUI() {
@@ -265,6 +406,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
     override fun onResume() {
         super.onResume()
+        hideLoading()
         AppState.isAppVisible = true
         mainHandler.post(updateRunnable) // Bắt đầu vòng lặp cập nhật UI
     }
@@ -371,6 +513,76 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
             return false
         }
         return true
+    }
+
+    private fun hasUsageStatsPermission(): Boolean {
+        val appOps = getSystemService(Context.APP_OPS_SERVICE) as android.app.AppOpsManager
+        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            appOps.unsafeCheckOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), packageName)
+        } else {
+            @Suppress("DEPRECATION")
+            appOps.checkOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), packageName)
+        }
+        return mode == android.app.AppOpsManager.MODE_ALLOWED
+    }
+
+    private fun loadAndCategorizeApps(): Pair<List<AppItem>, List<AppItem>> {
+        val pm = packageManager
+        val mainIntent = Intent(Intent.ACTION_MAIN, null).apply { addCategory(Intent.CATEGORY_LAUNCHER) }
+        val resolvedInfos = pm.queryIntentActivities(mainIntent, 0)
+        
+        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+        val savedApps = pref.getStringSet("allowed_apps", emptySet()) ?: emptySet()
+        
+        val recommendedKeywords = listOf("adofai", "a dance of fire and ice", "geometry dash")
+        
+        val allApps = resolvedInfos
+            .filter { it.activityInfo.packageName != packageName }
+            .map { 
+                AppItem(
+                    label = it.loadLabel(pm).toString(),
+                    packageName = it.activityInfo.packageName,
+                    icon = it.loadIcon(pm),
+                    isChecked = savedApps.contains(it.activityInfo.packageName)
+                )
+            }
+
+        val recommended = allApps.filter { item -> 
+            recommendedKeywords.any { kw -> item.label.contains(kw, ignoreCase = true) } 
+        }.sortedBy { it.label }
+        
+        val others = allApps.filter { item -> 
+            !recommendedKeywords.any { kw -> item.label.contains(kw, ignoreCase = true) } 
+        }.sortedBy { it.label }
+        
+        return recommended to others
+    }
+
+    private fun showAppSelectionDialog(recommended: List<AppItem>, others: List<AppItem>) {
+        val finalItems = mutableListOf<AppItem>()
+        if (recommended.isNotEmpty()) {
+            finalItems.add(AppItem("", "", null, isHeader = true, headerTitle = getString(R.string.header_recommended)))
+            finalItems.addAll(recommended)
+        }
+        finalItems.add(AppItem("", "", null, isHeader = true, headerTitle = getString(R.string.header_others)))
+        finalItems.addAll(others)
+
+        val rv = RecyclerView(this).apply {
+            layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            layoutManager = LinearLayoutManager(this@MainActivity)
+        }
+        
+        rv.adapter = AppAdapter(finalItems) { _, _ -> }
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.dialog_select_apps_title))
+            .setView(rv)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val selectedSet = finalItems.filter { !it.isHeader && it.isChecked }.map { it.packageName }.toSet()
+                getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE).edit().putStringSet("allowed_apps", selectedSet).apply()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     override fun onDestroy() {

@@ -66,4 +66,10 @@
     <string name="toast_reset_default">Đã đưa về mặc định chuẩn</string>
     <string name="current_language">Ngôn ngữ: Tiếng Việt</string>
     <string name="switch_language">English</string>
+    <string name="select_apps">Chọn Game tự động bật</string>
+    <string name="usage_stats_required">Ứng dụng cần quyền Truy cập sử dụng để tự động bật/tắt KeyViewer</string>
+    <string name="dialog_select_apps_title">Chọn ứng dụng</string>
+    <string name="header_recommended">⭐ Nên dùng</string>
+    <string name="header_others">📱 Các app còn lại</string>
+    <string name="cancel">Hủy</string>
 </resources>

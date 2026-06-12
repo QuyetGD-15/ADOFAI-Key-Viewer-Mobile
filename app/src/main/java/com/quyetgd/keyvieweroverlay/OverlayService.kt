@@ -4,6 +4,8 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.app.usage.UsageEvents
+import android.app.usage.UsageStatsManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -38,8 +40,6 @@ import rikka.shizuku.Shizuku
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.ArrayDeque
-import kotlin.math.pow
-import kotlin.math.sqrt
 
 class OverlayService : Service() {
 
@@ -62,13 +62,89 @@ class OverlayService : Service() {
 
     private lateinit var windowManager: WindowManager
     private lateinit var notificationManager: NotificationManager
+    private lateinit var usageStatsManager: UsageStatsManager
     private lateinit var wrapper: FrameLayout
     private lateinit var viewerContainer: View
     private lateinit var viewerParams: WindowManager.LayoutParams
 
+    private val keyViews = arrayOfNulls<TextView>(6)
     private var isOverlayShowing = false
     private var isKeyViewerOn = false
     private var isShowTouchesOn = false
+
+    private var isManualOverride = false
+    private var lastForegroundApp = ""
+    private var lastIsLandscape = false
+
+    private fun getLatestForegroundApp(): String {
+        val time = System.currentTimeMillis()
+        val events = usageStatsManager.queryEvents(time - 5000, time)
+        var latestApp = ""
+        val event = UsageEvents.Event()
+        while (events.hasNextEvent()) {
+            events.getNextEvent(event)
+            if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
+                latestApp = event.packageName ?: ""
+            }
+        }
+        return latestApp
+    }
+
+    private fun checkIsLandscape(): Boolean {
+        return try {
+            @Suppress("DEPRECATION")
+            val rotation = windowManager.defaultDisplay.rotation
+            rotation == Surface.ROTATION_90 || rotation == Surface.ROTATION_270
+        } catch (e: Exception) {
+            resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        }
+    }
+
+    private val autoShowRunnable = object : Runnable {
+        override fun run() {
+            try {
+                var currentApp = getLatestForegroundApp()
+
+                if (currentApp.isEmpty() || currentApp == "com.android.systemui") {
+                    currentApp = lastForegroundApp
+                }
+
+                val isLandscape = checkIsLandscape()
+
+                if (currentApp != lastForegroundApp) {
+                    isManualOverride = false
+                }
+
+                if (currentApp != lastForegroundApp || isLandscape != lastIsLandscape) {
+                    lastForegroundApp = currentApp
+                    lastIsLandscape = isLandscape
+
+                    if (!isManualOverride) {
+                        val allowedApps = sharedPrefs.getStringSet("allowed_apps", emptySet()) ?: emptySet()
+                        val shouldShow = allowedApps.contains(currentApp) && isLandscape
+
+                        if (shouldShow && !isKeyViewerOn) {
+                            isKeyViewerOn = true
+                            mainHandler.post {
+                                tryShowOverlay()
+                                updateNotification()
+                            }
+                        } else if (!shouldShow && isKeyViewerOn) {
+                            isKeyViewerOn = false
+                            mainHandler.post {
+                                hideOverlay()
+                                updateNotification()
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("AutoShowDebug", "Lỗi vòng lặp Auto: ${e.message}")
+            } finally {
+                mainHandler.postDelayed(this, 1500)
+            }
+        }
+    }
 
     private class TouchSlot(
         var trackingId: Int = -1,
@@ -143,6 +219,7 @@ class OverlayService : Service() {
         createNotificationChannel()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
 
         sharedPrefs = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
         totalClicks = sharedPrefs.getInt("TOTAL_CLICKS", 0)
@@ -197,6 +274,8 @@ class OverlayService : Service() {
         if (Shizuku.pingBinder()) {
             initHardwareAndStartReading()
         }
+
+        mainHandler.post(autoShowRunnable)
     }
 
     private fun initHardwareAndStartReading() {
@@ -329,13 +408,20 @@ class OverlayService : Service() {
                     var finalLaneToActivate = -1
 
                     if (directHitLane != -1) {
-                        val isLaneOccupied = slots.any { it != slot && it.isActive && it.lastHitLane == directHitLane }
+                        var isLaneOccupied = false
+                        for (k in 0 until 10) {
+                            val s = slots[k]
+                            if (s !== slot && s.isActive && s.lastHitLane == directHitLane) {
+                                isLaneOccupied = true
+                                break
+                            }
+                        }
 
                         if (!isLaneOccupied) {
                             finalLaneToActivate = directHitLane
                         } else {
                             var nearestEmptyLane = -1
-                            var minDistance = Float.MAX_VALUE
+                            var minDistanceSq = Float.MAX_VALUE // So sánh bình phương, không dùng sqrt
 
                             val startLane = if (directHitLane < 3) 0 else 3
                             val endLane = if (directHitLane < 3) 3 else 6
@@ -343,7 +429,14 @@ class OverlayService : Service() {
                             for (j in startLane until endLane) {
                                 if (j == directHitLane) continue
 
-                                val isJEmpty = slots.none { it.isActive && it.lastHitLane == j }
+                                var isJEmpty = true
+                                for (k in 0 until 10) {
+                                    val s = slots[k]
+                                    if (s.isActive && s.lastHitLane == j) {
+                                        isJEmpty = false
+                                        break
+                                    }
+                                }
 
                                 if (isJEmpty) {
                                     val hBox = hitboxes[j]
@@ -352,10 +445,13 @@ class OverlayService : Service() {
                                     val centerX = hBox.centerX()
                                     val centerY = hBox.centerY()
 
-                                    val dist = sqrt((mappedX - centerX).pow(2) + (mappedY - centerY).pow(2))
+                                    // Tính toán không dùng pow() và sqrt()
+                                    val dx = mappedX - centerX
+                                    val dy = mappedY - centerY
+                                    val distSq = dx * dx + dy * dy
 
-                                    if (dist < minDistance) {
-                                        minDistance = dist
+                                    if (distSq < minDistanceSq) {
+                                        minDistanceSq = distSq
                                         nearestEmptyLane = j
                                     }
                                 }
@@ -406,8 +502,7 @@ class OverlayService : Service() {
     private fun onKeyDown(lane: Int) {
         mainHandler.post {
             if (activeTrails[lane] != null) return@post
-            val keyId = resources.getIdentifier("key${lane + 1}", "id", packageName)
-            val tv = viewerContainer.findViewById<TextView>(keyId) ?: return@post
+            val tv = keyViews[lane] ?: return@post
             activeTrails[lane] = keyTrailView.addTrail(tv.x, tv.width.toFloat())
             tv.setBackgroundResource(R.drawable.bg_key_pressed)
             tv.setTextColor(Color.BLACK)
@@ -415,14 +510,21 @@ class OverlayService : Service() {
     }
 
     private fun onKeyUp(lane: Int) {
-        val isStillOccupied = slots.any { it.isActive && it.lastHitLane == lane && it.trackingId != -1 }
+        // Tối ưu .any{} thành for-loop chuẩn để tránh rác RAM
+        var isStillOccupied = false
+        for (i in 0 until 10) {
+            val s = slots[i]
+            if (s.isActive && s.lastHitLane == lane && s.trackingId != -1) {
+                isStillOccupied = true
+                break
+            }
+        }
         if (isStillOccupied) return
 
         mainHandler.post {
             activeTrails[lane]?.isReleased = true
             activeTrails[lane] = null
-            val keyId = resources.getIdentifier("key${lane + 1}", "id", packageName)
-            val tv = viewerContainer.findViewById<TextView>(keyId)
+            val tv = keyViews[lane]
             tv?.setBackgroundResource(R.drawable.bg_key_normal)
             tv?.setTextColor(Color.WHITE)
         }
@@ -442,10 +544,14 @@ class OverlayService : Service() {
         viewerContainer = LayoutInflater.from(this).inflate(R.layout.overlay_view, wrapper, false)
         keyTrailView = viewerContainer.findViewById(R.id.keyTrailView)
 
-        // ĐÃ FIX: Sửa chính tả từ TRANSPARETransparent thành TRANSPARENT chuẩn Android
         keyTrailView.setBackgroundColor(Color.TRANSPARENT)
 
         wrapper.addView(viewerContainer)
+
+        for (i in 0 until 6) {
+            val keyId = resources.getIdentifier("key${i + 1}", "id", packageName)
+            keyViews[i] = viewerContainer.findViewById(keyId)
+        }
 
         viewerParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -655,6 +761,7 @@ class OverlayService : Service() {
                 startServiceAsForeground()
             }
             ACTION_TOGGLE_KEY_VIEWER -> {
+                isManualOverride = true
                 if (isKeyViewerOn) {
                     hideOverlay()
                     isKeyViewerOn = false
@@ -683,6 +790,7 @@ class OverlayService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         isRunning = false
+        mainHandler.removeCallbacks(autoShowRunnable)
         stopReadingTouchEvents()
         try { unregisterReceiver(editReceiver) } catch (e: Exception) { }
         try { unregisterReceiver(resetTotalReceiver) } catch (e: Exception) { }
