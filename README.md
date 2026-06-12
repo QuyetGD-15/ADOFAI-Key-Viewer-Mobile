@@ -1,5 +1,5 @@
 # 🌍 Language / Ngôn ngữ
-[Tiếng Việt](README.md) | [English](README_EN.md)
+[Tiếng Việt](README_VN.md) | [English](README.md)
 
 ---
 
