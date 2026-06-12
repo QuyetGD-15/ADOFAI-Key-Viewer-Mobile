@@ -1,3 +1,7 @@
+# 🌍 Language / Ngôn ngữ
+[Tiếng Việt](README.md) | [English](README_EN.md)
+
+---
 # 🎹 ADOFAI Key Viewer Mobile
 
 Một công cụ Overlay siêu nhẹ, trễ thấp (Ultra-low latency) dành riêng cho game thủ ADOFAI và các tựa game nhịp điệu trên Android. Vượt qua giới hạn của Game Turbo để bắt trọn từng thao tác múa phím của bạn.
