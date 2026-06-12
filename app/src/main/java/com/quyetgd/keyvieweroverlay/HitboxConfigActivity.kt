@@ -135,39 +135,53 @@ class HitboxConfigActivity : AppCompatActivity() {
     }
 
     private fun resetHitboxesToDefault(hitboxes: Array<HitboxView>) {
-        val displayMetrics = resources.displayMetrics
-        val screenWidth = displayMetrics.widthPixels
-        val screenHeight = displayMetrics.heightPixels
+        val realMetrics = android.util.DisplayMetrics()
+        @Suppress("DEPRECATION")
+        windowManager.defaultDisplay.getRealMetrics(realMetrics)
 
-        val defaultWidth = screenWidth / 6
-        val defaultHeight = 300
-        val yPosition = screenHeight * 0.7f // Nửa dưới màn hình
+        val screenWidth = kotlin.math.max(realMetrics.widthPixels, realMetrics.heightPixels).toFloat()
+        val screenHeight = kotlin.math.min(realMetrics.widthPixels, realMetrics.heightPixels).toFloat()
+
+        // Chính là bán kính chấm đỏ lấy từ HitboxView
+        val dotOffset = 20f
 
         val sharedPref = getSharedPreferences("HitboxPrefs", Context.MODE_PRIVATE)
         val editor = sharedPref.edit()
 
         hitboxes.forEachIndexed { index, view ->
             val id = index + 1
-            val xPosition = (index * defaultWidth).toFloat()
 
-            // Cập nhật View ngay trên màn hình
-            view.x = xPosition
-            view.y = yPosition
+            // Tính toán kích thước KHUNG XANH THẬT
+            val startX = (index * screenWidth / 6f).toInt()
+            val endX = ((index + 1) * screenWidth / 6f).toInt()
+
+            val trueBoxWidth = endX - startX
+            val trueBoxHeight = screenHeight.toInt()
+
+            // 💡 BÙ TRỪ: Đẩy View lùi lên trên và sang trái 20px, đồng thời phình to ra 40px
+            // Để giấu gọn 4 chấm đỏ ra ngoài rìa khung xanh
+            val viewX = startX.toFloat() - dotOffset
+            val viewY = 0f - dotOffset
+            val viewWidth = trueBoxWidth + (dotOffset * 2f)
+            val viewHeight = trueBoxHeight + (dotOffset * 2f)
+
+            // Cập nhật View
+            view.x = viewX
+            view.y = viewY
             val params = view.layoutParams
-            params.width = defaultWidth
-            params.height = defaultHeight
+            params.width = viewWidth.toInt()
+            params.height = viewHeight.toInt()
             view.layoutParams = params
 
             // Ghi đè vào SharedPreferences
-            editor.putFloat("hitbox_${id}_x", xPosition)
-            editor.putFloat("hitbox_${id}_y", yPosition)
-            editor.putInt("hitbox_${id}_w", defaultWidth)
-            editor.putInt("hitbox_${id}_h", defaultHeight)
+            editor.putFloat("hitbox_${id}_x", viewX)
+            editor.putFloat("hitbox_${id}_y", viewY)
+            editor.putInt("hitbox_${id}_w", viewWidth.toInt())
+            editor.putInt("hitbox_${id}_h", viewHeight.toInt())
         }
         editor.apply()
-        Toast.makeText(this, "Đã đặt lại về mặc định", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Đã chia khít 6 Hitbox lấp đầy màn hình", Toast.LENGTH_SHORT).show()
     }
-
     override fun onDestroy() {
         super.onDestroy()
         // Đảm bảo OverlayService được khóa lại khi thoát màn hình này

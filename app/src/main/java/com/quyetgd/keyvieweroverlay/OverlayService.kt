@@ -38,6 +38,8 @@ import rikka.shizuku.Shizuku
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.ArrayDeque
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 class OverlayService : Service() {
 
@@ -52,11 +54,10 @@ class OverlayService : Service() {
         const val ACTION_STOP_EDIT = "com.quyetgd.keyvieweroverlay.ACTION_STOP_EDIT"
         const val ACTION_UPDATE_CONFIG = "com.quyetgd.keyvieweroverlay.UPDATE_OVERLAY_CONFIG"
         const val ACTION_VISIBILITY = "com.quyetgd.keyvieweroverlay.VISIBILITY_OVERLAY"
-        // THÊM: Action để lắng nghe sự kiện xóa thông báo
-        const val ACTION_NOTIFICATION_DISMISSED = "com.quyetgd.keyvieweroverlay.ACTION_NOTIFICATION_DISMISSED"
-
         const val CHANNEL_ID = "overlay_service_channel"
         const val NOTIFICATION_ID = 1
+
+        val SPACE_REGEX = "\\s+".toRegex()
     }
 
     private lateinit var windowManager: WindowManager
@@ -80,11 +81,9 @@ class OverlayService : Service() {
     private val slots = Array(10) { TouchSlot() }
     private var currentSlot = 0
 
-    // Biến lưu thông số phần cứng động
     private var maxRawX = 1f
     private var maxRawY = 1f
 
-    // Biến Cache để giảm tải CPU
     private var cachedScreenWidth = -1f
     private var cachedScreenHeight = -1f
     private var cachedRotation = -1
@@ -150,6 +149,10 @@ class OverlayService : Service() {
 
         setupViewerView()
 
+        val metrics = resources.displayMetrics
+        cachedScreenWidth = kotlin.math.max(metrics.widthPixels, metrics.heightPixels).toFloat()
+        cachedScreenHeight = kotlin.math.min(metrics.widthPixels, metrics.heightPixels).toFloat()
+
         mainHandler.post {
             loadKeyViewerSettings()
             loadHitboxesFromPrefs()
@@ -183,7 +186,10 @@ class OverlayService : Service() {
                     kpsQueue.removeFirst()
                     changed = true
                 }
-                if (changed) updateKpsTotalUI(kpsQueue.size, totalClicks)
+                if (changed) {
+                    updateKpsTotalUI(kpsQueue.size, totalClicks)
+                    sharedPrefs.edit().putInt("TOTAL_CLICKS", totalClicks).apply()
+                }
                 mainHandler.postDelayed(this, 100)
             }
         })
@@ -217,34 +223,29 @@ class OverlayService : Service() {
                 }
             }
 
-            val cmd = arrayOf("sh", "-c", "getevent -il")
+            val cmd = arrayOf("sh", "-c", "getevent -p -l")
             val newProcessMethod = Shizuku::class.java.getDeclaredMethod("newProcess", Array<String>::class.java, Array<String>::class.java, String::class.java)
             newProcessMethod.isAccessible = true
             val process = newProcessMethod.invoke(null, cmd, null, null) as Process
             val reader = BufferedReader(InputStreamReader(process.inputStream))
 
             var currentDevice: String? = null
-            var hasTouch = false
-            var line: String?
+            var hasX = false
+            var hasY = false
 
-            while (reader.readLine().also { line = it } != null) {
-                val currentLine = line!!
-                if (currentLine.startsWith("add device")) {
-                    if (currentDevice != null && hasTouch) {
-                        process.destroy()
-                        return currentDevice
-                    }
-                    currentDevice = currentLine.substringAfter(": ").trim()
-                    hasTouch = false
+            reader.forEachLine { line ->
+                if (line.startsWith("add device")) {
+                    if (currentDevice != null && hasX && hasY) return@forEachLine
+                    currentDevice = line.substringAfter(": ").trim()
+                    hasX = false
+                    hasY = false
                 }
-                if (currentLine.contains("ABS_MT_POSITION_X")) hasTouch = true
+                if (line.contains("ABS_MT_POSITION_X")) hasX = true
+                if (line.contains("ABS_MT_POSITION_Y")) hasY = true
             }
-            if (currentDevice != null && hasTouch) {
-                process.destroy()
-                return currentDevice
-            }
+            if (currentDevice != null && hasX && hasY) return currentDevice
         } catch (e: Exception) {
-            Log.e("KeyViewer_Debug", "Lỗi quét thiết bị: ${e.message}")
+            // Error finding device
         }
         return null
     }
@@ -252,6 +253,10 @@ class OverlayService : Service() {
     private fun startReadingTouchEvents(devicePath: String) {
         isReadingEvents = true
         Log.d("KeyViewer_Debug", "Bắt đầu đọc Shizuku tại: $devicePath")
+
+        val pref = getSharedPreferences("HardwarePrefs", Context.MODE_PRIVATE)
+        val hwMaxX = pref.getInt("hardware_max_x", 10799).toFloat()
+        val hwMaxY = pref.getInt("hardware_max_y", 24599).toFloat()
 
         eventReaderThread = Thread {
             try {
@@ -266,7 +271,7 @@ class OverlayService : Service() {
 
                 while (isReadingEvents) {
                     line = reader.readLine() ?: break
-                    val parts = line.trim().split("\\s+".toRegex())
+                    val parts = line.trim().split(SPACE_REGEX)
                     if (parts.size < 3) continue
 
                     val type = parts[parts.size - 3].removeSuffix(":")
@@ -274,7 +279,7 @@ class OverlayService : Service() {
                     val value = try { parts.last().toLong(16).toInt() } catch (e: Exception) { 0 }
 
                     when (type) {
-                        "0003" -> {
+                        "0003" -> { // EV_ABS
                             when (code) {
                                 "002f" -> currentSlot = value.coerceIn(0, 9)
                                 "0039" -> slots[currentSlot].trackingId = value
@@ -282,9 +287,9 @@ class OverlayService : Service() {
                                 "0036" -> slots[currentSlot].y = value.toFloat()
                             }
                         }
-                        "0000" -> {
-                            if (code == "0000") {
-                                processSync()
+                        "0000" -> { // EV_SYN
+                            if (code == "0000") { // SYN_REPORT
+                                processSync(hwMaxX, hwMaxY)
                             }
                         }
                     }
@@ -295,70 +300,78 @@ class OverlayService : Service() {
                 stopReadingTouchEvents()
             }
         }.apply {
-            priority = Thread.MAX_PRIORITY
+            priority = Thread.NORM_PRIORITY
             start()
         }
     }
 
-    private fun processSync() {
-        if (cachedRotation == -1) {
-            val metrics = resources.displayMetrics
-            cachedScreenWidth = kotlin.math.max(metrics.widthPixels, metrics.heightPixels).toFloat()
-            cachedScreenHeight = kotlin.math.min(metrics.widthPixels, metrics.heightPixels).toFloat()
-            @Suppress("DEPRECATION")
-            cachedRotation = windowManager.defaultDisplay.rotation
-        }
+    private fun processSync(hwMaxX: Float, hwMaxY: Float) {
+        val screenWidth = cachedScreenWidth
+        val screenHeight = cachedScreenHeight
 
         for (i in 0 until 10) {
             val slot = slots[i]
 
-            var safeMaxX = if (maxRawX > 10f) maxRawX else 10799f
-            var safeMaxY = if (maxRawY > 10f) maxRawY else 24599f
-
-            if (slot.x > safeMaxX * 2 || slot.y > safeMaxY * 2) {
-                safeMaxX = kotlin.math.max(safeMaxX * 10f, 10799f)
-                safeMaxY = kotlin.math.max(safeMaxY * 10f, 24599f)
-            }
-
-            val normX = slot.x / safeMaxX
-            val normY = slot.y / safeMaxY
-
-            var mappedX = 0f
-            var mappedY = 0f
-
-            when (cachedRotation) {
-                Surface.ROTATION_0 -> {
-                    mappedX = normX * cachedScreenWidth
-                    mappedY = normY * cachedScreenHeight
-                }
-                Surface.ROTATION_90 -> {
-                    mappedX = normY * cachedScreenWidth
-                    mappedY = (1f - normX) * cachedScreenHeight
-                }
-                Surface.ROTATION_180 -> {
-                    mappedX = (1f - normX) * cachedScreenWidth
-                    mappedY = (1f - normY) * cachedScreenHeight
-                }
-                Surface.ROTATION_270 -> {
-                    mappedX = (1f - normY) * cachedScreenWidth
-                    mappedY = normX * cachedScreenHeight
-                }
-            }
+            val mappedX = (slot.y / hwMaxY) * screenWidth
+            val mappedY = ((hwMaxX - slot.x) / hwMaxX) * screenHeight
 
             if (slot.trackingId != -1) {
                 if (!slot.isActive) {
-                    var hitLane = -1
+
+                    var directHitLane = -1
                     for (j in 0 until 6) {
                         if (hitboxes[j].contains(mappedX, mappedY)) {
-                            hitLane = j
+                            directHitLane = j
                             break
                         }
                     }
 
-                    if (hitLane != -1) {
-                        slot.lastHitLane = hitLane
+                    var finalLaneToActivate = -1
+
+                    if (directHitLane != -1) {
+                        val isLaneOccupied = slots.any { it != slot && it.isActive && it.lastHitLane == directHitLane }
+
+                        if (!isLaneOccupied) {
+                            finalLaneToActivate = directHitLane
+                        } else {
+                            var nearestEmptyLane = -1
+                            var minDistance = Float.MAX_VALUE
+
+                            val startLane = if (directHitLane < 3) 0 else 3
+                            val endLane = if (directHitLane < 3) 3 else 6
+
+                            for (j in startLane until endLane) {
+                                if (j == directHitLane) continue
+
+                                val isJEmpty = slots.none { it.isActive && it.lastHitLane == j }
+
+                                if (isJEmpty) {
+                                    val hBox = hitboxes[j]
+                                    if (hBox.width() <= 0 || hBox.height() <= 0) continue
+
+                                    val centerX = hBox.centerX()
+                                    val centerY = hBox.centerY()
+
+                                    val dist = sqrt((mappedX - centerX).pow(2) + (mappedY - centerY).pow(2))
+
+                                    if (dist < minDistance) {
+                                        minDistance = dist
+                                        nearestEmptyLane = j
+                                    }
+                                }
+                            }
+
+                            if (nearestEmptyLane != -1) {
+                                Log.d("KeyViewer_Debug", "🔄 Auto-Correct Cụm ${if (directHitLane < 3) "TRÁI" else "PHẢI"}: Trượt từ $directHitLane sang Lane trống $nearestEmptyLane")
+                                finalLaneToActivate = nearestEmptyLane
+                            }
+                        }
+                    }
+
+                    if (finalLaneToActivate != -1) {
+                        slot.lastHitLane = finalLaneToActivate
                         slot.isActive = true
-                        onKeyDown(hitLane)
+                        onKeyDown(finalLaneToActivate)
 
                         val currentTime = System.currentTimeMillis()
                         kpsQueue.addLast(currentTime)
@@ -367,9 +380,6 @@ class OverlayService : Service() {
                         while (kpsQueue.isNotEmpty() && currentTime - kpsQueue.first() > 1000) {
                             kpsQueue.removeFirst()
                         }
-
-                        sharedPrefs.edit().putInt("TOTAL_CLICKS", totalClicks).apply()
-                        updateKpsTotalUI(kpsQueue.size, totalClicks)
                     }
                 }
             } else {
@@ -390,9 +400,7 @@ class OverlayService : Service() {
             }
         }
 
-        if (isShowTouchesOn) {
-            SharedTouchData.invalidateCallback?.invoke()
-        }
+        SharedTouchData.invalidateCallback?.invoke()
     }
 
     private fun onKeyDown(lane: Int) {
@@ -434,6 +442,7 @@ class OverlayService : Service() {
         viewerContainer = LayoutInflater.from(this).inflate(R.layout.overlay_view, wrapper, false)
         keyTrailView = viewerContainer.findViewById(R.id.keyTrailView)
 
+        // ĐÃ FIX: Sửa chính tả từ TRANSPARETransparent thành TRANSPARENT chuẩn Android
         keyTrailView.setBackgroundColor(Color.TRANSPARENT)
 
         wrapper.addView(viewerContainer)
@@ -445,7 +454,8 @@ class OverlayService : Service() {
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
@@ -568,17 +578,12 @@ class OverlayService : Service() {
         }
         val pendingOpenApp = PendingIntent.getActivity(this, 3, intentOpenApp, flag)
 
-        // THÊM: Intent lắng nghe sự kiện xóa
-        val intentDismiss = Intent(this, OverlayService::class.java).apply { action = ACTION_NOTIFICATION_DISMISSED }
-        val pendingDismiss = PendingIntent.getService(this, 4, intentDismiss, flag)
-
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification_key)
             .setContentTitle("Key Viewer Overlay")
             .setContentText("Sử dụng các nút bên dưới để điều khiển.")
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setDeleteIntent(pendingDismiss) // THÊM: Gắn bùa hồi sinh
             .addAction(0, keyViewerText, pendingKeyViewer)
             .addAction(0, showTouchesText, pendingTouches)
             .addAction(0, "MỞ APP", pendingOpenApp)
@@ -597,7 +602,7 @@ class OverlayService : Service() {
             return false
         }
 
-        if (resources.configuration.orientation != android.content.res.Configuration.ORIENTATION_LANDSCAPE) {
+        if (resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE) {
             Toast.makeText(this, "Keyviewer overlay chỉ hoạt động ở màn hình ngang", Toast.LENGTH_SHORT).show()
             return false
         }
@@ -630,7 +635,6 @@ class OverlayService : Service() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        cachedRotation = -1
 
         if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
             if (isKeyViewerOn) {
@@ -649,12 +653,6 @@ class OverlayService : Service() {
         when (intent?.action) {
             ACTION_START_FOREGROUND -> {
                 startServiceAsForeground()
-            }
-            // THÊM: Xử lý sự kiện hồi sinh thông báo
-            ACTION_NOTIFICATION_DISMISSED -> {
-                if (isRunning) {
-                    updateNotification()
-                }
             }
             ACTION_TOGGLE_KEY_VIEWER -> {
                 if (isKeyViewerOn) {
