@@ -26,7 +26,7 @@ class TouchRendererService : AccessibilityService() {
         pointerCanvasView = object : View(this) {
             private val blackPaint = Paint().apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = 10f; alpha = 204; isAntiAlias = true }
             private val whitePaint = Paint().apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 5f; alpha = 204; isAntiAlias = true }
-            
+
             override fun onDraw(canvas: Canvas) {
                 super.onDraw(canvas)
                 for (pt in SharedTouchData.points) {
@@ -39,21 +39,25 @@ class TouchRendererService : AccessibilityService() {
             }
         }
 
-        /**
-         * Kiến trúc vẽ xuyên thấu: Sử dụng TYPE_ACCESSIBILITY_OVERLAY.
-         * Đây là loại Window đặc biệt của AccessibilityService có quyền ưu tiên cao nhất,
-         * cho phép vẽ đè lên tất cả các ứng dụng khác, bao gồm cả các lớp phủ hệ thống (như Game Turbo).
-         */
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
-            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSPARENT
-        )
+        ).apply {
+            // ĐỒNG BỘ 1: Ép điểm gốc (0,0) lên góc trên cùng bên trái
+            gravity = android.view.Gravity.TOP or android.view.Gravity.START
+
+            // ĐỒNG BỘ 2: Xin quyền đâm xuyên tai thỏ giống hệt OverlayService
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
+        }
+
         windowManager.addView(pointerCanvasView, params)
 
         // Nhận lệnh vẽ lại từ Shizuku

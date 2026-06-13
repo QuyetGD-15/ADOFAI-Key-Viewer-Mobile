@@ -3,6 +3,7 @@ package com.quyetgd.keyvieweroverlay
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.Toast
@@ -95,11 +96,17 @@ class HitboxConfigActivity : AppCompatActivity() {
         val sharedPref = getSharedPreferences("HitboxPrefs", Context.MODE_PRIVATE)
 
         with(sharedPref.edit()) {
+            val location = IntArray(2)
             hitboxes.forEachIndexed { index, view ->
                 val id = index + 1
-                // Sử dụng view.x và view.y trực tiếp vì Activity đã tràn viền (hệ quy chiếu 0,0)
-                putFloat("hitbox_${id}_x", view.x)
-                putFloat("hitbox_${id}_y", view.y)
+
+                // Lấy tọa độ TUYỆT ĐỐI trên màn hình thay vì tọa độ cục bộ (view.x)
+                view.getLocationOnScreen(location)
+                val absoluteX = location[0].toFloat()
+                val absoluteY = location[1].toFloat()
+
+                putFloat("hitbox_${id}_x", absoluteX)
+                putFloat("hitbox_${id}_y", absoluteY)
                 putInt("hitbox_${id}_w", view.width)
                 putInt("hitbox_${id}_h", view.height)
             }
@@ -107,24 +114,39 @@ class HitboxConfigActivity : AppCompatActivity() {
         }
         Toast.makeText(this, getString(R.string.toast_config_saved), Toast.LENGTH_SHORT).show()
 
-        // Gửi tín hiệu dừng chỉnh sửa trước khi đóng
         sendBroadcast(Intent(OverlayService.ACTION_STOP_EDIT).setPackage(packageName))
         finish()
     }
 
     private fun loadHitboxCoordinates(hitboxes: Array<HitboxView>) {
         val sharedPref = getSharedPreferences("HitboxPrefs", Context.MODE_PRIVATE)
+        val rootLocation = IntArray(2)
+
         hitboxes.forEachIndexed { index, view ->
             val id = index + 1
-            val x = sharedPref.getFloat("hitbox_${id}_x", -1f)
-            val y = sharedPref.getFloat("hitbox_${id}_y", -1f)
+            val savedAbsoluteX = sharedPref.getFloat("hitbox_${id}_x", -1f)
+            val savedAbsoluteY = sharedPref.getFloat("hitbox_${id}_y", -1f)
             val w = sharedPref.getInt("hitbox_${id}_w", -1)
             val h = sharedPref.getInt("hitbox_${id}_h", -1)
 
-            if (x != -1f && y != -1f && w != -1 && h != -1) {
+            if (savedAbsoluteX != -1f && savedAbsoluteY != -1f && w != -1 && h != -1) {
                 view.post {
-                    view.x = x
-                    view.y = y
+                    // Ép kiểu an toàn (as?) để tránh lỗi ClassCastException
+                    val parentView = view.parent as? View
+
+                    if (parentView != null) {
+                        parentView.getLocationOnScreen(rootLocation)
+                        val parentOffsetX = rootLocation[0].toFloat()
+                        val parentOffsetY = rootLocation[1].toFloat()
+
+                        view.x = savedAbsoluteX - parentOffsetX
+                        view.y = savedAbsoluteY - parentOffsetY
+                    } else {
+                        // Phòng hờ nếu parent null, gán thẳng tọa độ tuyệt đối
+                        view.x = savedAbsoluteX
+                        view.y = savedAbsoluteY
+                    }
+
                     val params = view.layoutParams
                     params.width = w
                     params.height = h

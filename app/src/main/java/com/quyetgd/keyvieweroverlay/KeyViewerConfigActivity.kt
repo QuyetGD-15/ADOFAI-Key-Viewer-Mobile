@@ -83,7 +83,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         // Cố định Pivot 0,0 để đồng bộ hệ tọa độ
         viewerContainer.pivotX = 0f
         viewerContainer.pivotY = 0f
-        
+
         // Cập nhật giao diện ban đầu
         viewerContainer.post { updateLivePreview() }
     }
@@ -359,7 +359,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         currentKeyWidth = 55
         currentKeyHeight = 60
         currentKeySpacing = 5
-        
+
         // 2. Cập nhật thanh trượt
         seekPosX.progress = centerX
         seekPosY.progress = centerY

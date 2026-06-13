@@ -386,21 +386,63 @@ class OverlayService : Service() {
     }
 
     private fun processSync(hwMaxX: Float, hwMaxY: Float) {
-        val screenWidth = cachedScreenWidth
-        val screenHeight = cachedScreenHeight
+        // BƯỚC 1: Lấy kích thước VẬT LÝ TUYỆT ĐỐI của màn hình
+        val realMetrics = android.util.DisplayMetrics()
+        @Suppress("DEPRECATION")
+        windowManager.defaultDisplay.getRealMetrics(realMetrics)
+        val physScreenWidth = realMetrics.widthPixels.toFloat()
+        val physScreenHeight = realMetrics.heightPixels.toFloat()
+
+        // BƯỚC 2: Nhận diện góc quay hiện tại của thiết bị
+        @Suppress("DEPRECATION")
+        val rotation = windowManager.defaultDisplay.rotation
+
+        // BƯỚC 3: Xác định điểm gốc (Origin) của Overlay để trừ đi phần bị đẩy bởi tai thỏ/viền đen
+        val windowLocation = IntArray(2)
+        wrapper.getLocationOnScreen(windowLocation)
+        val offsetX = windowLocation[0].toFloat()
+        val offsetY = windowLocation[1].toFloat()
 
         for (i in 0 until 10) {
             val slot = slots[i]
 
-            val mappedX = (slot.y / hwMaxY) * screenWidth
-            val mappedY = ((hwMaxX - slot.x) / hwMaxX) * screenHeight
+            // Khởi tạo tọa độ local cuối cùng
+            var finalMappedX = -1f
+            var finalMappedY = -1f
 
             if (slot.trackingId != -1) {
-                if (!slot.isActive) {
+                // BƯỚC 4: Ma trận Xoay (Rotation Matrix)
+                var rawMappedX = 0f
+                var rawMappedY = 0f
 
+                when (rotation) {
+                    Surface.ROTATION_0 -> { // Cầm dọc bình thường
+                        rawMappedX = (slot.x / hwMaxX) * physScreenWidth
+                        rawMappedY = (slot.y / hwMaxY) * physScreenHeight
+                    }
+                    Surface.ROTATION_90 -> { // Xoay ngang (Cụm camera/tai thỏ ở bên TRÁI)
+                        rawMappedX = (slot.y / hwMaxY) * physScreenWidth
+                        rawMappedY = ((hwMaxX - slot.x) / hwMaxX) * physScreenHeight
+                    }
+                    Surface.ROTATION_270 -> { // Xoay ngang ngược (Cụm camera/tai thỏ ở bên PHẢI)
+                        rawMappedX = ((hwMaxY - slot.y) / hwMaxY) * physScreenWidth
+                        rawMappedY = (slot.x / hwMaxX) * physScreenHeight
+                    }
+                    Surface.ROTATION_180 -> { // Cầm dọc ngược
+                        rawMappedX = ((hwMaxX - slot.x) / hwMaxX) * physScreenWidth
+                        rawMappedY = ((hwMaxY - slot.y) / hwMaxY) * physScreenHeight
+                    }
+                }
+
+                // BƯỚC 5: Trừ hao Offset để ra tọa độ cuối cùng trên Overlay
+                finalMappedX = rawMappedX - offsetX
+                finalMappedY = rawMappedY - offsetY
+
+                if (!slot.isActive) {
                     var directHitLane = -1
+                    // Kiểm tra va chạm bằng tọa độ đã tinh chỉnh
                     for (j in 0 until 6) {
-                        if (hitboxes[j].contains(mappedX, mappedY)) {
+                        if (hitboxes[j].contains(finalMappedX, finalMappedY)) {
                             directHitLane = j
                             break
                         }
@@ -422,7 +464,7 @@ class OverlayService : Service() {
                             finalLaneToActivate = directHitLane
                         } else {
                             var nearestEmptyLane = -1
-                            var minDistanceSq = Float.MAX_VALUE // So sánh bình phương, không dùng sqrt
+                            var minDistanceSq = Float.MAX_VALUE
 
                             val startLane = if (directHitLane < 3) 0 else 3
                             val endLane = if (directHitLane < 3) 3 else 6
@@ -446,9 +488,9 @@ class OverlayService : Service() {
                                     val centerX = hBox.centerX()
                                     val centerY = hBox.centerY()
 
-                                    // Tính toán không dùng pow() và sqrt()
-                                    val dx = mappedX - centerX
-                                    val dy = mappedY - centerY
+                                    // Tính khoảng cách bằng tọa độ đã tinh chỉnh
+                                    val dx = finalMappedX - centerX
+                                    val dy = finalMappedY - centerY
                                     val distSq = dx * dx + dy * dy
 
                                     if (distSq < minDistanceSq) {
@@ -459,7 +501,7 @@ class OverlayService : Service() {
                             }
 
                             if (nearestEmptyLane != -1) {
-                                Log.d("KeyViewer_Debug", "🔄 Auto-Correct Cụm ${if (directHitLane < 3) "TRÁI" else "PHẢI"}: Trượt từ $directHitLane sang Lane trống $nearestEmptyLane")
+                                Log.d("KeyViewer_Debug", "🔄 Auto-Correct: Trượt từ $directHitLane sang Lane trống $nearestEmptyLane")
                                 finalLaneToActivate = nearestEmptyLane
                             }
                         }
@@ -474,8 +516,7 @@ class OverlayService : Service() {
                         kpsQueue.addLast(currentTime)
                         totalClicks++
 
-                        // ĐÃ XÓA lệnh sharedPrefs ở đây! Chỉ lưu trên RAM (biến totalClicks).
-                        // Ép UI nảy số tức thì:
+                        // Ép UI nảy số tức thì trên RAM
                         mainHandler.post {
                             updateKpsTotalUI(kpsQueue.size, totalClicks)
                         }
@@ -486,6 +527,7 @@ class OverlayService : Service() {
                     }
                 }
             } else {
+                // Nhả phím
                 if (slot.isActive && slot.lastHitLane != -1) {
                     onKeyUp(slot.lastHitLane)
                     slot.lastHitLane = -1
@@ -493,10 +535,11 @@ class OverlayService : Service() {
                 }
             }
 
+            // Đồng bộ vẽ chấm cảm ứng (Tính năng Show Touches)
             val sharedPt = SharedTouchData.points[i]
             if (isShowTouchesOn && slot.isActive && slot.trackingId != -1) {
-                sharedPt.x = mappedX
-                sharedPt.y = mappedY
+                sharedPt.x = finalMappedX
+                sharedPt.y = finalMappedY
                 sharedPt.isActive = true
             } else {
                 sharedPt.isActive = false
