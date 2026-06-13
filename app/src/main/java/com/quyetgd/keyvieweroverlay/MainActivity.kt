@@ -1,6 +1,8 @@
 package com.quyetgd.keyvieweroverlay
 
 import android.content.BroadcastReceiver
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -324,6 +326,27 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         }
 
         handleIncomingIntent(intent)
+
+        // Kiểm tra lỗi crash từ phiên trước
+        val crashPref = getSharedPreferences("CrashPrefs", Context.MODE_PRIVATE)
+        val crashLog = crashPref.getString("CRASH_LOG", null)
+        if (!crashLog.isNullOrEmpty()) {
+            val displayLog = if (crashLog.length > 500) crashLog.substring(0, 500) + "..." else crashLog
+            AlertDialog.Builder(this)
+                .setTitle("App đã bị đột quỵ ở phiên trước 😢")
+                .setMessage(displayLog)
+                .setPositiveButton("Sao chép mã lỗi") { _, _ ->
+                    val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    val clip = ClipData.newPlainText("Crash Log", crashLog)
+                    clipboard.setPrimaryClip(clip)
+                    Toast.makeText(this, "Đã sao chép", Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("Bỏ qua") { _, _ ->
+                    crashPref.edit().remove("CRASH_LOG").apply()
+                }
+                .setCancelable(false)
+                .show()
+        }
     }
 
     private fun showLoading() {
@@ -348,6 +371,27 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         super.onNewIntent(intent)
         setIntent(intent) // Cập nhật intent mới
         handleIncomingIntent(intent)
+
+        // Kiểm tra lỗi crash từ phiên trước
+        val crashPref = getSharedPreferences("CrashPrefs", Context.MODE_PRIVATE)
+        val crashLog = crashPref.getString("CRASH_LOG", null)
+        if (!crashLog.isNullOrEmpty()) {
+            val displayLog = if (crashLog.length > 500) crashLog.substring(0, 500) + "..." else crashLog
+            AlertDialog.Builder(this)
+                .setTitle("App đã bị đột quỵ ở phiên trước 😢")
+                .setMessage(displayLog)
+                .setPositiveButton("Sao chép mã lỗi") { _, _ ->
+                    val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    val clip = ClipData.newPlainText("Crash Log", crashLog)
+                    clipboard.setPrimaryClip(clip)
+                    Toast.makeText(this, "Đã sao chép", Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("Bỏ qua") { _, _ ->
+                    crashPref.edit().remove("CRASH_LOG").apply()
+                }
+                .setCancelable(false)
+                .show()
+        }
     }
 
     /**
