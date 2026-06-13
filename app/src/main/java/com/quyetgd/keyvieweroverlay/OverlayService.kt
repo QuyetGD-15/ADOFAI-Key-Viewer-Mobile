@@ -56,8 +56,6 @@ class OverlayService : Service() {
         const val ACTION_VISIBILITY = "com.quyetgd.keyvieweroverlay.VISIBILITY_OVERLAY"
         const val CHANNEL_ID = "overlay_service_channel"
         const val NOTIFICATION_ID = 1
-
-        val SPACE_REGEX = "\\s+".toRegex()
     }
 
     private lateinit var windowManager: WindowManager
@@ -66,6 +64,19 @@ class OverlayService : Service() {
     private lateinit var wrapper: FrameLayout
     private lateinit var viewerContainer: View
     private lateinit var viewerParams: WindowManager.LayoutParams
+
+    // === CÁC BIẾN CACHE TỐI ƯU HIỆU SUẤT ===
+    private var tvKpsCache: TextView? = null
+    private var tvTotalCache: TextView? = null
+    private var lastRenderedKps = -1
+    private var lastRenderedTotal = -1
+
+    private var cachedPhysWidth = 0f
+    private var cachedPhysHeight = 0f
+    private var cachedOffsetX = 0f
+    private var cachedOffsetY = 0f
+    private var cachedRotation = 0
+    // =======================================
 
     private val keyViews = arrayOfNulls<TextView>(6)
     private var isOverlayShowing = false
@@ -160,10 +171,6 @@ class OverlayService : Service() {
     private var maxRawX = 1f
     private var maxRawY = 1f
 
-    private var cachedScreenWidth = -1f
-    private var cachedScreenHeight = -1f
-    private var cachedRotation = -1
-
     private val hitboxes = Array(6) { RectF() }
     private lateinit var keyTrailView: KeyTrailView
     private val activeTrails = arrayOfNulls<KeyTrailView.Trail>(6)
@@ -184,6 +191,9 @@ class OverlayService : Service() {
             if (intent?.action == "ACTION_RESET_TOTAL") {
                 totalClicks = 0
                 sharedPrefs.edit().putInt("TOTAL_CLICKS", 0).apply()
+                // Ép vẽ lại KPS/Total bằng cách reset Cache
+                lastRenderedKps = -1
+                lastRenderedTotal = -1
                 updateKpsTotalUI(kpsQueue.size, totalClicks)
             }
         }
@@ -204,6 +214,9 @@ class OverlayService : Service() {
                     val isVisible = intent.getBooleanExtra("isVisible", true)
                     mainHandler.post {
                         wrapper.visibility = if (isVisible) View.VISIBLE else View.GONE
+                        if (isVisible) {
+                            wrapper.post { updateDisplayMetricsCache() }
+                        }
                     }
                 }
             }
@@ -225,10 +238,6 @@ class OverlayService : Service() {
         totalClicks = sharedPrefs.getInt("TOTAL_CLICKS", 0)
 
         setupViewerView()
-
-        val metrics = resources.displayMetrics
-        cachedScreenWidth = kotlin.math.max(metrics.widthPixels, metrics.heightPixels).toFloat()
-        cachedScreenHeight = kotlin.math.min(metrics.widthPixels, metrics.heightPixels).toFloat()
 
         mainHandler.post {
             loadKeyViewerSettings()
@@ -259,13 +268,10 @@ class OverlayService : Service() {
             override fun run() {
                 val currentTime = System.currentTimeMillis()
 
-                // Tính toán KPS giảm dần
                 while (kpsQueue.isNotEmpty() && currentTime - kpsQueue.first() > 1000) {
                     kpsQueue.removeFirst()
                 }
 
-                // CHỈ cập nhật Giao diện (UI) để số nhảy mượt mà mỗi 100ms.
-                // TUYỆT ĐỐI KHÔNG ghi file SharedPreferences ở đây để tránh cháy ổ cứng và lag game.
                 updateKpsTotalUI(kpsQueue.size, totalClicks)
 
                 mainHandler.postDelayed(this, 100)
@@ -277,6 +283,25 @@ class OverlayService : Service() {
         }
 
         mainHandler.post(autoShowRunnable)
+    }
+
+    // === HÀM LẤY CHỈ SỐ MÀN HÌNH CHỈ GỌI 1 LẦN ===
+    private fun updateDisplayMetricsCache() {
+        if (!isOverlayShowing) return
+
+        val realMetrics = android.util.DisplayMetrics()
+        @Suppress("DEPRECATION")
+        windowManager.defaultDisplay.getRealMetrics(realMetrics)
+        cachedPhysWidth = realMetrics.widthPixels.toFloat()
+        cachedPhysHeight = realMetrics.heightPixels.toFloat()
+
+        @Suppress("DEPRECATION")
+        cachedRotation = windowManager.defaultDisplay.rotation
+
+        val windowLocation = IntArray(2)
+        wrapper.getLocationOnScreen(windowLocation)
+        cachedOffsetX = windowLocation[0].toFloat()
+        cachedOffsetY = windowLocation[1].toFloat()
     }
 
     private fun initHardwareAndStartReading() {
@@ -297,7 +322,6 @@ class OverlayService : Service() {
                     if (xRange != null && yRange != null && xRange.max > 100f) {
                         maxRawX = xRange.max
                         maxRawY = yRange.max
-                        Log.d("KeyViewer_Debug", "Đã quét phần cứng: MaxX=$maxRawX, MaxY=$maxRawY")
                         break
                     }
                 }
@@ -324,15 +348,12 @@ class OverlayService : Service() {
                 if (line.contains("ABS_MT_POSITION_Y")) hasY = true
             }
             if (currentDevice != null && hasX && hasY) return currentDevice
-        } catch (e: Exception) {
-            // Error finding device
-        }
+        } catch (e: Exception) {}
         return null
     }
 
     private fun startReadingTouchEvents(devicePath: String) {
         isReadingEvents = true
-        Log.d("KeyViewer_Debug", "Bắt đầu đọc Shizuku tại: $devicePath")
 
         val pref = getSharedPreferences("HardwarePrefs", Context.MODE_PRIVATE)
         val hwMaxX = pref.getInt("hardware_max_x", 10799).toFloat()
@@ -351,12 +372,17 @@ class OverlayService : Service() {
 
                 while (isReadingEvents) {
                     line = reader.readLine() ?: break
-                    val parts = line.trim().split(SPACE_REGEX)
-                    if (parts.size < 3) continue
+                    if (line.isBlank()) continue
 
-                    val type = parts[parts.size - 3].removeSuffix(":")
-                    val code = parts[parts.size - 2]
-                    val value = try { parts.last().toLong(16).toInt() } catch (e: Exception) { 0 }
+                    // Tối ưu hóa: String Parsing nhẹ, không dùng Regex để bảo vệ RAM
+                    val parts = line.trim().split(" ")
+                    val validParts = parts.filter { it.isNotEmpty() }
+
+                    if (validParts.size < 3) continue
+
+                    val type = validParts[validParts.size - 3].removeSuffix(":")
+                    val code = validParts[validParts.size - 2]
+                    val value = try { validParts.last().toLong(16).toInt() } catch (e: Exception) { 0 }
 
                     when (type) {
                         "0003" -> { // EV_ABS
@@ -375,7 +401,6 @@ class OverlayService : Service() {
                     }
                 }
             } catch (e: Exception) {
-                // Reader error
             } finally {
                 stopReadingTouchEvents()
             }
@@ -386,61 +411,47 @@ class OverlayService : Service() {
     }
 
     private fun processSync(hwMaxX: Float, hwMaxY: Float) {
-        // BƯỚC 1: Lấy kích thước VẬT LÝ TUYỆT ĐỐI của màn hình
-        val realMetrics = android.util.DisplayMetrics()
-        @Suppress("DEPRECATION")
-        windowManager.defaultDisplay.getRealMetrics(realMetrics)
-        val physScreenWidth = realMetrics.widthPixels.toFloat()
-        val physScreenHeight = realMetrics.heightPixels.toFloat()
-
-        // BƯỚC 2: Nhận diện góc quay hiện tại của thiết bị
-        @Suppress("DEPRECATION")
-        val rotation = windowManager.defaultDisplay.rotation
-
-        // BƯỚC 3: Xác định điểm gốc (Origin) của Overlay để trừ đi phần bị đẩy bởi tai thỏ/viền đen
-        val windowLocation = IntArray(2)
-        wrapper.getLocationOnScreen(windowLocation)
-        val offsetX = windowLocation[0].toFloat()
-        val offsetY = windowLocation[1].toFloat()
+        // Lấy tọa độ thẳng từ RAM Cache thay vì gọi IPC -> Tốc độ tăng phi mã
+        val physScreenWidth = cachedPhysWidth
+        val physScreenHeight = cachedPhysHeight
+        val rotation = cachedRotation
+        val offsetX = cachedOffsetX
+        val offsetY = cachedOffsetY
 
         for (i in 0 until 10) {
             val slot = slots[i]
 
-            // Khởi tạo tọa độ local cuối cùng
             var finalMappedX = -1f
             var finalMappedY = -1f
 
             if (slot.trackingId != -1) {
-                // BƯỚC 4: Ma trận Xoay (Rotation Matrix)
                 var rawMappedX = 0f
                 var rawMappedY = 0f
 
                 when (rotation) {
-                    Surface.ROTATION_0 -> { // Cầm dọc bình thường
+                    Surface.ROTATION_0 -> {
                         rawMappedX = (slot.x / hwMaxX) * physScreenWidth
                         rawMappedY = (slot.y / hwMaxY) * physScreenHeight
                     }
-                    Surface.ROTATION_90 -> { // Xoay ngang (Cụm camera/tai thỏ ở bên TRÁI)
+                    Surface.ROTATION_90 -> {
                         rawMappedX = (slot.y / hwMaxY) * physScreenWidth
                         rawMappedY = ((hwMaxX - slot.x) / hwMaxX) * physScreenHeight
                     }
-                    Surface.ROTATION_270 -> { // Xoay ngang ngược (Cụm camera/tai thỏ ở bên PHẢI)
+                    Surface.ROTATION_270 -> {
                         rawMappedX = ((hwMaxY - slot.y) / hwMaxY) * physScreenWidth
                         rawMappedY = (slot.x / hwMaxX) * physScreenHeight
                     }
-                    Surface.ROTATION_180 -> { // Cầm dọc ngược
+                    Surface.ROTATION_180 -> {
                         rawMappedX = ((hwMaxX - slot.x) / hwMaxX) * physScreenWidth
                         rawMappedY = ((hwMaxY - slot.y) / hwMaxY) * physScreenHeight
                     }
                 }
 
-                // BƯỚC 5: Trừ hao Offset để ra tọa độ cuối cùng trên Overlay
                 finalMappedX = rawMappedX - offsetX
                 finalMappedY = rawMappedY - offsetY
 
                 if (!slot.isActive) {
                     var directHitLane = -1
-                    // Kiểm tra va chạm bằng tọa độ đã tinh chỉnh
                     for (j in 0 until 6) {
                         if (hitboxes[j].contains(finalMappedX, finalMappedY)) {
                             directHitLane = j
@@ -488,7 +499,6 @@ class OverlayService : Service() {
                                     val centerX = hBox.centerX()
                                     val centerY = hBox.centerY()
 
-                                    // Tính khoảng cách bằng tọa độ đã tinh chỉnh
                                     val dx = finalMappedX - centerX
                                     val dy = finalMappedY - centerY
                                     val distSq = dx * dx + dy * dy
@@ -501,7 +511,6 @@ class OverlayService : Service() {
                             }
 
                             if (nearestEmptyLane != -1) {
-                                Log.d("KeyViewer_Debug", "🔄 Auto-Correct: Trượt từ $directHitLane sang Lane trống $nearestEmptyLane")
                                 finalLaneToActivate = nearestEmptyLane
                             }
                         }
@@ -516,7 +525,6 @@ class OverlayService : Service() {
                         kpsQueue.addLast(currentTime)
                         totalClicks++
 
-                        // Ép UI nảy số tức thì trên RAM
                         mainHandler.post {
                             updateKpsTotalUI(kpsQueue.size, totalClicks)
                         }
@@ -527,7 +535,6 @@ class OverlayService : Service() {
                     }
                 }
             } else {
-                // Nhả phím
                 if (slot.isActive && slot.lastHitLane != -1) {
                     onKeyUp(slot.lastHitLane)
                     slot.lastHitLane = -1
@@ -535,7 +542,6 @@ class OverlayService : Service() {
                 }
             }
 
-            // Đồng bộ vẽ chấm cảm ứng (Tính năng Show Touches)
             val sharedPt = SharedTouchData.points[i]
             if (isShowTouchesOn && slot.isActive && slot.trackingId != -1) {
                 sharedPt.x = finalMappedX
@@ -560,7 +566,6 @@ class OverlayService : Service() {
     }
 
     private fun onKeyUp(lane: Int) {
-        // Tối ưu .any{} thành for-loop chuẩn để tránh rác RAM
         var isStillOccupied = false
         for (i in 0 until 10) {
             val s = slots[i]
@@ -593,7 +598,6 @@ class OverlayService : Service() {
 
         viewerContainer = LayoutInflater.from(this).inflate(R.layout.overlay_view, wrapper, false)
         keyTrailView = viewerContainer.findViewById(R.id.keyTrailView)
-
         keyTrailView.setBackgroundColor(Color.TRANSPARENT)
 
         wrapper.addView(viewerContainer)
@@ -602,6 +606,10 @@ class OverlayService : Service() {
             val keyId = resources.getIdentifier("key${i + 1}", "id", packageName)
             keyViews[i] = viewerContainer.findViewById(keyId)
         }
+
+        // KẾT NỐI CACHE ĐỂ RENDER UI SIÊU TỐC
+        tvKpsCache = viewerContainer.findViewById(R.id.tvKps)
+        tvTotalCache = viewerContainer.findViewById(R.id.tvTotal)
 
         viewerParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -663,15 +671,17 @@ class OverlayService : Service() {
             }
 
             val countersContainer = viewerContainer.findViewById<LinearLayout>(R.id.bottomCountersContainer)
-            val tvKps = viewerContainer.findViewById<TextView>(R.id.tvKps)
+            val tvKps = tvKpsCache
 
             val counterParams = countersContainer.layoutParams as ViewGroup.MarginLayoutParams
             counterParams.topMargin = (keySpacing * resources.displayMetrics.density).toInt()
             countersContainer.layoutParams = counterParams
 
-            val kpsParams = tvKps.layoutParams as ViewGroup.MarginLayoutParams
-            kpsParams.rightMargin = (keySpacing * resources.displayMetrics.density).toInt()
-            tvKps.layoutParams = kpsParams
+            if (tvKps != null) {
+                val kpsParams = tvKps.layoutParams as ViewGroup.MarginLayoutParams
+                kpsParams.rightMargin = (keySpacing * resources.displayMetrics.density).toInt()
+                tvKps.layoutParams = kpsParams
+            }
 
             val trailParams = keyTrailView.layoutParams
             trailParams.height = (limitPx * resources.displayMetrics.density).toInt()
@@ -766,11 +776,14 @@ class OverlayService : Service() {
         if (!isOverlayShowing) {
             mainHandler.post {
                 try {
-                    if (wrapper.parent == null) windowManager.addView(wrapper, viewerParams)
-                    isOverlayShowing = true
-                } catch (e: Exception) {
-                    // Overlay show error
-                }
+                    if (wrapper.parent == null) {
+                        windowManager.addView(wrapper, viewerParams)
+                        isOverlayShowing = true
+
+                        // ĐỢI VIEW ĐƯỢC VẼ RA RỒI MỚI CHỐT TOẠ ĐỘ VÀ KÍCH THƯỚC MÀN HÌNH
+                        wrapper.post { updateDisplayMetricsCache() }
+                    }
+                } catch (e: Exception) {}
             }
         }
         return true
@@ -778,16 +791,13 @@ class OverlayService : Service() {
 
     private fun hideOverlay() {
         if (isOverlayShowing) {
-            // Chốt sổ: Lưu tổng click của cả phiên chơi vào ổ cứng ngay khi ẩn Overlay
             sharedPrefs.edit().putInt("TOTAL_CLICKS", totalClicks).apply()
 
             mainHandler.post {
                 try {
                     if (wrapper.parent != null) windowManager.removeView(wrapper)
                     isOverlayShowing = false
-                } catch (e: Exception) {
-                    // Overlay hide error
-                }
+                } catch (e: Exception) {}
             }
         }
     }
@@ -805,6 +815,11 @@ class OverlayService : Service() {
                 SharedTouchData.invalidateCallback?.invoke()
             }
             updateNotification()
+        }
+
+        // CHỐT LẠI TOẠ ĐỘ NẾU XOAY MÀN HÌNH LÚC ĐANG CHƠI GAME
+        if (isOverlayShowing) {
+            wrapper.post { updateDisplayMetricsCache() }
         }
     }
 
@@ -843,11 +858,8 @@ class OverlayService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         isRunning = false
-
-        // Chốt sổ phòng hờ: Nếu người dùng tắt hẳn App/Service
         sharedPrefs.edit().putInt("TOTAL_CLICKS", totalClicks).apply()
 
-        // Dọn dẹp vòng lặp trên luồng chính
         mainHandler.removeCallbacks(autoShowRunnable)
 
         stopReadingTouchEvents()
@@ -857,15 +869,17 @@ class OverlayService : Service() {
     }
 
     private fun updateKpsTotalUI(kps: Int, total: Int) {
+        // SMART UPDATE: CHỈ RENDER NẾU SỐ THỰC SỰ ĐỔI -> ĐỘ TRỄ BẰNG 0
+        if (kps == lastRenderedKps && total == lastRenderedTotal) return
+
+        lastRenderedKps = kps
+        lastRenderedTotal = total
+
         mainHandler.post {
             try {
-                val tvKps = viewerContainer.findViewById<TextView>(R.id.tvKps)
-                val tvTotal = viewerContainer.findViewById<TextView>(R.id.tvTotal)
-                tvKps?.text = "${getString(R.string.kps_label)}\n$kps"
-                tvTotal?.text = "${getString(R.string.total_label)}\n$total"
-            } catch (e: Exception) {
-                // UI update error
-            }
+                tvKpsCache?.text = "${getString(R.string.kps_label)}\n$kps"
+                tvTotalCache?.text = "${getString(R.string.total_label)}\n$total"
+            } catch (e: Exception) {}
         }
     }
 }

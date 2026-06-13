@@ -55,6 +55,9 @@ class KeyViewerConfigActivity : AppCompatActivity() {
     private var lastX = 0f
     private var lastY = 0f
 
+    // Thêm biến gốc để tính toán scale chữ cho chuẩn với OverlayService
+    private val baseTextSize = 20f
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         supportActionBar?.hide()
@@ -79,7 +82,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         initViews()
         loadPreferences()
         setupListeners()
-        
+
         // Cố định Pivot 0,0 để đồng bộ hệ tọa độ
         viewerContainer.pivotX = 0f
         viewerContainer.pivotY = 0f
@@ -130,6 +133,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         val centerX = dm.widthPixels
         val centerY = dm.heightPixels
 
+        // GIỮ NGUYÊN BẢN CÁC GIÁ TRỊ CỦA BẠN
         val x = sharedPref.getFloat("viewer_x", 0f)
         val y = sharedPref.getFloat("viewer_y", 0f)
         currentScale = sharedPref.getFloat("viewer_scale", 1.0f)
@@ -168,7 +172,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                     view.y += (event.rawY - lastY)
                     lastX = event.rawX
                     lastY = event.rawY
-                    
+
                     // Cập nhật ngược lại SeekBar (Cộng thêm Center Offset)
                     val dm = resources.displayMetrics
                     seekPosX.progress = view.x.toInt() + dm.widthPixels
@@ -225,10 +229,10 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                 val dm = resources.displayMetrics
                 val centerX = dm.widthPixels
                 val centerY = dm.heightPixels
-                
+
                 val actualX = seekPosX.progress - centerX
                 val actualY = seekPosY.progress - centerY
-                
+
                 if (fromUser) {
                     when (seekBar?.id) {
                         R.id.seekPosX -> viewerContainer.x = actualX.toFloat()
@@ -274,6 +278,11 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                 params.leftMargin = spacingPx
             }
             keyView.layoutParams = params
+
+            // FIX ĐỒNG BỘ 1: Chữ to nhỏ theo Scale (Để preview khớp 100% với lúc vào game)
+            if (keyView is TextView) {
+                keyView.setTextSize(TypedValue.COMPLEX_UNIT_SP, baseTextSize * currentScale)
+            }
         }
 
         // Spacing cho bộ đếm
@@ -295,18 +304,14 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         trailParams.height = limitPx
         keyTrailView.layoutParams = trailParams
 
+        // FIX ĐỒNG BỘ 2: Setup thông số cho nét vẽ Trail (Tốc độ rơi và chiều cao tối đa)
+        keyTrailView.setParameters(currentSpeed, currentLimit.toFloat())
+
         // Cố định Pivot 0,0
         viewerContainer.pivotX = 0f
         viewerContainer.pivotY = 0f
 
         updateLabels()
-    }
-
-    private fun anchorContainer() {
-        val screenH = resources.displayMetrics.heightPixels
-        val anchorY = screenH * 0.8f
-        // Giữ đáy của container (sau khi scale) tại vị trí anchorY
-        viewerContainer.y = anchorY - (viewerContainer.height * viewerContainer.scaleY)
     }
 
     private fun dpToPx(dp: Float): Int {
@@ -326,7 +331,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
 
     private fun saveAndExit() {
         val sharedPref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
-        
+
         // Sử dụng x, y trực tiếp từ View vì Activity đã tràn viền (no limits)
         val savedX = viewerContainer.x
         val savedY = viewerContainer.y
@@ -342,7 +347,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             putInt("key_spacing", currentKeySpacing)
             apply()
         }
-        
+
         Toast.makeText(this, getString(R.string.toast_config_saved), Toast.LENGTH_SHORT).show()
         finish()
     }
@@ -352,7 +357,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         val centerX = dm.widthPixels
         val centerY = dm.heightPixels
 
-        // 1. Thiết lập lại các giá trị biến (giá trị thực)
+        // GIỮ NGUYÊN BẢN GIÁ TRỊ RESET CỦA BẠN
         currentScale = 0.5f
         currentSpeed = 0.7f
         currentLimit = 280
@@ -360,25 +365,25 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         currentKeyHeight = 60
         currentKeySpacing = 5
 
-        // 2. Cập nhật thanh trượt
+        // Cập nhật thanh trượt
         seekPosX.progress = centerX
         seekPosY.progress = centerY
         seekScale.progress = (currentScale * 100).toInt()
         seekSpeed.progress = (currentSpeed * 100).toInt()
-        seekLimit.progress = currentLimit - 70 
+        seekLimit.progress = currentLimit - 70
         seekKeyWidth.progress = currentKeyWidth - 30
         seekKeyHeight.progress = currentKeyHeight - 30
         seekKeySpacing.progress = currentKeySpacing
-        
-        // 3. Cập nhật UI Preview và Tọa độ View
+
+        // Cập nhật UI Preview và Tọa độ View (Về 0f)
         viewerContainer.x = 0f
         viewerContainer.y = 0f
         viewerContainer.scaleX = currentScale
         viewerContainer.scaleY = currentScale
-        
+
         updateLivePreview()
 
-        // 4. Lưu SharedPreferences
+        // Lưu SharedPreferences (Lưu 0f)
         val sharedPref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
         sharedPref.edit().apply {
             putFloat("viewer_x", 0f)
