@@ -150,6 +150,7 @@ class OverlayService : Service() {
                     }
                 }
             } catch (e: Exception) {
+                AppLogger.log(this@OverlayService, "OverlayService ERROR: ${e.message}")
                 Log.e("AutoShowDebug", "Lỗi vòng lặp Auto: ${e.message}")
             } finally {
                 mainHandler.postDelayed(this, 1500)
@@ -226,6 +227,7 @@ class OverlayService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
+        AppLogger.log(this, "OverlayService: Đã khởi tạo dịch vụ ngầm")
         super.onCreate()
         isRunning = true
 
@@ -311,11 +313,13 @@ class OverlayService : Service() {
                 cachedOffsetY = 0f
             }
         } catch (e: Exception) {
+            AppLogger.log(this, "OverlayService LỖI khi quét kích thước màn hình: ${e.message}")
             Log.e("KeyViewer", "Lỗi lấy thông số màn hình: ${e.message}")
         }
     }
 
     private fun initHardwareAndStartReading() {
+        AppLogger.log(this, "OverlayService: Bắt đầu quét phần cứng và Shizuku")
         Thread {
             val device = calibrateHardwareAndFindDevice() ?: "/dev/input/event2"
             startReadingTouchEvents(device)
@@ -361,6 +365,7 @@ class OverlayService : Service() {
                     if (currentDevice != null && hasX && hasY) {
                         maxRawX = tempMaxX
                         maxRawY = tempMaxY
+                        AppLogger.log(this, "OverlayService: Đã tìm thấy thiết bị phần cứng: $currentDevice (MaxX: $maxRawX, MaxY: $maxRawY)")
                         Log.d("KeyViewer_Debug", "Đã tìm thấy Driver: $currentDevice, MaxX=$maxRawX, MaxY=$maxRawY")
                         return currentDevice
                     }
@@ -383,10 +388,12 @@ class OverlayService : Service() {
             if (currentDevice != null && hasX && hasY) {
                 maxRawX = tempMaxX
                 maxRawY = tempMaxY
+                AppLogger.log(this, "OverlayService: Đã tìm thấy thiết bị phần cứng: $currentDevice (MaxX: $maxRawX, MaxY: $maxRawY)")
                 Log.d("KeyViewer_Debug", "Đã tìm thấy Driver: $currentDevice, MaxX=$maxRawX, MaxY=$maxRawY")
                 return currentDevice
             }
         } catch (e: Exception) {
+            AppLogger.log(this, "OverlayService ERROR: ${e.message}")
             Log.e("KeyViewer_Debug", "Lỗi quét Driver Linux: ${e.message}")
         }
         return null
@@ -800,6 +807,7 @@ class OverlayService : Service() {
     }
 
     private fun tryShowOverlay(): Boolean {
+        AppLogger.log(this, "OverlayService: Đang vẽ cửa sổ KeyViewer lên màn hình")
         if (AppState.isAppVisible) {
             Toast.makeText(this, getString(R.string.toast_enter_game), Toast.LENGTH_SHORT).show()
             return false
@@ -827,6 +835,7 @@ class OverlayService : Service() {
 
     private fun hideOverlay() {
         if (isOverlayShowing) {
+            AppLogger.log(this, "OverlayService: Đã ẩn KeyViewer. Tổng số click hiện tại: $totalClicks")
             sharedPrefs.edit().putInt("TOTAL_CLICKS", totalClicks).apply()
 
             mainHandler.post {
@@ -891,8 +900,10 @@ class OverlayService : Service() {
     }
 
     override fun onDestroy() {
+        AppLogger.log(this, "OverlayService: Đã hủy dịch vụ ngầm")
         super.onDestroy()
         isRunning = false
+        AppLogger.log(this, "OverlayService: Dịch vụ bị tắt. Tổng số click phiên vừa rồi: $totalClicks")
         sharedPrefs.edit().putInt("TOTAL_CLICKS", totalClicks).apply()
 
         mainHandler.removeCallbacks(autoShowRunnable)

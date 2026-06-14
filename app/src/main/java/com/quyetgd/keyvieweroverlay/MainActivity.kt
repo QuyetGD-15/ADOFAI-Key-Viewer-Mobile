@@ -20,6 +20,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -144,6 +145,20 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
     private var layoutAccessibilityPrompt: View? = null
     private var loadingDialog: android.app.Dialog? = null
     
+    private val exportLogLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+        if (uri != null) {
+            try {
+                contentResolver.openOutputStream(uri)?.use { outputStream ->
+                    val logData = AppLogger.getLog(this)
+                    outputStream.write(logData.toByteArray())
+                }
+                Toast.makeText(this, "Đã lưu file log thành công!", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(this, "Lỗi khi lưu file: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    
     private val SHIZUKU_ACTION = "moe.shizuku.privileged.api.intent.action.BINDER_RECEIVED"
 
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -257,6 +272,13 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         btnSelectApps = findViewById(R.id.btnSelectApps)
         tvCurrentLanguage = findViewById(R.id.tvCurrentLanguage)
         btnToggleLanguage = findViewById(R.id.btnToggleLanguage)
+
+        findViewById<Button>(R.id.btnExportLog).setOnClickListener {
+            AppLogger.log(this, "Người dùng bấm nút Lưu Log ra file .txt")
+            val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date())
+            val fileName = "KeyViewer_Log_$timestamp.txt"
+            exportLogLauncher.launch(fileName)
+        }
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
