@@ -168,6 +168,7 @@ class OverlayService : Service() {
     private val slots = Array(10) { TouchSlot() }
     private var currentSlot = 0
 
+    // ĐÃ SỬA: Sẽ được cập nhật chính xác từ hàm quét Driver Linux
     private var maxRawX = 1f
     private var maxRawY = 1f
 
@@ -191,7 +192,6 @@ class OverlayService : Service() {
             if (intent?.action == "ACTION_RESET_TOTAL") {
                 totalClicks = 0
                 sharedPrefs.edit().putInt("TOTAL_CLICKS", 0).apply()
-                // Ép vẽ lại KPS/Total bằng cách reset Cache
                 lastRenderedKps = -1
                 lastRenderedTotal = -1
                 updateKpsTotalUI(kpsQueue.size, totalClicks)
@@ -239,6 +239,9 @@ class OverlayService : Service() {
 
         setupViewerView()
 
+        // FIX LỖI #2: Gọi hàm nạp Kích thước màn hình ngay lập tức để tránh biến 0f
+        updateDisplayMetricsCache()
+
         mainHandler.post {
             loadKeyViewerSettings()
             loadHitboxesFromPrefs()
@@ -285,23 +288,31 @@ class OverlayService : Service() {
         mainHandler.post(autoShowRunnable)
     }
 
-    // === HÀM LẤY CHỈ SỐ MÀN HÌNH CHỈ GỌI 1 LẦN ===
+    // === HÀM LẤY CHỈ SỐ MÀN HÌNH CHỈ GỌI KHI CẦN THIẾT ===
     private fun updateDisplayMetricsCache() {
-        if (!isOverlayShowing) return
+        try {
+            val realMetrics = android.util.DisplayMetrics()
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.getRealMetrics(realMetrics)
+            cachedPhysWidth = realMetrics.widthPixels.toFloat()
+            cachedPhysHeight = realMetrics.heightPixels.toFloat()
 
-        val realMetrics = android.util.DisplayMetrics()
-        @Suppress("DEPRECATION")
-        windowManager.defaultDisplay.getRealMetrics(realMetrics)
-        cachedPhysWidth = realMetrics.widthPixels.toFloat()
-        cachedPhysHeight = realMetrics.heightPixels.toFloat()
+            @Suppress("DEPRECATION")
+            cachedRotation = windowManager.defaultDisplay.rotation
 
-        @Suppress("DEPRECATION")
-        cachedRotation = windowManager.defaultDisplay.rotation
-
-        val windowLocation = IntArray(2)
-        wrapper.getLocationOnScreen(windowLocation)
-        cachedOffsetX = windowLocation[0].toFloat()
-        cachedOffsetY = windowLocation[1].toFloat()
+            // Nếu Overlay chưa hiện thì tọa độ Offset bằng 0, không được return để chặn hàm
+            if (isOverlayShowing && wrapper.parent != null) {
+                val windowLocation = IntArray(2)
+                wrapper.getLocationOnScreen(windowLocation)
+                cachedOffsetX = windowLocation[0].toFloat()
+                cachedOffsetY = windowLocation[1].toFloat()
+            } else {
+                cachedOffsetX = 0f
+                cachedOffsetY = 0f
+            }
+        } catch (e: Exception) {
+            Log.e("KeyViewer", "Lỗi lấy thông số màn hình: ${e.message}")
+        }
     }
 
     private fun initHardwareAndStartReading() {
@@ -311,6 +322,7 @@ class OverlayService : Service() {
         }.start()
     }
 
+    // FIX LỖI #1: ĐỌC THÔNG SỐ VẬT LÝ TUYỆT ĐỐI TỪ DRIVER LINUX
     private fun calibrateHardwareAndFindDevice(): String? {
         try {
             val inputManager = getSystemService(Context.INPUT_SERVICE) as InputManager
@@ -336,28 +348,56 @@ class OverlayService : Service() {
             var currentDevice: String? = null
             var hasX = false
             var hasY = false
+            var tempMaxX = 1f
+            var tempMaxY = 1f
 
-            reader.forEachLine { line ->
+            // Regex bóc tách chữ số sau từ khóa "max"
+            val maxRegex = "max\\s+(\\d+)".toRegex()
+
+            // SỬA LỖI TẠI ĐÂY: Dùng vòng lặp while thay vì forEachLine
+            var line = reader.readLine()
+            while (line != null) {
                 if (line.startsWith("add device")) {
-                    if (currentDevice != null && hasX && hasY) return@forEachLine
+                    if (currentDevice != null && hasX && hasY) {
+                        maxRawX = tempMaxX
+                        maxRawY = tempMaxY
+                        Log.d("KeyViewer_Debug", "Đã tìm thấy Driver: $currentDevice, MaxX=$maxRawX, MaxY=$maxRawY")
+                        return currentDevice
+                    }
                     currentDevice = line.substringAfter(": ").trim()
                     hasX = false
                     hasY = false
                 }
-                if (line.contains("ABS_MT_POSITION_X")) hasX = true
-                if (line.contains("ABS_MT_POSITION_Y")) hasY = true
+                if (line.contains("ABS_MT_POSITION_X")) {
+                    hasX = true
+                    maxRegex.find(line)?.groupValues?.get(1)?.toFloatOrNull()?.let { tempMaxX = it }
+                }
+                if (line.contains("ABS_MT_POSITION_Y")) {
+                    hasY = true
+                    maxRegex.find(line)?.groupValues?.get(1)?.toFloatOrNull()?.let { tempMaxY = it }
+                }
+                // Đọc dòng tiếp theo
+                line = reader.readLine()
             }
-            if (currentDevice != null && hasX && hasY) return currentDevice
-        } catch (e: Exception) {}
+
+            if (currentDevice != null && hasX && hasY) {
+                maxRawX = tempMaxX
+                maxRawY = tempMaxY
+                Log.d("KeyViewer_Debug", "Đã tìm thấy Driver: $currentDevice, MaxX=$maxRawX, MaxY=$maxRawY")
+                return currentDevice
+            }
+        } catch (e: Exception) {
+            Log.e("KeyViewer_Debug", "Lỗi quét Driver Linux: ${e.message}")
+        }
         return null
     }
 
     private fun startReadingTouchEvents(devicePath: String) {
         isReadingEvents = true
 
-        val pref = getSharedPreferences("HardwarePrefs", Context.MODE_PRIVATE)
-        val hwMaxX = pref.getInt("hardware_max_x", 10799).toFloat()
-        val hwMaxY = pref.getInt("hardware_max_y", 24599).toFloat()
+        // KHÔNG ĐỌC TỪ HardwarePrefs NỮA, LẤY TRỰC TIẾP TỪ KẾT QUẢ QUÉT BÊN TRÊN
+        val hwMaxX = maxRawX
+        val hwMaxY = maxRawY
 
         eventReaderThread = Thread {
             try {
@@ -374,7 +414,6 @@ class OverlayService : Service() {
                     line = reader.readLine() ?: break
                     if (line.isBlank()) continue
 
-                    // Tối ưu hóa: String Parsing nhẹ, không dùng Regex để bảo vệ RAM
                     val parts = line.trim().split(" ")
                     val validParts = parts.filter { it.isNotEmpty() }
 
@@ -411,7 +450,6 @@ class OverlayService : Service() {
     }
 
     private fun processSync(hwMaxX: Float, hwMaxY: Float) {
-        // Lấy tọa độ thẳng từ RAM Cache thay vì gọi IPC -> Tốc độ tăng phi mã
         val physScreenWidth = cachedPhysWidth
         val physScreenHeight = cachedPhysHeight
         val rotation = cachedRotation
@@ -607,7 +645,6 @@ class OverlayService : Service() {
             keyViews[i] = viewerContainer.findViewById(keyId)
         }
 
-        // KẾT NỐI CACHE ĐỂ RENDER UI SIÊU TỐC
         tvKpsCache = viewerContainer.findViewById(R.id.tvKps)
         tvTotalCache = viewerContainer.findViewById(R.id.tvTotal)
 
@@ -780,7 +817,6 @@ class OverlayService : Service() {
                         windowManager.addView(wrapper, viewerParams)
                         isOverlayShowing = true
 
-                        // ĐỢI VIEW ĐƯỢC VẼ RA RỒI MỚI CHỐT TOẠ ĐỘ VÀ KÍCH THƯỚC MÀN HÌNH
                         wrapper.post { updateDisplayMetricsCache() }
                     }
                 } catch (e: Exception) {}
@@ -817,7 +853,6 @@ class OverlayService : Service() {
             updateNotification()
         }
 
-        // CHỐT LẠI TOẠ ĐỘ NẾU XOAY MÀN HÌNH LÚC ĐANG CHƠI GAME
         if (isOverlayShowing) {
             wrapper.post { updateDisplayMetricsCache() }
         }
@@ -869,7 +904,6 @@ class OverlayService : Service() {
     }
 
     private fun updateKpsTotalUI(kps: Int, total: Int) {
-        // SMART UPDATE: CHỈ RENDER NẾU SỐ THỰC SỰ ĐỔI -> ĐỘ TRỄ BẰNG 0
         if (kps == lastRenderedKps && total == lastRenderedTotal) return
 
         lastRenderedKps = kps
