@@ -21,6 +21,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.provider.Settings
 import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
@@ -39,7 +40,6 @@ import androidx.core.app.NotificationCompat
 import rikka.shizuku.Shizuku
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.util.ArrayDeque
 
 class OverlayService : Service() {
 
@@ -65,7 +65,6 @@ class OverlayService : Service() {
     private lateinit var viewerContainer: View
     private lateinit var viewerParams: WindowManager.LayoutParams
 
-    // === CÁC BIẾN CACHE TỐI ƯU HIỆU SUẤT ===
     private var tvKpsCache: TextView? = null
     private var tvTotalCache: TextView? = null
     private var lastRenderedKps = -1
@@ -76,7 +75,6 @@ class OverlayService : Service() {
     private var cachedOffsetX = 0f
     private var cachedOffsetY = 0f
     private var cachedRotation = 0
-    // =======================================
 
     private val keyViews = arrayOfNulls<TextView>(6)
     private var isOverlayShowing = false
@@ -86,6 +84,37 @@ class OverlayService : Service() {
     private var isManualOverride = false
     private var lastForegroundApp = ""
     private var lastIsLandscape = false
+
+    // === TỐI ƯU ZERO-ALLOCATION: RING BUFFER ĐẾM KPS (Tuyệt đối không sinh rác RAM) ===
+    private val kpsTimestamps = LongArray(256)
+    private var kpsHead = 0
+    private var kpsTail = 0
+    private val kpsLock = Any()
+
+    @Volatile
+    private var totalClicks = 0
+    private lateinit var sharedPrefs: SharedPreferences
+
+    // === TỐI ƯU ZERO-ALLOCATION: Nạp đạn sẵn cho các luồng cập nhật UI phím bấm ===
+    private val keyDownRunnables = Array(6) { lane ->
+        Runnable {
+            if (activeTrails[lane] != null) return@Runnable
+            val tv = keyViews[lane] ?: return@Runnable
+            activeTrails[lane] = keyTrailView.addTrail(tv.x, tv.width.toFloat())
+            tv.setBackgroundResource(R.drawable.bg_key_pressed)
+            tv.setTextColor(Color.BLACK)
+        }
+    }
+
+    private val keyUpRunnables = Array(6) { lane ->
+        Runnable {
+            activeTrails[lane]?.isReleased = true
+            activeTrails[lane] = null
+            val tv = keyViews[lane]
+            tv?.setBackgroundResource(R.drawable.bg_key_normal)
+            tv?.setTextColor(Color.WHITE)
+        }
+    }
 
     private fun getLatestForegroundApp(): String {
         val time = System.currentTimeMillis()
@@ -151,7 +180,6 @@ class OverlayService : Service() {
                 }
             } catch (e: Exception) {
                 AppLogger.log(this@OverlayService, "OverlayService ERROR: ${e.message}")
-                Log.e("AutoShowDebug", "Lỗi vòng lặp Auto: ${e.message}")
             } finally {
                 mainHandler.postDelayed(this, 1500)
             }
@@ -168,25 +196,17 @@ class OverlayService : Service() {
 
     private val slots = Array(10) { TouchSlot() }
     private var currentSlot = 0
-
-    // ĐÃ SỬA: Sẽ được cập nhật chính xác từ hàm quét Driver Linux
     private var maxRawX = 1f
     private var maxRawY = 1f
-
     private val hitboxes = Array(6) { RectF() }
     private lateinit var keyTrailView: KeyTrailView
     private val activeTrails = arrayOfNulls<KeyTrailView.Trail>(6)
     private val mainHandler = Handler(Looper.getMainLooper())
-
     private val baseTextSize = 20f
 
     private var eventReaderThread: Thread? = null
     private var isReadingEvents = false
     private var shizukuProcess: Process? = null
-
-    private val kpsQueue = ArrayDeque<Long>()
-    private var totalClicks = 0
-    private lateinit var sharedPrefs: SharedPreferences
 
     private val resetTotalReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -195,7 +215,7 @@ class OverlayService : Service() {
                 sharedPrefs.edit().putInt("TOTAL_CLICKS", 0).apply()
                 lastRenderedKps = -1
                 lastRenderedTotal = -1
-                updateKpsTotalUI(kpsQueue.size, totalClicks)
+                updateKpsTotalUI(0, totalClicks)
             }
         }
     }
@@ -240,8 +260,6 @@ class OverlayService : Service() {
         totalClicks = sharedPrefs.getInt("TOTAL_CLICKS", 0)
 
         setupViewerView()
-
-        // FIX LỖI #2: Gọi hàm nạp Kích thước màn hình ngay lập tức để tránh biến 0f
         updateDisplayMetricsCache()
 
         mainHandler.post {
@@ -272,13 +290,17 @@ class OverlayService : Service() {
         mainHandler.post(object : Runnable {
             override fun run() {
                 val currentTime = System.currentTimeMillis()
+                var currentKps = 0
 
-                while (kpsQueue.isNotEmpty() && currentTime - kpsQueue.first() > 1000) {
-                    kpsQueue.removeFirst()
+                // Thuật toán KPS đọc siêu nhanh từ Ring Buffer
+                synchronized(kpsLock) {
+                    while (kpsTail != kpsHead && currentTime - kpsTimestamps[kpsTail] > 1000) {
+                        kpsTail = (kpsTail + 1) and 255 // Tương đương % 256 nhưng cực nhanh ở cấp độ bit
+                    }
+                    currentKps = if (kpsHead >= kpsTail) kpsHead - kpsTail else kpsHead + 256 - kpsTail
                 }
 
-                updateKpsTotalUI(kpsQueue.size, totalClicks)
-
+                updateKpsTotalUI(currentKps, totalClicks)
                 mainHandler.postDelayed(this, 100)
             }
         })
@@ -290,7 +312,6 @@ class OverlayService : Service() {
         mainHandler.post(autoShowRunnable)
     }
 
-    // === HÀM LẤY CHỈ SỐ MÀN HÌNH CHỈ GỌI KHI CẦN THIẾT ===
     private fun updateDisplayMetricsCache() {
         try {
             val realMetrics = android.util.DisplayMetrics()
@@ -302,7 +323,6 @@ class OverlayService : Service() {
             @Suppress("DEPRECATION")
             cachedRotation = windowManager.defaultDisplay.rotation
 
-            // Nếu Overlay chưa hiện thì tọa độ Offset bằng 0, không được return để chặn hàm
             if (isOverlayShowing && wrapper.parent != null) {
                 val windowLocation = IntArray(2)
                 wrapper.getLocationOnScreen(windowLocation)
@@ -314,7 +334,6 @@ class OverlayService : Service() {
             }
         } catch (e: Exception) {
             AppLogger.log(this, "OverlayService LỖI khi quét kích thước màn hình: ${e.message}")
-            Log.e("KeyViewer", "Lỗi lấy thông số màn hình: ${e.message}")
         }
     }
 
@@ -326,7 +345,6 @@ class OverlayService : Service() {
         }.start()
     }
 
-    // FIX LỖI #1: ĐỌC THÔNG SỐ VẬT LÝ TUYỆT ĐỐI TỪ DRIVER LINUX
     private fun calibrateHardwareAndFindDevice(): String? {
         try {
             val inputManager = getSystemService(Context.INPUT_SERVICE) as InputManager
@@ -355,10 +373,8 @@ class OverlayService : Service() {
             var tempMaxX = 1f
             var tempMaxY = 1f
 
-            // Regex bóc tách chữ số sau từ khóa "max"
             val maxRegex = "max\\s+(\\d+)".toRegex()
 
-            // SỬA LỖI TẠI ĐÂY: Dùng vòng lặp while thay vì forEachLine
             var line = reader.readLine()
             while (line != null) {
                 if (line.startsWith("add device")) {
@@ -366,7 +382,6 @@ class OverlayService : Service() {
                         maxRawX = tempMaxX
                         maxRawY = tempMaxY
                         AppLogger.log(this, "OverlayService: Đã tìm thấy thiết bị phần cứng: $currentDevice (MaxX: $maxRawX, MaxY: $maxRawY)")
-                        Log.d("KeyViewer_Debug", "Đã tìm thấy Driver: $currentDevice, MaxX=$maxRawX, MaxY=$maxRawY")
                         return currentDevice
                     }
                     currentDevice = line.substringAfter(": ").trim()
@@ -381,7 +396,6 @@ class OverlayService : Service() {
                     hasY = true
                     maxRegex.find(line)?.groupValues?.get(1)?.toFloatOrNull()?.let { tempMaxY = it }
                 }
-                // Đọc dòng tiếp theo
                 line = reader.readLine()
             }
 
@@ -389,20 +403,32 @@ class OverlayService : Service() {
                 maxRawX = tempMaxX
                 maxRawY = tempMaxY
                 AppLogger.log(this, "OverlayService: Đã tìm thấy thiết bị phần cứng: $currentDevice (MaxX: $maxRawX, MaxY: $maxRawY)")
-                Log.d("KeyViewer_Debug", "Đã tìm thấy Driver: $currentDevice, MaxX=$maxRawX, MaxY=$maxRawY")
                 return currentDevice
             }
         } catch (e: Exception) {
             AppLogger.log(this, "OverlayService ERROR: ${e.message}")
-            Log.e("KeyViewer_Debug", "Lỗi quét Driver Linux: ${e.message}")
         }
         return null
     }
 
+    // TỐI ƯU ZERO-ALLOCATION: Hàm mổ xẻ mã Hex siêu nhẹ, không dùng lệnh String
+    private fun parseHexInline(s: String, start: Int, end: Int): Int {
+        var res = 0
+        for (i in start until end) {
+            val c = s[i]
+            val v = when (c) {
+                in '0'..'9' -> c - '0'
+                in 'a'..'f' -> c - 'a' + 10
+                in 'A'..'F' -> c - 'A' + 10
+                else -> return res // Bỏ qua dấu 2 chấm (:) hoặc khoảng trắng tự động
+            }
+            res = (res shl 4) or v
+        }
+        return res
+    }
+
     private fun startReadingTouchEvents(devicePath: String) {
         isReadingEvents = true
-
-        // KHÔNG ĐỌC TỪ HardwarePrefs NỮA, LẤY TRỰC TIẾP TỪ KẾT QUẢ QUÉT BÊN TRÊN
         val hwMaxX = maxRawX
         val hwMaxY = maxRawY
 
@@ -421,26 +447,43 @@ class OverlayService : Service() {
                     line = reader.readLine() ?: break
                     if (line.isBlank()) continue
 
-                    val parts = line.trim().split(" ")
-                    val validParts = parts.filter { it.isNotEmpty() }
+                    // THUẬT TOÁN ĐỌC NGƯỢC (ZERO-ALLOCATION): Giải phẫu luồng getevent mà không tạo Mảng/Chuỗi rác
+                    val len = line.length
+                    var p3 = len
+                    while (p3 > 0 && line[p3 - 1] <= ' ') p3--
+                    if (p3 == 0) continue
 
-                    if (validParts.size < 3) continue
+                    var p2 = p3 - 1
+                    while (p2 > 0 && line[p2] > ' ') p2--
+                    val valStart = p2 + 1
 
-                    val type = validParts[validParts.size - 3].removeSuffix(":")
-                    val code = validParts[validParts.size - 2]
-                    val value = try { validParts.last().toLong(16).toInt() } catch (e: Exception) { 0 }
+                    var p1 = p2 - 1
+                    while (p1 > 0 && line[p1] <= ' ') p1--
+                    val codeEnd = p1 + 1
+                    while (p1 > 0 && line[p1] > ' ') p1--
+                    val codeStart = p1 + 1
+
+                    var p0 = p1 - 1
+                    while (p0 > 0 && line[p0] <= ' ') p0--
+                    val typeEnd = p0 + 1
+                    while (p0 > 0 && line[p0] > ' ') p0--
+                    val typeStart = p0 + 1
+
+                    val type = parseHexInline(line, typeStart, typeEnd)
+                    val code = parseHexInline(line, codeStart, codeEnd)
+                    val value = parseHexInline(line, valStart, p3)
 
                     when (type) {
-                        "0003" -> { // EV_ABS
+                        0x0003 -> { // EV_ABS
                             when (code) {
-                                "002f" -> currentSlot = value.coerceIn(0, 9)
-                                "0039" -> slots[currentSlot].trackingId = value
-                                "0035" -> slots[currentSlot].x = value.toFloat()
-                                "0036" -> slots[currentSlot].y = value.toFloat()
+                                0x002f -> currentSlot = value.coerceIn(0, 9)
+                                0x0039 -> slots[currentSlot].trackingId = value
+                                0x0035 -> slots[currentSlot].x = value.toFloat()
+                                0x0036 -> slots[currentSlot].y = value.toFloat()
                             }
                         }
-                        "0000" -> { // EV_SYN
-                            if (code == "0000") { // SYN_REPORT
+                        0x0000 -> { // EV_SYN
+                            if (code == 0x0000) { // SYN_REPORT
                                 processSync(hwMaxX, hwMaxY)
                             }
                         }
@@ -451,7 +494,7 @@ class OverlayService : Service() {
                 stopReadingTouchEvents()
             }
         }.apply {
-            priority = Thread.NORM_PRIORITY
+            priority = Thread.MAX_PRIORITY // Nâng lên mức ưu tiên cao nhất của hệ thống
             start()
         }
     }
@@ -567,16 +610,18 @@ class OverlayService : Service() {
                         onKeyDown(finalLaneToActivate)
 
                         val currentTime = System.currentTimeMillis()
-                        kpsQueue.addLast(currentTime)
+
+                        // Nạp dữ liệu vào Ring Buffer (Tuyệt đối không sinh Object rác)
+                        synchronized(kpsLock) {
+                            kpsTimestamps[kpsHead] = currentTime
+                            kpsHead = (kpsHead + 1) and 255
+                            if (kpsHead == kpsTail) {
+                                kpsTail = (kpsTail + 1) and 255
+                            }
+                        }
                         totalClicks++
 
-                        mainHandler.post {
-                            updateKpsTotalUI(kpsQueue.size, totalClicks)
-                        }
-
-                        while (kpsQueue.isNotEmpty() && currentTime - kpsQueue.first() > 1000) {
-                            kpsQueue.removeFirst()
-                        }
+                        // Đã xóa hàm post updateKpsTotalUI ở đây vì vòng lặp autoShowRunnable sẽ tự động vẽ.
                     }
                 }
             } else {
@@ -601,13 +646,8 @@ class OverlayService : Service() {
     }
 
     private fun onKeyDown(lane: Int) {
-        mainHandler.post {
-            if (activeTrails[lane] != null) return@post
-            val tv = keyViews[lane] ?: return@post
-            activeTrails[lane] = keyTrailView.addTrail(tv.x, tv.width.toFloat())
-            tv.setBackgroundResource(R.drawable.bg_key_pressed)
-            tv.setTextColor(Color.BLACK)
-        }
+        // Kích hoạt nòng súng đã nạp đạn sẵn, không tạo Runnable mới
+        mainHandler.post(keyDownRunnables[lane])
     }
 
     private fun onKeyUp(lane: Int) {
@@ -621,13 +661,7 @@ class OverlayService : Service() {
         }
         if (isStillOccupied) return
 
-        mainHandler.post {
-            activeTrails[lane]?.isReleased = true
-            activeTrails[lane] = null
-            val tv = keyViews[lane]
-            tv?.setBackgroundResource(R.drawable.bg_key_normal)
-            tv?.setTextColor(Color.WHITE)
-        }
+        mainHandler.post(keyUpRunnables[lane])
     }
 
     private fun stopReadingTouchEvents() {
@@ -799,15 +833,26 @@ class OverlayService : Service() {
             .addAction(0, getString(R.string.notif_open_app), pendingOpenApp)
             .build()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+            } else {
+                startForeground(NOTIFICATION_ID, notification)
+            }
+        } catch (e: Exception) {
+            AppLogger.log(this, "OverlayService: LỖI ĐỘT QUỴ khi startForeground: ${e.message}")
         }
     }
 
     private fun tryShowOverlay(): Boolean {
         AppLogger.log(this, "OverlayService: Đang vẽ cửa sổ KeyViewer lên màn hình")
+
+        if (!Settings.canDrawOverlays(this)) {
+            AppLogger.log(this, "OverlayService: TỪ CHỐI VẼ - Thiếu quyền Hiển thị trên ứng dụng khác!")
+            mainHandler.post { Toast.makeText(this, "Vui lòng cấp quyền Hiển thị trên ứng dụng khác (Draw over other apps)!", Toast.LENGTH_LONG).show() }
+            return false
+        }
+
         if (AppState.isAppVisible) {
             Toast.makeText(this, getString(R.string.toast_enter_game), Toast.LENGTH_SHORT).show()
             return false
@@ -827,7 +872,9 @@ class OverlayService : Service() {
 
                         wrapper.post { updateDisplayMetricsCache() }
                     }
-                } catch (e: Exception) {}
+                } catch (e: Exception) {
+                    AppLogger.log(this, "OverlayService: LỖI CHÍNH MẠNG khi addView: ${e.message}")
+                }
             }
         }
         return true
