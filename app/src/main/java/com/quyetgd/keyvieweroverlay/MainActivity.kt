@@ -152,9 +152,9 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                     val logData = AppLogger.getLog(this)
                     outputStream.write(logData.toByteArray())
                 }
-                Toast.makeText(this, "Đã lưu file log thành công!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.log_save_success), Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
-                Toast.makeText(this, "Lỗi khi lưu file: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.log_save_error, e.message), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -274,7 +274,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         btnToggleLanguage = findViewById(R.id.btnToggleLanguage)
 
         findViewById<Button>(R.id.btnExportLog).setOnClickListener {
-            AppLogger.log(this, "Người dùng bấm nút Lưu Log ra file .txt")
+            AppLogger.log(this, getString(R.string.log_msg_export))
             val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date())
             val fileName = "KeyViewer_Log_$timestamp.txt"
             exportLogLauncher.launch(fileName)
@@ -355,15 +355,15 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         if (!crashLog.isNullOrEmpty()) {
             val displayLog = if (crashLog.length > 500) crashLog.substring(0, 500) + "..." else crashLog
             AlertDialog.Builder(this)
-                .setTitle("App đã bị đột quỵ ở phiên trước 😢")
+                .setTitle(getString(R.string.crash_dialog_title))
                 .setMessage(displayLog)
-                .setPositiveButton("Sao chép mã lỗi") { _, _ ->
+                .setPositiveButton(getString(R.string.crash_copy_code)) { _, _ ->
                     val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                     val clip = ClipData.newPlainText("Crash Log", crashLog)
                     clipboard.setPrimaryClip(clip)
-                    Toast.makeText(this, "Đã sao chép", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.toast_copied), Toast.LENGTH_SHORT).show()
                 }
-                .setNegativeButton("Bỏ qua") { _, _ ->
+                .setNegativeButton(getString(R.string.crash_ignore)) { _, _ ->
                     crashPref.edit().remove("CRASH_LOG").apply()
                 }
                 .setCancelable(false)
@@ -400,15 +400,15 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         if (!crashLog.isNullOrEmpty()) {
             val displayLog = if (crashLog.length > 500) crashLog.substring(0, 500) + "..." else crashLog
             AlertDialog.Builder(this)
-                .setTitle("App đã bị đột quỵ ở phiên trước 😢")
+                .setTitle(getString(R.string.crash_dialog_title))
                 .setMessage(displayLog)
-                .setPositiveButton("Sao chép mã lỗi") { _, _ ->
+                .setPositiveButton(getString(R.string.crash_copy_code)) { _, _ ->
                     val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                     val clip = ClipData.newPlainText("Crash Log", crashLog)
                     clipboard.setPrimaryClip(clip)
-                    Toast.makeText(this, "Đã sao chép", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.toast_copied), Toast.LENGTH_SHORT).show()
                 }
-                .setNegativeButton("Bỏ qua") { _, _ ->
+                .setNegativeButton(getString(R.string.crash_ignore)) { _, _ ->
                     crashPref.edit().remove("CRASH_LOG").apply()
                 }
                 .setCancelable(false)

@@ -31,9 +31,12 @@ class KeyTrailView @JvmOverloads constructor(
         color = Color.WHITE
         style = Paint.Style.FILL
         isAntiAlias = true
-        // Thêm Đổ bóng: Bán kính tỏa ra 12px, không lệch X/Y, màu Đen đậm (70% alpha)
         setShadowLayer(12f, 0f, 0f, Color.parseColor("#B3000000"))
     }
+
+    private var rainColor = Color.WHITE
+    private var rainShadowColor = Color.CYAN
+    private var isShadowEnabled = true
     
     private val baseSpeed = 25f
     private val baseMaxHeight = 1000f
@@ -103,10 +106,23 @@ class KeyTrailView @JvmOverloads constructor(
         super.onDraw(canvas)
         synchronized(trails) {
             trails.forEach { trail ->
+                paint.color = rainColor
                 paint.alpha = trail.alpha
                 canvas.drawRect(trail.leftX, trail.startY, trail.rightX, trail.bottomY, paint)
             }
         }
+    }
+
+    fun setThemeColors(color: Int, shadowColor: Int) {
+        this.rainColor = color
+        this.rainShadowColor = shadowColor
+        this.isShadowEnabled = Color.alpha(shadowColor) > 0
+        if (isShadowEnabled) {
+            paint.setShadowLayer(12f, 0f, 0f, rainShadowColor)
+        } else {
+            paint.clearShadowLayer()
+        }
+        invalidate()
     }
 
     fun addTrail(x: Float, width: Float): Trail {

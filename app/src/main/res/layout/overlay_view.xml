@@ -4,6 +4,7 @@
     android:id="@+id/overlay_root"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:background="@android:color/transparent"
     android:clipChildren="false"
     android:clipToPadding="false"
     android:orientation="vertical">
@@ -96,35 +97,58 @@
         android:id="@+id/bottomCountersContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:clipChildren="false">
 
-        <TextView
-            android:id="@+id/tvKps"
+        <RelativeLayout
+            android:id="@+id/kpsContainer"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@drawable/bg_key_normal"
-            android:gravity="center"
-            android:padding="4dp"
-            android:text="@string/kps_label"
-            tools:text="KPS\n0"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp">
+            <TextView
+                android:id="@+id/tvKpsLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:text="KPS" />
+            <TextView
+                android:id="@+id/tvKpsValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:text="0" />
+        </RelativeLayout>
 
-        <TextView
-            android:id="@+id/tvTotal"
+        <RelativeLayout
+            android:id="@+id/totalContainer"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@drawable/bg_key_normal"
-            android:gravity="center"
-            android:padding="4dp"
-            android:text="@string/total_label"
-            tools:text="Total\n0"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp">
+            <TextView
+                android:id="@+id/tvTotalLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:text="Total" />
+            <TextView
+                android:id="@+id/tvTotalValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:text="0" />
+        </RelativeLayout>
     </LinearLayout>
 
 </LinearLayout>

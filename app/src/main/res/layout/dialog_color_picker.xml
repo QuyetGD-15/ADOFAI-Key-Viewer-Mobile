@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <View
+        android:id="@+id/viewColorPreview"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_marginBottom="16dp"
+        android:background="#000" />
+
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/color_r" />
+    <SeekBar android:id="@+id/seekR" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="255" />
+
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/color_g" />
+    <SeekBar android:id="@+id/seekG" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="255" />
+
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/color_b" />
+    <SeekBar android:id="@+id/seekB" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="255" />
+
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Alpha" />
+    <SeekBar android:id="@+id/seekA" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="255" android:progress="255" />
+
+</LinearLayout>

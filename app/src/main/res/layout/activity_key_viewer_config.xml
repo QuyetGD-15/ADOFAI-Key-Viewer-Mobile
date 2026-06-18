@@ -47,152 +47,305 @@
                 android:textStyle="bold" />
 
             <TextView
-                android:layout_width="wrap_content"
+                android:id="@+id/tvSection1Header"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
                 android:text="@string/section_key"
                 android:textColor="#FFEB3B"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true" />
 
-            <!-- Vị trí X -->
-            <TextView
-                android:id="@+id/tvPosXLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/pos_x_label"
-                android:textColor="#FFFFFF" />
-
-            <SeekBar
-                android:id="@+id/seekPosX"
+            <LinearLayout
+                android:id="@+id/section1ContentLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="20dp" />
+                android:orientation="vertical">
 
-            <!-- Vị trí Y -->
+                <!-- Vị trí X -->
+                <TextView
+                    android:id="@+id/tvPosXLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/pos_x_label"
+                    android:textColor="#FFFFFF" />
+
+                <SeekBar
+                    android:id="@+id/seekPosX"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="20dp" />
+
+                <!-- Vị trí Y -->
+                <TextView
+                    android:id="@+id/tvPosYLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/pos_y_label"
+                    android:textColor="#FFFFFF" />
+
+                <SeekBar
+                    android:id="@+id/seekPosY"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="20dp" />
+
+                <!-- Chỉnh Độ lớn -->
+                <TextView
+                    android:id="@+id/tvScaleLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/scale_label"
+                    android:textColor="#FFFFFF" />
+
+                <SeekBar
+                    android:id="@+id/seekScale"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="20dp"
+                    android:max="200"
+                    android:progress="100" />
+
+                <!-- Chiều rộng phím -->
+                <TextView
+                    android:id="@+id/tvKeyWidthLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/key_width_label"
+                    android:textColor="#FFFFFF" />
+
+                <SeekBar
+                    android:id="@+id/seekKeyWidth"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="20dp"
+                    android:max="70"
+                    android:progress="30" />
+
+                <!-- Chiều cao phím -->
+                <TextView
+                    android:id="@+id/tvKeyHeightLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/key_height_label"
+                    android:textColor="#FFFFFF" />
+
+                <SeekBar
+                    android:id="@+id/seekKeyHeight"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="20dp"
+                    android:max="70"
+                    android:progress="30" />
+
+                <!-- Khoảng cách phím -->
+                <TextView
+                    android:id="@+id/tvKeySpacingLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/spacing_label"
+                    android:textColor="#FFFFFF" />
+
+                <SeekBar
+                    android:id="@+id/seekKeySpacing"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="24dp"
+                    android:max="20"
+                    android:progress="0" />
+            </LinearLayout>
+
             <TextView
-                android:id="@+id/tvPosYLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/pos_y_label"
-                android:textColor="#FFFFFF" />
-
-            <SeekBar
-                android:id="@+id/seekPosY"
+                android:id="@+id/tvSection2Header"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="20dp" />
-
-            <!-- Chỉnh Độ lớn -->
-            <TextView
-                android:id="@+id/tvScaleLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/scale_label"
-                android:textColor="#FFFFFF" />
-
-            <SeekBar
-                android:id="@+id/seekScale"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="20dp"
-                android:max="200"
-                android:progress="100" />
-
-            <!-- Chiều rộng phím -->
-            <TextView
-                android:id="@+id/tvKeyWidthLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/key_width_label"
-                android:textColor="#FFFFFF" />
-
-            <SeekBar
-                android:id="@+id/seekKeyWidth"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="20dp"
-                android:max="70"
-                android:progress="30" />
-
-            <!-- Chiều cao phím -->
-            <TextView
-                android:id="@+id/tvKeyHeightLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/key_height_label"
-                android:textColor="#FFFFFF" />
-
-            <SeekBar
-                android:id="@+id/seekKeyHeight"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="20dp"
-                android:max="70"
-                android:progress="30" />
-
-            <!-- Khoảng cách phím -->
-            <TextView
-                android:id="@+id/tvKeySpacingLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/spacing_label"
-                android:textColor="#FFFFFF" />
-
-            <SeekBar
-                android:id="@+id/seekKeySpacing"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="24dp"
-                android:max="20"
-                android:progress="0" />
-
-            <TextView
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
                 android:text="@string/section_key_rain"
                 android:textColor="#FFEB3B"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true" />
 
-            <!-- Chỉnh Tốc độ -->
-            <TextView
-                android:id="@+id/tvSpeedLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/speed_label"
-                android:textColor="#FFFFFF" />
-
-            <SeekBar
-                android:id="@+id/seekSpeed"
+            <LinearLayout
+                android:id="@+id/section2ContentLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="20dp"
-                android:max="200"
-                android:progress="100" />
+                android:orientation="vertical">
 
-            <!-- Chỉnh Giới hạn độ cao -->
+                <!-- Chỉnh Tốc độ -->
+                <TextView
+                    android:id="@+id/tvSpeedLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/speed_label"
+                    android:textColor="#FFFFFF" />
+
+                <SeekBar
+                    android:id="@+id/seekSpeed"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="20dp"
+                    android:max="200"
+                    android:progress="100" />
+
+                <!-- Chỉnh Giới hạn độ cao -->
+                <TextView
+                    android:id="@+id/tvLimitLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/limit_label"
+                    android:textColor="#FFFFFF" />
+
+                <SeekBar
+                    android:id="@+id/seekLimit"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="24dp"
+                    android:max="210"
+                    android:progress="130" />
+            </LinearLayout>
+
+            <!-- CHỦ ĐỀ (THEME) -->
             <TextView
-                android:id="@+id/tvLimitLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/limit_label"
-                android:textColor="#FFFFFF" />
-
-            <SeekBar
-                android:id="@+id/seekLimit"
+                android:id="@+id/tvThemeHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="20dp"
-                android:max="210"
-                android:progress="130" />
+                android:layout_marginBottom="12dp"
+                android:text="@string/section_theme"
+                android:textColor="#FFEB3B"
+                android:textStyle="bold"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <LinearLayout
+                android:id="@+id/layoutThemeContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <!-- NHÓM 1. CHỮ -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="@string/theme_text_group"
+                    android:textColor="#4CAF50"
+                    android:textStyle="bold"
+                    android:textSize="12sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <CheckBox android:id="@+id/cbBold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/theme_bold" android:textColor="#FFF" android:textSize="12sp" />
+                    <CheckBox android:id="@+id/cbItalic" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/theme_italic" android:textColor="#FFF" android:textSize="12sp" />
+                    <CheckBox android:id="@+id/cbUnderline" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/theme_underline" android:textColor="#FFF" android:textSize="12sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvThemeTextSizeLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/theme_text_size"
+                    android:textColor="#FFF"
+                    android:textSize="12sp" />
+                <SeekBar
+                    android:id="@+id/seekThemeTextSize"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="40"
+                    android:progress="10" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="8dp">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/theme_text_color" android:textColor="#FFF" android:textSize="12sp" />
+                    <View android:id="@+id/viewTextColorPreview" android:layout_width="30dp" android:layout_height="30dp" android:background="#FFF" android:layout_marginEnd="8dp" />
+                    <EditText android:id="@+id/etTextColorHex" android:layout_width="100dp" android:layout_height="wrap_content" android:hint="@string/theme_hex_hint" android:textColor="#FFF" android:textSize="12sp" android:maxLines="1" android:inputType="textNoSuggestions" android:autofillHints="none" />
+                </LinearLayout>
+
+                <!-- Màu chữ (Khi nhấn) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="8dp">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/theme_text_color_pressed" android:textColor="#FFF" android:textSize="12sp" />
+                    <View android:id="@+id/viewTextColorPressedPreview" android:layout_width="30dp" android:layout_height="30dp" android:background="#FFF" android:layout_marginEnd="8dp" />
+                    <EditText android:id="@+id/etTextColorPressedHex" android:layout_width="100dp" android:layout_height="wrap_content" android:hint="@string/theme_hex_hint" android:textColor="#FFF" android:textSize="12sp" android:maxLines="1" android:inputType="textNoSuggestions" android:autofillHints="none" />
+                </LinearLayout>
+
+                <!-- NHÓM 2. MÀU SẮC -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="@string/theme_colors_group"
+                    android:textColor="#4CAF50"
+                    android:textStyle="bold"
+                    android:textSize="12sp" />
+
+                <!-- Màu nền (Bình thường) -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginBottom="4dp">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/theme_bg_normal" android:textColor="#FFF" android:textSize="11sp" />
+                    <View android:id="@+id/viewBgNormalPreview" android:layout_width="30dp" android:layout_height="30dp" android:background="#FFF" android:layout_marginEnd="8dp" />
+                    <EditText android:id="@+id/etBgNormalHex" android:layout_width="90dp" android:layout_height="wrap_content" android:hint="#HEX" android:textColor="#FFF" android:textSize="11sp" android:maxLines="1" android:inputType="textNoSuggestions" android:autofillHints="none" />
+                </LinearLayout>
+
+                <!-- Màu nền (Nhấn) -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginBottom="4dp">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/theme_bg_pressed" android:textColor="#FFF" android:textSize="11sp" />
+                    <View android:id="@+id/viewBgPressedPreview" android:layout_width="30dp" android:layout_height="30dp" android:background="#FFF" android:layout_marginEnd="8dp" />
+                    <EditText android:id="@+id/etBgPressedHex" android:layout_width="90dp" android:layout_height="wrap_content" android:hint="#HEX" android:textColor="#FFF" android:textSize="11sp" android:maxLines="1" android:inputType="textNoSuggestions" android:autofillHints="none" />
+                </LinearLayout>
+
+                <!-- Màu viền (Bình thường) -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginBottom="4dp">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/theme_border_normal" android:textColor="#FFF" android:textSize="11sp" />
+                    <View android:id="@+id/viewBorderNormalPreview" android:layout_width="30dp" android:layout_height="30dp" android:background="#FFF" android:layout_marginEnd="8dp" />
+                    <EditText android:id="@+id/etBorderNormalHex" android:layout_width="90dp" android:layout_height="wrap_content" android:hint="#HEX" android:textColor="#FFF" android:textSize="11sp" android:maxLines="1" android:inputType="textNoSuggestions" android:autofillHints="none" />
+                </LinearLayout>
+
+                <!-- Màu viền (Nhấn) -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginBottom="4dp">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/theme_border_pressed" android:textColor="#FFF" android:textSize="11sp" />
+                    <View android:id="@+id/viewBorderPressedPreview" android:layout_width="30dp" android:layout_height="30dp" android:background="#FFF" android:layout_marginEnd="8dp" />
+                    <EditText android:id="@+id/etBorderPressedHex" android:layout_width="90dp" android:layout_height="wrap_content" android:hint="#HEX" android:textColor="#FFF" android:textSize="11sp" android:maxLines="1" android:inputType="textNoSuggestions" android:autofillHints="none" />
+                </LinearLayout>
+
+                <!-- Màu Rain -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginBottom="4dp">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/theme_rain_color" android:textColor="#FFF" android:textSize="11sp" />
+                    <View android:id="@+id/viewRainColorPreview" android:layout_width="30dp" android:layout_height="30dp" android:background="#FFF" android:layout_marginEnd="8dp" />
+                    <EditText android:id="@+id/etRainColorHex" android:layout_width="90dp" android:layout_height="wrap_content" android:hint="#HEX" android:textColor="#FFF" android:textSize="11sp" android:maxLines="1" android:inputType="textNoSuggestions" android:autofillHints="none" />
+                </LinearLayout>
+
+                <!-- Màu bóng Rain -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginBottom="24dp">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/theme_rain_shadow" android:textColor="#FFF" android:textSize="11sp" />
+                    <View android:id="@+id/viewRainShadowPreview" android:layout_width="30dp" android:layout_height="30dp" android:background="#FFF" android:layout_marginEnd="8dp" />
+                    <EditText android:id="@+id/etRainShadowHex" android:layout_width="90dp" android:layout_height="wrap_content" android:hint="#HEX" android:textColor="#FFF" android:textSize="11sp" android:maxLines="1" android:inputType="textNoSuggestions" android:autofillHints="none" />
+                </LinearLayout>
+
+            </LinearLayout>
 
             <!-- Nút Lưu & Đặt lại -->
             <LinearLayout

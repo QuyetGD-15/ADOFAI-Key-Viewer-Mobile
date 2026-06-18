@@ -52,7 +52,7 @@
             android:minWidth="0dp"
             android:minHeight="0dp"
             android:padding="8dp"
-            android:text="Lưu Log (.txt)"
+            android:text="@string/btn_export_log"
             android:textSize="12sp"
             app:rippleColor="#22FFFFFF" />
     </LinearLayout>
