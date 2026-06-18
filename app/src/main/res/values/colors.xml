@@ -2,4 +2,11 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Material Design 3 Dark Theme Colors -->
+    <color name="md3_background">#121212</color>
+    <color name="md3_surface">#1E1E1E</color>
+    <color name="md3_primary">#A78BFA</color>
+    <color name="md3_primary_variant">#8B5CF6</color>
+    <color name="md3_primary_neon_bg">#338B5CF6</color> <!-- 20% Alpha -->
 </resources>

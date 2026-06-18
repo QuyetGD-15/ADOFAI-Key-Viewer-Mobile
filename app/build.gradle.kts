@@ -14,10 +14,13 @@ android {
         applicationId = "com.quyetgd.keyvieweroverlay"
         minSdk = 24
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.0.7-beta"
+        versionCode = 5
+        versionName = "1.0.71-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        ndk {
+            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a"))
+        }
     }
 
     buildTypes {

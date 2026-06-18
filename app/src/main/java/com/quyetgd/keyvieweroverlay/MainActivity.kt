@@ -24,13 +24,16 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.appcompat.widget.SwitchCompat
+import com.google.android.material.materialswitch.MaterialSwitch
 import androidx.core.os.LocaleListCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -136,7 +139,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
     private lateinit var tvStatus: TextView
     private lateinit var tvShizukuStatus: TextView
     private lateinit var btnCheck: Button
-    private lateinit var switchOverlay: SwitchCompat
+    private lateinit var switchOverlay: MaterialSwitch
     private lateinit var btnConfigHitbox: Button
     private lateinit var btnConfigKeyViewer: Button
     private lateinit var btnSelectApps: Button
@@ -201,6 +204,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        initDefaultLanguage()
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
@@ -342,8 +346,11 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         updateLanguageUI()
         btnToggleLanguage.setOnClickListener {
             showLoading()
-            val currentLocales = AppCompatDelegate.getApplicationLocales()
-            val newLocale = if (currentLocales.toLanguageTags() == "en") "vi" else "en"
+            val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+            val currentLang = pref.getString("app_language", "en")
+            val newLocale = if (currentLang == "en") "vi" else "en"
+            
+            pref.edit().putString("app_language", newLocale).apply()
             AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(newLocale))
         }
 
@@ -354,7 +361,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         val crashLog = crashPref.getString("CRASH_LOG", null)
         if (!crashLog.isNullOrEmpty()) {
             val displayLog = if (crashLog.length > 500) crashLog.substring(0, 500) + "..." else crashLog
-            AlertDialog.Builder(this)
+            MaterialAlertDialogBuilder(this)
                 .setTitle(getString(R.string.crash_dialog_title))
                 .setMessage(displayLog)
                 .setPositiveButton(getString(R.string.crash_copy_code)) { _, _ ->
@@ -399,7 +406,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         val crashLog = crashPref.getString("CRASH_LOG", null)
         if (!crashLog.isNullOrEmpty()) {
             val displayLog = if (crashLog.length > 500) crashLog.substring(0, 500) + "..." else crashLog
-            AlertDialog.Builder(this)
+            MaterialAlertDialogBuilder(this)
                 .setTitle(getString(R.string.crash_dialog_title))
                 .setMessage(displayLog)
                 .setPositiveButton(getString(R.string.crash_copy_code)) { _, _ ->
@@ -645,23 +652,54 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         finalItems.add(AppItem("", "", null, isHeader = true, headerTitle = getString(R.string.header_others)))
         finalItems.addAll(others)
 
+        val dialog = BottomSheetDialog(this, R.style.RoundedBottomSheetDialog)
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dpToPx(16), dpToPx(24), dpToPx(16), dpToPx(24))
+            backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#1E1E1E"))
+        }
+
+        val title = TextView(this).apply {
+            text = getString(R.string.dialog_select_apps_title)
+            textSize = 20f
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTextColor(Color.WHITE)
+            setPadding(0, 0, 0, dpToPx(16))
+        }
+
         val rv = RecyclerView(this).apply {
-            layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
             layoutManager = LinearLayoutManager(this@MainActivity)
         }
-        
         rv.adapter = AppAdapter(finalItems) { _, _ -> }
 
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.dialog_select_apps_title))
-            .setView(rv)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
+        val btnOk = MaterialButton(this).apply {
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dpToPx(56)).apply {
+                topMargin = dpToPx(16)
+            }
+            text = getString(android.R.string.ok)
+            cornerRadius = dpToPx(16)
+            setOnClickListener {
                 val selectedSet = finalItems.filter { !it.isHeader && it.isChecked }.map { it.packageName }.toSet()
                 getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE).edit().putStringSet("allowed_apps", selectedSet).apply()
+                dialog.dismiss()
             }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
+        }
+
+        root.addView(title)
+        root.addView(rv)
+        root.addView(btnOk)
+
+        dialog.setContentView(root)
+        
+        // Cố định chiều cao khoảng 70% màn hình để dễ nhìn
+        val dm = resources.displayMetrics
+        root.layoutParams.height = (dm.heightPixels * 0.7).toInt()
+        
+        dialog.show()
     }
+
+    private fun dpToPx(dp: Int): Int = (dp * resources.displayMetrics.density).toInt()
 
     private fun isXiaomiDevice(): Boolean {
         val manufacturer = Build.MANUFACTURER.lowercase()
@@ -679,7 +717,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
             return
         }
 
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.xiaomi_warning_title))
             .setMessage(getString(R.string.xiaomi_warning_msg))
             .setPositiveButton(getString(R.string.xiaomi_warning_settings)) { _, _ ->
@@ -694,6 +732,25 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                 onProceed()
             }
             .show()
+    }
+
+    private fun initDefaultLanguage() {
+        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+        
+        // Kiểm tra xem đã có key ngôn ngữ trong bộ nhớ chưa (chưa có nghĩa là lần mở app đầu tiên)
+        if (!pref.contains("app_language")) {
+            // Lấy mã ngôn ngữ hiện tại của hệ điều hành
+            val systemLang = java.util.Locale.getDefault().language
+            
+            // Nếu là tiếng Việt thì dùng "vi", tất cả ngôn ngữ khác đều fallback về tiếng Anh "en"
+            val defaultAppLang = if (systemLang == "vi") "vi" else "en"
+            
+            // Lưu lựa chọn này vào bộ nhớ để các lần mở app sau không bị ghi đè
+            pref.edit().putString("app_language", defaultAppLang).apply()
+            
+            // Áp dụng ngôn ngữ cho ứng dụng ngay lần đầu
+            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(defaultAppLang))
+        }
     }
 
     override fun onDestroy() {

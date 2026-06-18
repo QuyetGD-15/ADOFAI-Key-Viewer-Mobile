@@ -5,9 +5,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="false"
-    android:background="#B3000000">
+    android:background="@color/md3_background">
 
-    <!-- Khu vực Preview bên trái -->
+    <!-- Khu vực Preview bên trái (TUYỆT ĐỐI CẤM padding/margin ở đây) -->
     <FrameLayout
         android:id="@+id/viewerContainer"
         android:layout_width="wrap_content"
@@ -19,370 +19,758 @@
         <include layout="@layout/overlay_view" />
     </FrameLayout>
 
-    <!-- Khu vực Menu bên phải có thanh cuộn -->
+    <!-- Khu vực Menu bên phải -->
     <ScrollView
         android:id="@+id/menuScroll"
-        android:layout_width="280dp"
+        android:layout_width="320dp"
         android:layout_height="match_parent"
-        android:background="#E61A1A1A"
-        android:elevation="8dp"
+        android:background="@android:color/transparent"
         android:scrollbars="none"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <LinearLayout
-            android:id="@+id/menuContainer"
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="20dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:text="@string/key_viewer_config_title"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvSection1Header"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:text="@string/section_key"
-                android:textColor="#FFEB3B"
-                android:textStyle="bold"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true" />
+            android:layout_margin="16dp"
+            app:cardBackgroundColor="#1E1E1E"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="0dp">
 
             <LinearLayout
-                android:id="@+id/section1ContentLayout"
+                android:id="@+id/menuContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <!-- Vị trí X -->
-                <TextView
-                    android:id="@+id/tvPosXLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/pos_x_label"
-                    android:textColor="#FFFFFF" />
-
-                <SeekBar
-                    android:id="@+id/seekPosX"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="20dp" />
-
-                <!-- Vị trí Y -->
-                <TextView
-                    android:id="@+id/tvPosYLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/pos_y_label"
-                    android:textColor="#FFFFFF" />
-
-                <SeekBar
-                    android:id="@+id/seekPosY"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="20dp" />
-
-                <!-- Chỉnh Độ lớn -->
-                <TextView
-                    android:id="@+id/tvScaleLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/scale_label"
-                    android:textColor="#FFFFFF" />
-
-                <SeekBar
-                    android:id="@+id/seekScale"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="20dp"
-                    android:max="200"
-                    android:progress="100" />
-
-                <!-- Chiều rộng phím -->
-                <TextView
-                    android:id="@+id/tvKeyWidthLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/key_width_label"
-                    android:textColor="#FFFFFF" />
-
-                <SeekBar
-                    android:id="@+id/seekKeyWidth"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="20dp"
-                    android:max="70"
-                    android:progress="30" />
-
-                <!-- Chiều cao phím -->
-                <TextView
-                    android:id="@+id/tvKeyHeightLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/key_height_label"
-                    android:textColor="#FFFFFF" />
-
-                <SeekBar
-                    android:id="@+id/seekKeyHeight"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="20dp"
-                    android:max="70"
-                    android:progress="30" />
-
-                <!-- Khoảng cách phím -->
-                <TextView
-                    android:id="@+id/tvKeySpacingLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/spacing_label"
-                    android:textColor="#FFFFFF" />
-
-                <SeekBar
-                    android:id="@+id/seekKeySpacing"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="24dp"
-                    android:max="20"
-                    android:progress="0" />
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/tvSection2Header"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:text="@string/section_key_rain"
-                android:textColor="#FFEB3B"
-                android:textStyle="bold"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <LinearLayout
-                android:id="@+id/section2ContentLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <!-- Chỉnh Tốc độ -->
-                <TextView
-                    android:id="@+id/tvSpeedLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/speed_label"
-                    android:textColor="#FFFFFF" />
-
-                <SeekBar
-                    android:id="@+id/seekSpeed"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="20dp"
-                    android:max="200"
-                    android:progress="100" />
-
-                <!-- Chỉnh Giới hạn độ cao -->
-                <TextView
-                    android:id="@+id/tvLimitLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/limit_label"
-                    android:textColor="#FFFFFF" />
-
-                <SeekBar
-                    android:id="@+id/seekLimit"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="24dp"
-                    android:max="210"
-                    android:progress="130" />
-            </LinearLayout>
-
-            <!-- CHỦ ĐỀ (THEME) -->
-            <TextView
-                android:id="@+id/tvThemeHeader"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:text="@string/section_theme"
-                android:textColor="#FFEB3B"
-                android:textStyle="bold"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <LinearLayout
-                android:id="@+id/layoutThemeContent"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:animateLayoutChanges="true"
                 android:orientation="vertical"
-                android:visibility="gone">
+                android:padding="20dp">
 
-                <!-- NHÓM 1. CHỮ -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginBottom="16dp"
+                    android:text="@string/key_viewer_config_title"
+                    android:textColor="@color/white"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <!-- SECTION 1: KEY -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    app:cardBackgroundColor="#2A2A2A"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:animateLayoutChanges="true"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvSection1Header"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackground"
+                            android:gravity="center_vertical"
+                            android:paddingStart="36dp"
+                            android:paddingEnd="16dp"
+                            android:paddingVertical="16dp"
+                            android:text="@string/section_key"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:id="@+id/section1ContentLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="16dp"
+                            android:visibility="gone">
+
+                            <TextView
+                                android:id="@+id/tvPosXLabel"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/pos_x_label"
+                                android:textColor="#BBFFFFFF"
+                                android:textSize="12sp" />
+
+                            <com.google.android.material.slider.Slider
+                                android:id="@+id/seekPosX"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:valueFrom="0"
+                                android:valueTo="2000" />
+
+                            <TextView
+                                android:id="@+id/tvPosYLabel"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/pos_y_label"
+                                android:textColor="#BBFFFFFF"
+                                android:textSize="12sp" />
+
+                            <com.google.android.material.slider.Slider
+                                android:id="@+id/seekPosY"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:valueFrom="0"
+                                android:valueTo="2000" />
+
+                            <TextView
+                                android:id="@+id/tvScaleLabel"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/scale_label"
+                                android:textColor="#BBFFFFFF"
+                                android:textSize="12sp" />
+
+                            <com.google.android.material.slider.Slider
+                                android:id="@+id/seekScale"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:value="100"
+                                android:valueFrom="0"
+                                android:valueTo="200" />
+
+                            <TextView
+                                android:id="@+id/tvKeyWidthLabel"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/key_width_label"
+                                android:textColor="#BBFFFFFF"
+                                android:textSize="12sp" />
+
+                            <com.google.android.material.slider.Slider
+                                android:id="@+id/seekKeyWidth"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:value="30"
+                                android:valueFrom="0"
+                                android:valueTo="70" />
+
+                            <TextView
+                                android:id="@+id/tvKeyHeightLabel"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/key_height_label"
+                                android:textColor="#BBFFFFFF"
+                                android:textSize="12sp" />
+
+                            <com.google.android.material.slider.Slider
+                                android:id="@+id/seekKeyHeight"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:value="30"
+                                android:valueFrom="0"
+                                android:valueTo="70" />
+
+                            <TextView
+                                android:id="@+id/tvKeySpacingLabel"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/spacing_label"
+                                android:textColor="#BBFFFFFF"
+                                android:textSize="12sp" />
+
+                            <com.google.android.material.slider.Slider
+                                android:id="@+id/seekKeySpacing"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:value="0"
+                                android:valueFrom="0"
+                                android:valueTo="20" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- SECTION 2: KEY RAIN -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    app:cardBackgroundColor="#2A2A2A"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:animateLayoutChanges="true"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvSection2Header"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackground"
+                            android:gravity="center_vertical"
+                            android:paddingStart="36dp"
+                            android:paddingEnd="16dp"
+                            android:paddingVertical="16dp"
+                            android:text="@string/section_key_rain"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:id="@+id/section2ContentLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="16dp"
+                            android:visibility="gone">
+
+                            <TextView
+                                android:id="@+id/tvSpeedLabel"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/speed_label"
+                                android:textColor="#BBFFFFFF"
+                                android:textSize="12sp" />
+
+                            <com.google.android.material.slider.Slider
+                                android:id="@+id/seekSpeed"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:value="100"
+                                android:valueFrom="0"
+                                android:valueTo="200" />
+
+                            <TextView
+                                android:id="@+id/tvLimitLabel"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/limit_label"
+                                android:textColor="#BBFFFFFF"
+                                android:textSize="12sp" />
+
+                            <com.google.android.material.slider.Slider
+                                android:id="@+id/seekLimit"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:value="130"
+                                android:valueFrom="0"
+                                android:valueTo="210" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- SECTION 3: THEME -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    app:cardBackgroundColor="#2A2A2A"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:animateLayoutChanges="true"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvThemeHeader"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackground"
+                            android:gravity="center_vertical"
+                            android:paddingStart="36dp"
+                            android:paddingEnd="16dp"
+                            android:paddingVertical="16dp"
+                            android:text="@string/section_theme"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:id="@+id/layoutThemeContent"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="16dp"
+                            android:visibility="gone">
+
+                            <!-- BƯỚC 2: EXPOSED DROPDOWN MENU -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical"
+                                android:paddingVertical="8dp">
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    app:boxCornerRadiusTopStart="12dp"
+                                    app:boxCornerRadiusTopEnd="12dp"
+                                    app:boxCornerRadiusBottomStart="12dp"
+                                    app:boxCornerRadiusBottomEnd="12dp"
+                                    app:boxStrokeColor="#33FFFFFF"
+                                    app:boxBackgroundColor="#00000000">
+
+                                    <AutoCompleteTextView
+                                        android:id="@+id/presetDropdown"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="none"
+                                        android:paddingTop="12dp"
+                                        android:paddingBottom="12dp"
+                                        android:textColor="#FFFFFF" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnSavePreset"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="56dp"
+                                    android:layout_marginStart="12dp"
+                                    android:text="@string/save_preset"
+                                    android:textAllCaps="false"
+                                    android:textColor="#A78BFA"
+                                    app:backgroundTint="#338B5CF6"
+                                    app:cornerRadius="12dp"
+                                    app:elevation="0dp" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:gravity="top"
+                                android:orientation="horizontal"
+                                android:weightSum="3">
+
+                                <CheckBox
+                                    android:id="@+id/cbBold"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:layout_gravity="top"
+                                    android:text="@string/theme_bold"
+                                    android:textColor="@color/white"
+                                    android:textSize="11sp" />
+
+                                <CheckBox
+                                    android:id="@+id/cbItalic"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:layout_gravity="top"
+                                    android:text="@string/theme_italic"
+                                    android:textColor="@color/white"
+                                    android:textSize="11sp" />
+
+                                <CheckBox
+                                    android:id="@+id/cbUnderline"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:layout_gravity="top"
+                                    android:text="@string/theme_underline"
+                                    android:textColor="@color/white"
+                                    android:textSize="11sp" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tvThemeTextSizeLabel"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/theme_text_size"
+                                android:textColor="#BBFFFFFF"
+                                android:textSize="12sp" />
+
+                            <com.google.android.material.slider.Slider
+                                android:id="@+id/seekThemeTextSize"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:value="10"
+                                android:valueFrom="0"
+                                android:valueTo="40" />
+
+                            <!-- Text Color -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:gravity="center_vertical">
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:hint="@string/theme_text_color"
+                                    app:boxCornerRadiusBottomEnd="8dp"
+                                    app:boxCornerRadiusBottomStart="8dp"
+                                    app:boxCornerRadiusTopEnd="8dp"
+                                    app:boxCornerRadiusTopStart="8dp">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/etTextColorHex"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="textNoSuggestions"
+                                        android:padding="8dp"
+                                        android:textColor="@color/white"
+                                        android:textSize="11sp" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.card.MaterialCardView
+                                    android:id="@+id/viewTextColorPreview"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:layout_marginStart="8dp"
+                                    app:cardCornerRadius="8dp"
+                                    app:cardElevation="0dp"
+                                    app:strokeColor="#33FFFFFF"
+                                    app:strokeWidth="1dp" />
+                            </LinearLayout>
+
+                            <!-- Thêm các trường màu khác ở đây nhưng rút gọn... -->
+                            <!-- Vì code dài nên tôi sẽ chỉ bọc một vài cái làm mẫu hoặc bọc hết nếu đủ chỗ -->
+                            <!-- Theo yêu cầu: Mọi EditText nhập mã HEX: Bọc trong TextInputLayout -->
+
+                            <!-- Text Color Pressed -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:gravity="center_vertical">
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:hint="@string/theme_text_color_pressed"
+                                    app:boxCornerRadiusBottomEnd="8dp"
+                                    app:boxCornerRadiusBottomStart="8dp"
+                                    app:boxCornerRadiusTopEnd="8dp"
+                                    app:boxCornerRadiusTopStart="8dp">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/etTextColorPressedHex"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="textNoSuggestions"
+                                        android:padding="8dp"
+                                        android:textColor="@color/white"
+                                        android:textSize="11sp" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.card.MaterialCardView
+                                    android:id="@+id/viewTextColorPressedPreview"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:layout_marginStart="8dp"
+                                    app:cardCornerRadius="8dp"
+                                    app:cardElevation="0dp"
+                                    app:strokeColor="#33FFFFFF"
+                                    app:strokeWidth="1dp" />
+                            </LinearLayout>
+
+                            <!-- Bg Normal -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:gravity="center_vertical">
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:hint="@string/theme_bg_normal"
+                                    app:boxCornerRadiusBottomEnd="8dp"
+                                    app:boxCornerRadiusBottomStart="8dp"
+                                    app:boxCornerRadiusTopEnd="8dp"
+                                    app:boxCornerRadiusTopStart="8dp">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/etBgNormalHex"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="textNoSuggestions"
+                                        android:padding="8dp"
+                                        android:textColor="@color/white"
+                                        android:textSize="11sp" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.card.MaterialCardView
+                                    android:id="@+id/viewBgNormalPreview"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:layout_marginStart="8dp"
+                                    app:cardCornerRadius="8dp"
+                                    app:cardElevation="0dp"
+                                    app:strokeColor="#33FFFFFF"
+                                    app:strokeWidth="1dp" />
+                            </LinearLayout>
+
+                            <!-- Bg Pressed -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:gravity="center_vertical">
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:hint="@string/theme_bg_pressed"
+                                    app:boxCornerRadiusBottomEnd="8dp"
+                                    app:boxCornerRadiusBottomStart="8dp"
+                                    app:boxCornerRadiusTopEnd="8dp"
+                                    app:boxCornerRadiusTopStart="8dp">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/etBgPressedHex"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="textNoSuggestions"
+                                        android:padding="8dp"
+                                        android:textColor="@color/white"
+                                        android:textSize="11sp" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.card.MaterialCardView
+                                    android:id="@+id/viewBgPressedPreview"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:layout_marginStart="8dp"
+                                    app:cardCornerRadius="8dp"
+                                    app:cardElevation="0dp"
+                                    app:strokeColor="#33FFFFFF"
+                                    app:strokeWidth="1dp" />
+                            </LinearLayout>
+
+                            <!-- Border Normal -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:gravity="center_vertical">
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:hint="@string/theme_border_normal"
+                                    app:boxCornerRadiusBottomEnd="8dp"
+                                    app:boxCornerRadiusBottomStart="8dp"
+                                    app:boxCornerRadiusTopEnd="8dp"
+                                    app:boxCornerRadiusTopStart="8dp">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/etBorderNormalHex"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="textNoSuggestions"
+                                        android:padding="8dp"
+                                        android:textColor="@color/white"
+                                        android:textSize="11sp" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.card.MaterialCardView
+                                    android:id="@+id/viewBorderNormalPreview"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:layout_marginStart="8dp"
+                                    app:cardCornerRadius="8dp"
+                                    app:cardElevation="0dp"
+                                    app:strokeColor="#33FFFFFF"
+                                    app:strokeWidth="1dp" />
+                            </LinearLayout>
+
+                            <!-- Border Pressed -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:gravity="center_vertical">
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:hint="@string/theme_border_pressed"
+                                    app:boxCornerRadiusBottomEnd="8dp"
+                                    app:boxCornerRadiusBottomStart="8dp"
+                                    app:boxCornerRadiusTopEnd="8dp"
+                                    app:boxCornerRadiusTopStart="8dp">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/etBorderPressedHex"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="textNoSuggestions"
+                                        android:padding="8dp"
+                                        android:textColor="@color/white"
+                                        android:textSize="11sp" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.card.MaterialCardView
+                                    android:id="@+id/viewBorderPressedPreview"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:layout_marginStart="8dp"
+                                    app:cardCornerRadius="8dp"
+                                    app:cardElevation="0dp"
+                                    app:strokeColor="#33FFFFFF"
+                                    app:strokeWidth="1dp" />
+                            </LinearLayout>
+
+                            <!-- Rain Color -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:gravity="center_vertical">
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:hint="@string/theme_rain_color"
+                                    app:boxCornerRadiusBottomEnd="8dp"
+                                    app:boxCornerRadiusBottomStart="8dp"
+                                    app:boxCornerRadiusTopEnd="8dp"
+                                    app:boxCornerRadiusTopStart="8dp">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/etRainColorHex"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="textNoSuggestions"
+                                        android:padding="8dp"
+                                        android:textColor="@color/white"
+                                        android:textSize="11sp" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.card.MaterialCardView
+                                    android:id="@+id/viewRainColorPreview"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:layout_marginStart="8dp"
+                                    app:cardCornerRadius="8dp"
+                                    app:cardElevation="0dp"
+                                    app:strokeColor="#33FFFFFF"
+                                    app:strokeWidth="1dp" />
+                            </LinearLayout>
+
+                            <!-- Rain Shadow -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="16dp"
+                                android:layout_marginTop="8dp"
+                                android:gravity="center_vertical">
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:hint="@string/theme_rain_shadow"
+                                    app:boxCornerRadiusBottomEnd="8dp"
+                                    app:boxCornerRadiusBottomStart="8dp"
+                                    app:boxCornerRadiusTopEnd="8dp"
+                                    app:boxCornerRadiusTopStart="8dp">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/etRainShadowHex"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="textNoSuggestions"
+                                        android:padding="8dp"
+                                        android:textColor="@color/white"
+                                        android:textSize="11sp" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.card.MaterialCardView
+                                    android:id="@+id/viewRainShadowPreview"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:layout_marginStart="8dp"
+                                    app:cardCornerRadius="8dp"
+                                    app:cardElevation="0dp"
+                                    app:strokeColor="#33FFFFFF"
+                                    app:strokeWidth="1dp" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
-                    android:text="@string/theme_text_group"
-                    android:textColor="#4CAF50"
-                    android:textStyle="bold"
-                    android:textSize="12sp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-                    <CheckBox android:id="@+id/cbBold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/theme_bold" android:textColor="#FFF" android:textSize="12sp" />
-                    <CheckBox android:id="@+id/cbItalic" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/theme_italic" android:textColor="#FFF" android:textSize="12sp" />
-                    <CheckBox android:id="@+id/cbUnderline" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/theme_underline" android:textColor="#FFF" android:textSize="12sp" />
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/tvThemeTextSizeLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/theme_text_size"
-                    android:textColor="#FFF"
-                    android:textSize="12sp" />
-                <SeekBar
-                    android:id="@+id/seekThemeTextSize"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:max="40"
-                    android:progress="10" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:layout_marginTop="8dp">
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/theme_text_color" android:textColor="#FFF" android:textSize="12sp" />
-                    <View android:id="@+id/viewTextColorPreview" android:layout_width="30dp" android:layout_height="30dp" android:background="#FFF" android:layout_marginEnd="8dp" />
-                    <EditText android:id="@+id/etTextColorHex" android:layout_width="100dp" android:layout_height="wrap_content" android:hint="@string/theme_hex_hint" android:textColor="#FFF" android:textSize="12sp" android:maxLines="1" android:inputType="textNoSuggestions" android:autofillHints="none" />
-                </LinearLayout>
-
-                <!-- Màu chữ (Khi nhấn) -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:layout_marginTop="8dp">
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/theme_text_color_pressed" android:textColor="#FFF" android:textSize="12sp" />
-                    <View android:id="@+id/viewTextColorPressedPreview" android:layout_width="30dp" android:layout_height="30dp" android:background="#FFF" android:layout_marginEnd="8dp" />
-                    <EditText android:id="@+id/etTextColorPressedHex" android:layout_width="100dp" android:layout_height="wrap_content" android:hint="@string/theme_hex_hint" android:textColor="#FFF" android:textSize="12sp" android:maxLines="1" android:inputType="textNoSuggestions" android:autofillHints="none" />
-                </LinearLayout>
-
-                <!-- NHÓM 2. MÀU SẮC -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="@string/theme_colors_group"
-                    android:textColor="#4CAF50"
+                    android:orientation="horizontal"
+                    android:weightSum="2">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnResetViewer"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:textAllCaps="false"
+                        android:text="@string/reset"
+                        android:textColor="#FF5252"
+                        app:backgroundTint="#33EF4444"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSaveViewer"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:textAllCaps="false"
+                        android:text="@string/save"
+                        android:textColor="#A78BFA"
+                        app:backgroundTint="#338B5CF6"
+                        app:cornerRadius="12dp" />
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnResetTotal"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="0dp"
+                    android:textAllCaps="false"
+                    android:text="@string/reset_total"
+                    android:textColor="#FF5252"
                     android:textStyle="bold"
-                    android:textSize="12sp" />
-
-                <!-- Màu nền (Bình thường) -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginBottom="4dp">
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/theme_bg_normal" android:textColor="#FFF" android:textSize="11sp" />
-                    <View android:id="@+id/viewBgNormalPreview" android:layout_width="30dp" android:layout_height="30dp" android:background="#FFF" android:layout_marginEnd="8dp" />
-                    <EditText android:id="@+id/etBgNormalHex" android:layout_width="90dp" android:layout_height="wrap_content" android:hint="#HEX" android:textColor="#FFF" android:textSize="11sp" android:maxLines="1" android:inputType="textNoSuggestions" android:autofillHints="none" />
-                </LinearLayout>
-
-                <!-- Màu nền (Nhấn) -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginBottom="4dp">
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/theme_bg_pressed" android:textColor="#FFF" android:textSize="11sp" />
-                    <View android:id="@+id/viewBgPressedPreview" android:layout_width="30dp" android:layout_height="30dp" android:background="#FFF" android:layout_marginEnd="8dp" />
-                    <EditText android:id="@+id/etBgPressedHex" android:layout_width="90dp" android:layout_height="wrap_content" android:hint="#HEX" android:textColor="#FFF" android:textSize="11sp" android:maxLines="1" android:inputType="textNoSuggestions" android:autofillHints="none" />
-                </LinearLayout>
-
-                <!-- Màu viền (Bình thường) -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginBottom="4dp">
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/theme_border_normal" android:textColor="#FFF" android:textSize="11sp" />
-                    <View android:id="@+id/viewBorderNormalPreview" android:layout_width="30dp" android:layout_height="30dp" android:background="#FFF" android:layout_marginEnd="8dp" />
-                    <EditText android:id="@+id/etBorderNormalHex" android:layout_width="90dp" android:layout_height="wrap_content" android:hint="#HEX" android:textColor="#FFF" android:textSize="11sp" android:maxLines="1" android:inputType="textNoSuggestions" android:autofillHints="none" />
-                </LinearLayout>
-
-                <!-- Màu viền (Nhấn) -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginBottom="4dp">
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/theme_border_pressed" android:textColor="#FFF" android:textSize="11sp" />
-                    <View android:id="@+id/viewBorderPressedPreview" android:layout_width="30dp" android:layout_height="30dp" android:background="#FFF" android:layout_marginEnd="8dp" />
-                    <EditText android:id="@+id/etBorderPressedHex" android:layout_width="90dp" android:layout_height="wrap_content" android:hint="#HEX" android:textColor="#FFF" android:textSize="11sp" android:maxLines="1" android:inputType="textNoSuggestions" android:autofillHints="none" />
-                </LinearLayout>
-
-                <!-- Màu Rain -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginBottom="4dp">
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/theme_rain_color" android:textColor="#FFF" android:textSize="11sp" />
-                    <View android:id="@+id/viewRainColorPreview" android:layout_width="30dp" android:layout_height="30dp" android:background="#FFF" android:layout_marginEnd="8dp" />
-                    <EditText android:id="@+id/etRainColorHex" android:layout_width="90dp" android:layout_height="wrap_content" android:hint="#HEX" android:textColor="#FFF" android:textSize="11sp" android:maxLines="1" android:inputType="textNoSuggestions" android:autofillHints="none" />
-                </LinearLayout>
-
-                <!-- Màu bóng Rain -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginBottom="24dp">
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/theme_rain_shadow" android:textColor="#FFF" android:textSize="11sp" />
-                    <View android:id="@+id/viewRainShadowPreview" android:layout_width="30dp" android:layout_height="30dp" android:background="#FFF" android:layout_marginEnd="8dp" />
-                    <EditText android:id="@+id/etRainShadowHex" android:layout_width="90dp" android:layout_height="wrap_content" android:hint="#HEX" android:textColor="#FFF" android:textSize="11sp" android:maxLines="1" android:inputType="textNoSuggestions" android:autofillHints="none" />
-                </LinearLayout>
-
+                    app:backgroundTint="#33EF4444"
+                    app:cornerRadius="12dp" />
             </LinearLayout>
-
-            <!-- Nút Lưu & Đặt lại -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/btnResetViewer"
-                    style="?android:attr/buttonBarButtonStyle"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
-                    android:layout_weight="1"
-                    android:text="@string/reset"
-                    android:textColor="#FF5252" />
-
-                <Button
-                    android:id="@+id/btnSaveViewer"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/save" />
-            </LinearLayout>
-
-            <Button
-                android:id="@+id/btnResetTotal"
-                style="?android:attr/borderlessButtonStyle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/reset_total"
-                android:textColor="#FF5252"
-                android:textStyle="bold" />
-
-        </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
     </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

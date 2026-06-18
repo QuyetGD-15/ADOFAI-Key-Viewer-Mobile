@@ -1,80 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/hitbox_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#80000000">
+    android:background="@color/md3_background">
 
     <com.quyetgd.keyvieweroverlay.HitboxView
         android:id="@+id/hitbox1"
         android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_margin="20dp" />
+        android:layout_height="100dp" />
 
     <com.quyetgd.keyvieweroverlay.HitboxView
         android:id="@+id/hitbox2"
         android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_marginStart="140dp"
-        android:layout_marginTop="20dp" />
+        android:layout_height="100dp" />
 
     <com.quyetgd.keyvieweroverlay.HitboxView
         android:id="@+id/hitbox3"
         android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_marginStart="260dp"
-        android:layout_marginTop="20dp" />
+        android:layout_height="100dp" />
 
     <com.quyetgd.keyvieweroverlay.HitboxView
         android:id="@+id/hitbox4"
         android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="140dp" />
+        android:layout_height="100dp" />
 
     <com.quyetgd.keyvieweroverlay.HitboxView
         android:id="@+id/hitbox5"
         android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_marginStart="140dp"
-        android:layout_marginTop="140dp" />
+        android:layout_height="100dp" />
 
     <com.quyetgd.keyvieweroverlay.HitboxView
         android:id="@+id/hitbox6"
         android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_marginStart="260dp"
-        android:layout_marginTop="140dp" />
+        android:layout_height="100dp" />
 
-    <TextView
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="50dp"
-        android:text="@string/hitbox_config_hint"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp"
-        android:textStyle="bold" />
+        android:layout_marginBottom="40dp"
+        app:cardBackgroundColor="@color/md3_surface"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        app:strokeWidth="0dp">
 
-    <LinearLayout
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="8dp"
+            android:text="@string/hitbox_config_hint"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|end"
         android:layout_margin="16dp"
-        android:orientation="horizontal">
+        app:cardBackgroundColor="@color/md3_surface"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        app:strokeWidth="0dp">
 
-        <Button
-            android:id="@+id/btnResetHitbox"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:text="@string/reset_default" />
+            android:orientation="horizontal"
+            android:padding="4dp">
 
-        <Button
-            android:id="@+id/btnSaveHitbox"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/save" />
-    </LinearLayout>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnResetHitbox"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:layout_marginEnd="4dp"
+                android:text="@string/reset_default"
+                android:textSize="12sp"
+                app:cornerRadius="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSaveHitbox"
+                style="@style/CompactNeonButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="@string/save"
+                android:textSize="12sp"
+                app:cornerRadius="8dp" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
 </FrameLayout>
