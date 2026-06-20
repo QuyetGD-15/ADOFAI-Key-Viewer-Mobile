@@ -68,6 +68,24 @@ class SetupActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_setup)
 
+        val bottomContainer = findViewById<View>(R.id.bottomButtonContainer)
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(bottomContainer) { view, windowInsets ->
+            val insets = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            
+            // Giữ nguyên padding trái, trên, phải. Chỉ cộng thêm chiều cao của Navigation Bar vào padding dưới.
+            // Cộng thêm khoảng 16dp (chuyển đổi sang px) để có khoảng trống "thở" cho nút.
+            val density = view.resources.displayMetrics.density
+            val extraPaddingPx = (16 * density).toInt()
+            
+            view.setPadding(
+                view.paddingLeft,
+                view.paddingTop,
+                view.paddingRight,
+                insets.bottom + extraPaddingPx
+            )
+            windowInsets
+        }
+
         setupFlipper = findViewById(R.id.setupFlipper)
         btnBack = findViewById(R.id.btnSetupBack)
         btnNext = findViewById(R.id.btnSetupNext)
@@ -398,26 +416,54 @@ class SetupActivity : AppCompatActivity() {
     }
 
     private fun checkXiaomiAndOpenAppList() {
+        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+        val isXiaomiWarningDismissed = pref.getBoolean("xiaomi_warning_dismissed", false)
         val manufacturer = Build.MANUFACTURER.lowercase()
-        if (manufacturer.contains("xiaomi") || manufacturer.contains("poco") || manufacturer.contains("redmi")) {
-            AlertDialog.Builder(this)
-                .setTitle(getString(R.string.xiaomi_dialog_title))
-                .setMessage(getString(R.string.xiaomi_dialog_msg))
-                .setPositiveButton(getString(R.string.xiaomi_dialog_btn)) { _, _ ->
-                    openAppSelectionScreen()
-                }
+        
+        if (!isXiaomiWarningDismissed && (manufacturer.contains("xiaomi") || manufacturer.contains("poco") || manufacturer.contains("redmi"))) {
+            val dialogView = layoutInflater.inflate(R.layout.dialog_xiaomi_warning, null)
+            val dialog = android.app.AlertDialog.Builder(this)
+                .setView(dialogView)
                 .setCancelable(false)
-                .show()
+                .create()
+                
+            dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+
+            val btnSettings = dialogView.findViewById<android.widget.Button>(R.id.btnXiaomiSettings)
+            val btnCancel = dialogView.findViewById<android.widget.Button>(R.id.btnXiaomiCancel)
+            val btnDone = dialogView.findViewById<android.widget.Button>(R.id.btnXiaomiDone)
+
+            btnSettings.setOnClickListener {
+                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+            }
+
+            btnCancel.setOnClickListener { dialog.dismiss() }
+
+            btnDone.setOnClickListener {
+                pref.edit().putBoolean("xiaomi_warning_dismissed", true).apply()
+                dialog.dismiss()
+                openAppSelectionScreen()
+            }
+
+            dialog.show()
         } else {
             openAppSelectionScreen()
         }
     }
 
     private fun openAppSelectionScreen() {
+        val pbLoading = findViewById<ProgressBar>(R.id.pbStepLoading)
+        val btnSelectApps = findViewById<Button>(R.id.btnStepSelectApps)
+        
+        pbLoading.visibility = View.VISIBLE
+        btnSelectApps.visibility = View.GONE
+        
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
                 loadAndCategorizeApps()
             }
+            pbLoading.visibility = View.GONE
+            btnSelectApps.visibility = View.VISIBLE
             showAppSelectionDialog(result.first, result.second)
         }
     }

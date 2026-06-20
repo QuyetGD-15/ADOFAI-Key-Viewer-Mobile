@@ -23,6 +23,18 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
+            <ImageButton
+                android:id="@+id/btnManualCheckUpdate"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/update_content_desc"
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:src="@android:drawable/ic_menu_rotate"
+                app:tint="@color/md3_primary" />
+
             <TextView
                 android:id="@+id/tvCurrentLanguage"
                 android:layout_width="wrap_content"

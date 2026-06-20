@@ -471,6 +471,11 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         }
 
         GitHubUpdateManager.checkForUpdate(this)
+
+        findViewById<ImageButton>(R.id.btnManualCheckUpdate).setOnClickListener {
+            Toast.makeText(this, getString(R.string.update_check_manual), Toast.LENGTH_SHORT).show()
+            GitHubUpdateManager.checkForUpdate(this)
+        }
     }
 
     private fun showLoading() {
@@ -757,6 +762,11 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         }
 
         GitHubUpdateManager.checkForUpdate(this)
+
+        findViewById<ImageButton>(R.id.btnManualCheckUpdate).setOnClickListener {
+            Toast.makeText(this, getString(R.string.update_check_manual), Toast.LENGTH_SHORT).show()
+            GitHubUpdateManager.checkForUpdate(this)
+        }
     }
 
     /**
@@ -1067,28 +1077,38 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
     private fun checkAndShowXiaomiWarning(onProceed: () -> Unit) {
         val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
-        val isDismissed = pref.getBoolean("xiaomi_battery_warning_dismissed", false)
+        val isDismissed = pref.getBoolean("xiaomi_warning_dismissed", false)
 
         if (!isXiaomiDevice() || isDismissed) {
             onProceed()
             return
         }
 
-        MaterialAlertDialogBuilder(this)
-            .setTitle(getString(R.string.xiaomi_warning_title))
-            .setMessage(getString(R.string.xiaomi_warning_msg))
-            .setPositiveButton(getString(R.string.xiaomi_warning_settings)) { _, _ ->
-                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                    data = Uri.fromParts("package", packageName, null)
-                }
-                startActivity(intent)
-            }
-            .setNegativeButton(getString(R.string.xiaomi_warning_cancel), null)
-            .setNeutralButton(getString(R.string.xiaomi_warning_continue)) { _, _ ->
-                pref.edit().putBoolean("xiaomi_battery_warning_dismissed", true).apply()
-                onProceed()
-            }
-            .show()
+        val dialogView = layoutInflater.inflate(R.layout.dialog_xiaomi_warning, null)
+        val dialog = android.app.AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setCancelable(false)
+            .create()
+            
+        dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+
+        val btnSettings = dialogView.findViewById<Button>(R.id.btnXiaomiSettings)
+        val btnCancel = dialogView.findViewById<Button>(R.id.btnXiaomiCancel)
+        val btnDone = dialogView.findViewById<Button>(R.id.btnXiaomiDone)
+
+        btnSettings.setOnClickListener {
+            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+        }
+
+        btnCancel.setOnClickListener { dialog.dismiss() }
+
+        btnDone.setOnClickListener {
+            pref.edit().putBoolean("xiaomi_warning_dismissed", true).apply()
+            dialog.dismiss()
+            onProceed()
+        }
+
+        dialog.show()
     }
 
     private fun initDefaultLanguage() {

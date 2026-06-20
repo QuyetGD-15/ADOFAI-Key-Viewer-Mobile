@@ -210,4 +210,6 @@
     <string name="update_notif_title">ADOFAI Key Viewer Update</string>
     <string name="update_notif_desc">Đang tải phiên bản %s...</string>
     <string name="update_error_install">Lỗi khi mở trình cài đặt!</string>
+    <string name="update_check_manual">Đang kiểm tra cập nhật...</string>
+    <string name="update_content_desc">Kiểm tra cập nhật</string>
 </resources>

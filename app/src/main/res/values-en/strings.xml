@@ -210,4 +210,6 @@
     <string name="update_notif_title">ADOFAI Key Viewer Update</string>
     <string name="update_notif_desc">Downloading version %s...</string>
     <string name="update_error_install">Error opening installer!</string>
+    <string name="update_check_manual">Checking for updates...</string>
+    <string name="update_content_desc">Check for updates</string>
 </resources>

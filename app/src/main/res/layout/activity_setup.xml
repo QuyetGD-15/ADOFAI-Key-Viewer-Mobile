@@ -11,7 +11,7 @@
         android:layout_height="0dp"
         android:inAnimation="@android:anim/slide_in_left"
         android:outAnimation="@android:anim/slide_out_right"
-        app:layout_constraintBottom_toTopOf="@+id/bottomBar"
+        app:layout_constraintBottom_toTopOf="@+id/bottomButtonContainer"
         app:layout_constraintTop_toTopOf="parent">
 
         <!-- Step 1: Language -->
@@ -381,6 +381,14 @@
                 android:text="@string/select_apps"
                 app:cornerRadius="16dp" />
 
+            <ProgressBar
+                android:id="@+id/pbStepLoading"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"
+                android:indeterminateTint="@color/md3_primary" />
+
             <TextView
                 android:id="@+id/tvStepSkipApps"
                 android:layout_width="wrap_content"
@@ -394,7 +402,7 @@
     </ViewFlipper>
 
     <LinearLayout
-        android:id="@+id/bottomBar"
+        android:id="@+id/bottomButtonContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
