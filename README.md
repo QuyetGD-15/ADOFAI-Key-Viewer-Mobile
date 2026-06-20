@@ -15,7 +15,7 @@ An ultra-lightweight, ultra-low latency overlay tool designed specifically for A
 
 <img width="386" height="386" alt="Screenshot 2026-06-11 154833" src="https://github.com/user-attachments/assets/52af2add-19fe-420b-9fde-9b74e2908e44" />
 
-## 📥 Installation (Beta)
+## 📥 Installation
 1. Download the latest APK from the [Releases](https://github.com/QuyetGD-15/ADOFAI-Key-Viewer-Mobile/releases) section.
 2. Install the application.
 3. Grant "Display over other apps" permission.
