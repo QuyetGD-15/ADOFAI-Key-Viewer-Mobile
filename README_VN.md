@@ -14,7 +14,7 @@ Một công cụ Overlay siêu nhẹ, trễ thấp (Ultra-low latency) dành ri�
 <img width="386" height="386" alt="Screenshot 2026-06-11 154833" src="https://github.com/user-attachments/assets/52af2add-19fe-420b-9fde-9b74e2908e44" />
 
 
-## 📥 Cài Đặt (Bản Beta)
+## 📥 Cài Đặt
 1. Tải file apk mới nhất tại mục [Releases](https://github.com/QuyetGD-15/ADOFAI-Key-Viewer-Mobile/releases).
 2. Cài đặt ứng dụng.
 3. Cấp quyền hiển thị trên ứng dụng khác.
