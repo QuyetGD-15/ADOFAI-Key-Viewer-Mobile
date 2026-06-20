@@ -7,18 +7,26 @@
 Một công cụ Overlay siêu nhẹ, trễ thấp (Ultra-low latency) dành riêng cho game thủ ADOFAI và các tựa game nhịp điệu trên Android. Vượt qua giới hạn của Game Turbo để bắt trọn từng thao tác múa phím của bạn.
 
 ## ✨ Tính Năng Nổi Bật
-* **🚀 Shizuku Core:** Đọc trực tiếp sự kiện đầu vào (getevent) từ hệ thống, loại bỏ hoàn toàn độ trễ của hệ điều hành. Chống hụt phím tuyệt đối kể cả khi chơi ở tốc độ cao.
-* **Bypass Game Turbo:** Hiển thị mượt mà xuyên qua các lớp phủ tối ưu game của hệ thống nhờ kiến trúc AccessibilityService.
-* **📊 KPS & Total Tracker:** Theo dõi số phím bấm trên giây (Keys Per Second) và tổng số click theo thời gian thực.
+### 🎮 Hai Chế Độ Đầu Vào Biến Thiên Độc Lập
+Ứng dụng cô lập hoàn toàn mã nguồn thực thi giữa hai chế độ, đảm bảo không có tài nguyên thừa chạy lén:
+* Chế độ Cảm ứng (Touch Mode):
+  * Sử dụng lõi Shizuku Core đọc trực tiếp sự kiện phần cứng (getevent), loại bỏ hoàn toàn độ trễ của hệ điều hành.
+  * Tích hợp thuật toán chống nhấn dính phím/nhấn nhầm (Anti-Misclick) thông minh dựa trên việc tính toán khoảng cách hình học đến tâm hitbox O(1).
+* Chế độ Bàn phím Vật lý (Physical Keyboard Mode):
+  * Dành riêng cho bàn phím cơ kết nối qua cổng OTG hoặc Bluetooth.
+  * Truyền dữ liệu tĩnh trực tiếp vào RAM (Singleton Instance Access) thông qua Accessibility Service cho tốc độ phản hồi 0ms.
+
+### 📊 Đa Dạng Chế Độ Phím (Isolated Key Modes)
+* Mở rộng không gian với đầy đủ các cấu hình layout: 4 KEY, 6 KEY, 8 KEY, và 10 KEY.
+
 * **Giao diện tối giản:** Thiết kế chống chói (Drop Shadow) giúp keyrain luôn nổi bật trên nền map Flashbang trắng sáng.
-<img width="386" height="386" alt="Screenshot 2026-06-11 154833" src="https://github.com/user-attachments/assets/52af2add-19fe-420b-9fde-9b74e2908e44" />
+
+<img width="400" height="379" alt="1000219385" src="https://github.com/user-attachments/assets/9f9c4f22-54eb-425d-a469-d5b8afc87c2d" />
 
 
-## 📥 Cài Đặt (Bản Beta)
+## 📥 Cài Đặt
 1. Tải file apk mới nhất tại mục [Releases](https://github.com/QuyetGD-15/ADOFAI-Key-Viewer-Mobile/releases).
 2. Cài đặt ứng dụng.
-3. Cấp quyền hiển thị trên ứng dụng khác.
-4. Bật Shizuku (yêu cầu để có trải nghiệm không độ trễ tốt nhất).
 
 ---
 **Developed with 💖 by [quyetgd]**
