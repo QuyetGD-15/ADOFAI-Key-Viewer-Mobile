@@ -2,16 +2,24 @@ package com.quyetgd.keyvieweroverlay
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 
 class HitboxConfigActivity : AppCompatActivity() {
+
+    private lateinit var hitboxes: Array<HitboxView>
+    private var keyMode: Int = 6
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,33 +44,53 @@ class HitboxConfigActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_hitbox_config)
 
-        val hitboxIds = arrayOf(
-            R.id.hitbox1,
-            R.id.hitbox2,
-            R.id.hitbox3,
-            R.id.hitbox4,
-            R.id.hitbox5,
-            R.id.hitbox6
-        )
-        val hitboxes = hitboxIds.mapIndexed { index, id ->
-            findViewById<HitboxView>(id).apply {
-                hitboxNumber = (index + 1).toString()
-            }
-        }.toTypedArray()
+        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+        keyMode = pref.getInt("current_key_mode", 6)
 
-        // Đọc và khôi phục vị trí cũ
-        loadHitboxCoordinates(hitboxes)
+        setupHitboxesAndGrid()
 
         findViewById<Button>(R.id.btnSaveHitbox).setOnClickListener {
-            saveHitboxCoordinates(hitboxes)
+            saveHitboxCoordinates()
         }
 
         findViewById<Button>(R.id.btnResetHitbox).setOnClickListener {
-            resetHitboxesToDefault(hitboxes)
+            resetHitboxesToDefault()
         }
 
         // Báo cho OverlayService biết để mở chế độ chỉnh sửa
         sendBroadcast(Intent(OverlayService.ACTION_START_EDIT).setPackage(packageName))
+    }
+
+    private fun setupHitboxesAndGrid() {
+        val root = findViewById<FrameLayout>(R.id.hitbox_root)
+
+        // Thêm Grid lines mờ làm nền
+        val gridOverlay = object : View(this) {
+            private val paint = Paint().apply {
+                color = Color.parseColor("#33FFFFFF")
+                strokeWidth = 2f
+            }
+            override fun onDraw(canvas: Canvas) {
+                val step = width.toFloat() / keyMode
+                for (i in 1 until keyMode) {
+                    val x = i * step
+                    canvas.drawLine(x, 0f, x, height.toFloat(), paint)
+                }
+            }
+        }
+        root.addView(gridOverlay, 0, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+
+        // Khởi tạo danh sách HitboxView dựa theo keyMode
+        // Thêm vào vị trí index 1 để nằm trên GridOverlay (index 0) nhưng dưới các nút điều khiển trong XML
+        hitboxes = Array(keyMode) { index ->
+            HitboxView(this).apply {
+                hitboxNumber = (index + 1).toString()
+                layoutParams = FrameLayout.LayoutParams(100, 100)
+            }.also { root.addView(it, index + 1) }
+        }
+
+        // Đọc và khôi phục vị trí cũ
+        loadHitboxCoordinates()
     }
 
     override fun onResume() {
@@ -92,23 +120,38 @@ class HitboxConfigActivity : AppCompatActivity() {
         }
     }
 
-    private fun saveHitboxCoordinates(hitboxes: Array<HitboxView>) {
+    private fun getHitboxKey(index: Int, type: String): String {
+        val id = index + 1
+        return if (keyMode == 6) {
+            "hitbox_${id}_$type"
+        } else {
+            // Theo yêu cầu: "hitbox_left_" + keyMode + "_" + i
+            val prefix = when(type) {
+                "x" -> "hitbox_left_"
+                "y" -> "hitbox_top_"
+                "w" -> "hitbox_width_"
+                "h" -> "hitbox_height_"
+                else -> "hitbox_"
+            }
+            "$prefix${keyMode}_$index"
+        }
+    }
+
+    private fun saveHitboxCoordinates() {
         val sharedPref = getSharedPreferences("HitboxPrefs", Context.MODE_PRIVATE)
 
         with(sharedPref.edit()) {
             val location = IntArray(2)
             hitboxes.forEachIndexed { index, view ->
-                val id = index + 1
-
                 // Lấy tọa độ TUYỆT ĐỐI trên màn hình thay vì tọa độ cục bộ (view.x)
                 view.getLocationOnScreen(location)
                 val absoluteX = location[0].toFloat()
                 val absoluteY = location[1].toFloat()
 
-                putFloat("hitbox_${id}_x", absoluteX)
-                putFloat("hitbox_${id}_y", absoluteY)
-                putInt("hitbox_${id}_w", view.width)
-                putInt("hitbox_${id}_h", view.height)
+                putFloat(getHitboxKey(index, "x"), absoluteX)
+                putFloat(getHitboxKey(index, "y"), absoluteY)
+                putInt(getHitboxKey(index, "w"), view.width)
+                putInt(getHitboxKey(index, "h"), view.height)
             }
             apply()
         }
@@ -118,22 +161,27 @@ class HitboxConfigActivity : AppCompatActivity() {
         finish()
     }
 
-    private fun loadHitboxCoordinates(hitboxes: Array<HitboxView>) {
+    private fun loadHitboxCoordinates() {
         val sharedPref = getSharedPreferences("HitboxPrefs", Context.MODE_PRIVATE)
+        
+        // KIỂM TRA LẦN ĐẦU CHO CHẾ ĐỘ NÀY
+        val checkKey = getHitboxKey(0, "x")
+        if (!sharedPref.contains(checkKey)) {
+            resetHitboxesToDefault()
+            return
+        }
+
         val rootLocation = IntArray(2)
 
         hitboxes.forEachIndexed { index, view ->
-            val id = index + 1
-            val savedAbsoluteX = sharedPref.getFloat("hitbox_${id}_x", -1f)
-            val savedAbsoluteY = sharedPref.getFloat("hitbox_${id}_y", -1f)
-            val w = sharedPref.getInt("hitbox_${id}_w", -1)
-            val h = sharedPref.getInt("hitbox_${id}_h", -1)
+            val savedAbsoluteX = sharedPref.getFloat(getHitboxKey(index, "x"), -1f)
+            val savedAbsoluteY = sharedPref.getFloat(getHitboxKey(index, "y"), -1f)
+            val w = sharedPref.getInt(getHitboxKey(index, "w"), -1)
+            val h = sharedPref.getInt(getHitboxKey(index, "h"), -1)
 
             if (savedAbsoluteX != -1f && savedAbsoluteY != -1f && w != -1 && h != -1) {
                 view.post {
-                    // Ép kiểu an toàn (as?) để tránh lỗi ClassCastException
                     val parentView = view.parent as? View
-
                     if (parentView != null) {
                         parentView.getLocationOnScreen(rootLocation)
                         val parentOffsetX = rootLocation[0].toFloat()
@@ -142,7 +190,6 @@ class HitboxConfigActivity : AppCompatActivity() {
                         view.x = savedAbsoluteX - parentOffsetX
                         view.y = savedAbsoluteY - parentOffsetY
                     } else {
-                        // Phòng hờ nếu parent null, gán thẳng tọa độ tuyệt đối
                         view.x = savedAbsoluteX
                         view.y = savedAbsoluteY
                     }
@@ -156,7 +203,7 @@ class HitboxConfigActivity : AppCompatActivity() {
         }
     }
 
-    private fun resetHitboxesToDefault(hitboxes: Array<HitboxView>) {
+    private fun resetHitboxesToDefault() {
         val realMetrics = android.util.DisplayMetrics()
         @Suppress("DEPRECATION")
         windowManager.defaultDisplay.getRealMetrics(realMetrics)
@@ -164,60 +211,75 @@ class HitboxConfigActivity : AppCompatActivity() {
         val screenWidth = kotlin.math.max(realMetrics.widthPixels, realMetrics.heightPixels).toFloat()
         val screenHeight = kotlin.math.min(realMetrics.widthPixels, realMetrics.heightPixels).toFloat()
 
-        // Chính là bán kính chấm đỏ lấy từ HitboxView
         val dotOffset = 20f
-
         val sharedPref = getSharedPreferences("HitboxPrefs", Context.MODE_PRIVATE)
         val editor = sharedPref.edit()
 
-        // Khai báo tỉ lệ vàng: 10% - 15% - 25% - 25% - 15% - 10%
-        val w1 = screenWidth * 0.10f
-        val w2 = screenWidth * 0.15f
-        val w3 = screenWidth * 0.25f
-        val widths = floatArrayOf(w1, w2, w3, w3, w2, w1)
+        if (keyMode == 6) {
+            // [GIỮ NGUYÊN 100% CODE CŨ CỦA BẠN]
+            val w1 = screenWidth * 0.10f
+            val w2 = screenWidth * 0.15f
+            val w3 = screenWidth * 0.25f
+            val widths = floatArrayOf(w1, w2, w3, w3, w2, w1)
 
-        var currentX = 0f
+            var currentX = 0f
+            hitboxes.forEachIndexed { index, view ->
+                val id = index + 1
+                val startX = currentX.toInt()
+                val endX = (currentX + widths[index]).toInt()
+                val trueBoxWidth = endX - startX
+                val trueBoxHeight = screenHeight.toInt()
 
-        hitboxes.forEachIndexed { index, view ->
-            val id = index + 1
+                val viewX = startX.toFloat() - dotOffset
+                val viewY = 0f - dotOffset
+                val viewWidth = trueBoxWidth + (dotOffset * 2f)
+                val viewHeight = trueBoxHeight + (dotOffset * 2f)
 
-            // Tính toán kích thước KHUNG XANH THẬT dựa theo mảng tỉ lệ
-            val startX = currentX.toInt()
-            val endX = (currentX + widths[index]).toInt()
+                view.x = viewX
+                view.y = viewY
+                val params = view.layoutParams
+                params.width = viewWidth.toInt()
+                params.height = viewHeight.toInt()
+                view.layoutParams = params
 
-            val trueBoxWidth = endX - startX
-            val trueBoxHeight = screenHeight.toInt()
+                editor.putFloat("hitbox_${id}_x", viewX)
+                editor.putFloat("hitbox_${id}_y", viewY)
+                editor.putInt("hitbox_${id}_w", viewWidth.toInt())
+                editor.putInt("hitbox_${id}_h", viewHeight.toInt())
+                currentX += widths[index]
+            }
+        } else {
+            // [THUẬT TOÁN TỰ ĐỘNG DÀN ĐỀU CHO CÁC CHẾ ĐỘ CÒN LẠI]
+            val colWidth = screenWidth / keyMode
+            hitboxes.forEachIndexed { index, view ->
+                val startX = index * colWidth
+                val trueBoxWidth = colWidth.toInt()
+                val trueBoxHeight = screenHeight.toInt()
 
-            // 💡 BÙ TRỪ: Đẩy View lùi lên trên và sang trái 20px, đồng thời phình to ra 40px
-            // Để giấu gọn 4 chấm đỏ ra ngoài rìa khung xanh
-            val viewX = startX.toFloat() - dotOffset
-            val viewY = 0f - dotOffset
-            val viewWidth = trueBoxWidth + (dotOffset * 2f)
-            val viewHeight = trueBoxHeight + (dotOffset * 2f)
+                val viewX = startX - dotOffset
+                val viewY = 0f - dotOffset
+                val viewWidth = trueBoxWidth + (dotOffset * 2f)
+                val viewHeight = trueBoxHeight + (dotOffset * 2f)
 
-            // Cập nhật View
-            view.x = viewX
-            view.y = viewY
-            val params = view.layoutParams
-            params.width = viewWidth.toInt()
-            params.height = viewHeight.toInt()
-            view.layoutParams = params
+                view.x = viewX
+                view.y = viewY
+                val params = view.layoutParams
+                params.width = viewWidth.toInt()
+                params.height = viewHeight.toInt()
+                view.layoutParams = params
 
-            // Ghi đè vào SharedPreferences
-            editor.putFloat("hitbox_${id}_x", viewX)
-            editor.putFloat("hitbox_${id}_y", viewY)
-            editor.putInt("hitbox_${id}_w", viewWidth.toInt())
-            editor.putInt("hitbox_${id}_h", viewHeight.toInt())
-
-            // Cộng dồn tọa độ X cho box tiếp theo
-            currentX += widths[index]
+                editor.putFloat(getHitboxKey(index, "x"), viewX)
+                editor.putFloat(getHitboxKey(index, "y"), viewY)
+                editor.putInt(getHitboxKey(index, "w"), viewWidth.toInt())
+                editor.putInt(getHitboxKey(index, "h"), viewHeight.toInt())
+            }
         }
         editor.apply()
         Toast.makeText(this, getString(R.string.toast_hitbox_reset), Toast.LENGTH_SHORT).show()
     }
+
     override fun onDestroy() {
         super.onDestroy()
-        // Đảm bảo OverlayService được khóa lại khi thoát màn hình này
         sendBroadcast(Intent(OverlayService.ACTION_STOP_EDIT).setPackage(packageName))
     }
 }

@@ -16,6 +16,7 @@ import android.os.Looper
 import android.provider.Settings
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
@@ -143,6 +144,12 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
     private lateinit var btnConfigHitbox: Button
     private lateinit var btnConfigKeyViewer: Button
     private lateinit var btnSelectApps: Button
+    private lateinit var dropdownKeyMode: AutoCompleteTextView
+    private lateinit var toggleInputSource: com.google.android.material.button.MaterialButtonToggleGroup
+    private lateinit var cardShizuku: View
+    private lateinit var cardAccessibility: View
+    private lateinit var btnAccessibility: Button
+    private lateinit var tvAccessibilityStatus: TextView
     private lateinit var tvCurrentLanguage: TextView
     private lateinit var btnToggleLanguage: Button
     private var layoutAccessibilityPrompt: View? = null
@@ -164,6 +171,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
     
     private val SHIZUKU_ACTION = "moe.shizuku.privileged.api.intent.action.BINDER_RECEIVED"
 
+    private var isShizukuPollingActive = false
     private val mainHandler = Handler(Looper.getMainLooper())
     private val updateRunnable = object : Runnable {
         override fun run() {
@@ -175,11 +183,27 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                 setupSwitchListener() // Bật lại listener
             }
 
-            // 2. Kiểm tra trạng thái Shizuku
-            updateShizukuStatusUI()
+            // 2. Kiểm tra trạng thái Shizuku (Nếu đang bật chế độ Cảm ứng)
+            if (isShizukuPollingActive) {
+                updateShizukuStatusUI()
+            }
+            
+            // 3. Kiểm tra trạng thái Trợ năng
+            updateAccessibilityStatusUI()
 
             mainHandler.postDelayed(this, 500)
         }
+    }
+
+    private fun startShizukuPolling() {
+        isShizukuPollingActive = true
+    }
+
+    private fun stopShizukuPolling() {
+        isShizukuPollingActive = false
+        // Reset UI Shizuku về trạng thái không hoạt động
+        tvShizukuStatus.text = getString(R.string.shizuku_paused)
+        tvShizukuStatus.setTextColor(Color.GRAY)
     }
 
     private val shizukuReceiver = object : BroadcastReceiver() {
@@ -204,12 +228,20 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+
+        // RẼ NHÁNH KHỞI ĐỘNG (ROUTING)
+        if (!pref.getBoolean("is_first_setup_done", false)) {
+            startActivity(Intent(this, SetupActivity::class.java))
+            finish()
+            return
+        }
+
         initDefaultLanguage()
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
         // 1. Cài đặt mặc định cho KeyViewer
-        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
         if (pref.getBoolean("is_first_run", true)) {
             pref.edit().apply {
                 putFloat("viewer_x", 0f)
@@ -274,8 +306,59 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         btnConfigHitbox = findViewById(R.id.btnConfigHitbox)
         btnConfigKeyViewer = findViewById(R.id.btnConfigKeyViewer)
         btnSelectApps = findViewById(R.id.btnSelectApps)
+        dropdownKeyMode = findViewById(R.id.dropdownKeyMode)
+        
+        toggleInputSource = findViewById(R.id.toggleInputSource)
+        cardShizuku = findViewById(R.id.cardShizuku)
+        cardAccessibility = findViewById(R.id.cardAccessibility)
+        btnAccessibility = findViewById(R.id.btnAccessibility)
+        tvAccessibilityStatus = findViewById(R.id.tvAccessibilityStatus)
+        
         tvCurrentLanguage = findViewById(R.id.tvCurrentLanguage)
         btnToggleLanguage = findViewById(R.id.btnToggleLanguage)
+
+        // Xử lý nguồn đầu vào (Cảm ứng/Bàn phím)
+        val initialInputSource = pref.getString("input_source", "touch")
+        if (initialInputSource == "keyboard") {
+            toggleInputSource.check(R.id.btnSourceKeyboard)
+            cardShizuku.visibility = View.GONE
+            cardAccessibility.visibility = View.VISIBLE
+        } else {
+            toggleInputSource.check(R.id.btnSourceTouch)
+            cardShizuku.visibility = View.VISIBLE
+            cardAccessibility.visibility = View.GONE
+        }
+
+        toggleInputSource.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) {
+                val newSource = if (checkedId == R.id.btnSourceKeyboard) "keyboard" else "touch"
+                pref.edit().putString("input_source", newSource).apply()
+                
+                if (newSource == "keyboard") {
+                    cardShizuku.visibility = View.GONE
+                    cardAccessibility.visibility = View.VISIBLE
+                    btnConfigHitbox.text = getString(R.string.main_btn_mapping)
+                    stopShizukuPolling()
+                } else {
+                    cardShizuku.visibility = View.VISIBLE
+                    cardAccessibility.visibility = View.GONE
+                    btnConfigHitbox.text = getString(R.string.config_hitbox)
+                    startShizukuPolling()
+                }
+
+                // 1. Ép công tắc về trạng thái TẮT
+                switchOverlay.isChecked = false 
+                // 2. Tắt Service hiện tại
+                stopService(Intent(this, OverlayService::class.java))
+                
+                // 3. Cập nhật trạng thái enabled của switch
+                updateSwitchEnableState()
+            }
+        }
+
+        btnAccessibility.setOnClickListener {
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
 
         findViewById<Button>(R.id.btnExportLog).setOnClickListener {
             AppLogger.log(this, getString(R.string.log_msg_export))
@@ -298,9 +381,18 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         setupSwitchListener()
         switchOverlay.text = if (OverlayService.isRunning) getString(R.string.overlay_use_notification) else getString(R.string.overlay_start_hint)
 
+        // Cập nhật text cho nút Config tùy theo nguồn đầu vào
+        val currentInputSource = pref.getString("input_source", "touch")
+        btnConfigHitbox.text = if (currentInputSource == "keyboard") "Gán phím" else getString(R.string.config_hitbox)
+
         btnConfigHitbox.setOnClickListener {
-            showLoading()
-            startActivity(Intent(this, HitboxConfigActivity::class.java))
+            val inputSource = pref.getString("input_source", "touch")
+            if (inputSource == "keyboard") {
+                showKeyMappingDialog()
+            } else {
+                showLoading()
+                startActivity(Intent(this, HitboxConfigActivity::class.java))
+            }
         }
 
         btnConfigKeyViewer.setOnClickListener {
@@ -344,6 +436,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         }
 
         updateLanguageUI()
+        setupKeyModeDropdown()
         btnToggleLanguage.setOnClickListener {
             showLoading()
             val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
@@ -395,6 +488,245 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
     private fun updateLanguageUI() {
         tvCurrentLanguage.text = getString(R.string.current_language)
+    }
+
+    private fun updateAccessibilityStatusUI() {
+        val isEnabled = isAccessibilityServiceEnabled(this, TouchRendererService::class.java)
+        if (isEnabled) {
+            tvAccessibilityStatus.text = getString(R.string.main_acc_status_granted)
+            tvAccessibilityStatus.setTextColor(Color.GREEN)
+        } else {
+            tvAccessibilityStatus.text = getString(R.string.main_acc_status_pending)
+            tvAccessibilityStatus.setTextColor(Color.RED)
+        }
+    }
+
+    private fun isAccessibilityServiceEnabled(context: Context, service: Class<out android.accessibilityservice.AccessibilityService>): Boolean {
+        val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as android.view.accessibility.AccessibilityManager
+        val enabledServices = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: return false
+        val colonSplitter = android.text.TextUtils.SimpleStringSplitter(':')
+        colonSplitter.setString(enabledServices)
+        val componentName = android.content.ComponentName(context, service).flattenToString()
+        while (colonSplitter.hasNext()) {
+            val s = colonSplitter.next()
+            if (s.equals(componentName, ignoreCase = true)) return true
+        }
+        return false
+    }
+
+    private fun setupKeyModeDropdown() {
+        val modes = arrayOf("4 KEY", "6 KEY", "8 KEY", "10 KEY")
+
+        // Tạo Adapter Custom ghi đè hoàn toàn bộ lọc (Filter)
+        val noFilterAdapter = object : ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, modes) {
+            override fun getFilter(): android.widget.Filter {
+                return object : android.widget.Filter() {
+                    override fun performFiltering(constraint: CharSequence?): FilterResults {
+                        val results = FilterResults()
+                        // LUÔN LUÔN trả về toàn bộ danh sách gốc, bất chấp từ khóa tìm kiếm là gì
+                        results.values = modes
+                        results.count = modes.size
+                        return results
+                    }
+                    override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
+                        notifyDataSetChanged()
+                    }
+                }
+            }
+        }
+
+        // 1. GÁN ADAPTER TRƯỚC
+        dropdownKeyMode.setAdapter(noFilterAdapter)
+
+        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+        val currentMode = pref.getInt("current_key_mode", 6)
+        
+        // 2. SỬ DỤNG LỆNH .POST ĐỂ TRÁNH LỖI LỌC DANH SÁCH LẦN ĐẦU MỞ APP
+        dropdownKeyMode.post {
+            dropdownKeyMode.setText("${currentMode} KEY", false)
+        }
+
+        dropdownKeyMode.setOnItemClickListener { _, _, position, _ ->
+            val selected = modes[position]
+            val modeNumber = try {
+                selected.split(" ")[0].toInt()
+            } catch (e: Exception) {
+                6
+            }
+            pref.edit().putInt("current_key_mode", modeNumber).apply()
+            
+            // KIỂM TRA TRẠNG THÁI CÔNG TẮC ĐỂ RESTART SERVICE
+            if (switchOverlay.isChecked) {
+                // Tắt Service
+                stopService(Intent(this, OverlayService::class.java))
+                
+                // Bật lại Service sau một khoảng trễ nhỏ để hệ thống giải phóng bộ nhớ
+                Handler(Looper.getMainLooper()).postDelayed({
+                    val intentStart = Intent(this, OverlayService::class.java).apply {
+                        action = "com.quyetgd.keyvieweroverlay.ACTION_START_FOREGROUND"
+                    }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(intentStart)
+                    } else {
+                        startService(intentStart)
+                    }
+                    Toast.makeText(this, getString(R.string.main_toast_restarted, selected), Toast.LENGTH_SHORT).show()
+                }, 300)
+            } else {
+                // Nếu chưa bật thì chỉ bắn cấu hình để màn hình Config (nếu đang mở) cập nhật
+                val intent = Intent("com.quyetgd.keyvieweroverlay.UPDATE_OVERLAY_CONFIG")
+                sendBroadcast(intent)
+                Toast.makeText(this, getString(R.string.main_toast_saved_mode, selected), Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun showKeyMappingDialog() {
+        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+        val keyMode = pref.getInt("current_key_mode", 6)
+        var waitingIndex = -1
+
+        // Root Layout nguyên khối
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dpToPx(24), dpToPx(24), dpToPx(24), dpToPx(24))
+            val bg = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = dpToPx(24).toFloat()
+                setColor(Color.parseColor("#1E1E1E"))
+            }
+            background = bg
+        }
+
+        // Tiêu đề thủ công
+        val tvTitle = TextView(this).apply {
+            text = getString(R.string.mapping_dialog_title)
+            setTextColor(Color.WHITE)
+            textSize = 20f
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            val params = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            params.bottomMargin = dpToPx(16)
+            layoutParams = params
+        }
+        root.addView(tvTitle)
+
+        // Container cho danh sách phím
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        root.addView(container)
+
+        val rowViews = mutableListOf<Pair<TextView, TextView>>()
+
+        for (i in 0 until keyMode) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dpToPx(16), dpToPx(12), dpToPx(16), dpToPx(12))
+                isClickable = true
+                isFocusable = true
+                val outValue = TypedValue()
+                theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
+                setBackgroundResource(outValue.resourceId)
+                
+                val bgItem = android.graphics.drawable.GradientDrawable().apply {
+                    cornerRadius = dpToPx(12).toFloat()
+                    setColor(Color.parseColor("#2A2A2A"))
+                }
+                background = bgItem
+                
+                val params = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                if (i > 0) params.topMargin = dpToPx(8)
+                layoutParams = params
+            }
+
+            val tvLabel = TextView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                text = getString(R.string.mapping_row_key, i + 1)
+                setTextColor(Color.WHITE)
+                textSize = 16f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+            }
+
+            val savedKeyName = pref.getString("key_name_${keyMode}_$i", getString(R.string.mapping_status_none))
+            val tvKey = TextView(this).apply {
+                text = savedKeyName
+                setTextColor(if (savedKeyName == getString(R.string.mapping_status_none)) Color.GRAY else Color.parseColor("#A78BFA"))
+                textSize = 14f
+            }
+
+            row.addView(tvLabel)
+            row.addView(tvKey)
+            container.addView(row)
+            rowViews.add(tvLabel to tvKey)
+
+            row.setOnClickListener {
+                waitingIndex = i
+                rowViews.forEachIndexed { index, pair ->
+                    if (index != i) {
+                        val kn = pref.getString("key_name_${keyMode}_$index", getString(R.string.mapping_status_none))
+                        pair.second.text = kn
+                        pair.second.setTextColor(if (kn == getString(R.string.mapping_status_none)) Color.GRAY else Color.parseColor("#A78BFA"))
+                    }
+                }
+                tvKey.text = getString(R.string.mapping_status_waiting)
+                tvKey.setTextColor(Color.parseColor("#A78BFA"))
+            }
+        }
+
+        // Nút XONG thủ công
+        val btnDone = TextView(this).apply {
+            text = getString(R.string.mapping_btn_done)
+            setTextColor(Color.parseColor("#A78BFA"))
+            textSize = 16f
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            gravity = Gravity.END
+            setPadding(dpToPx(16), dpToPx(8), dpToPx(16), dpToPx(8))
+            isClickable = true
+            isFocusable = true
+            val outValue = TypedValue()
+            theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
+            setBackgroundResource(outValue.resourceId)
+            
+            val params = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                gravity = Gravity.END
+                topMargin = dpToPx(24)
+            }
+            layoutParams = params
+        }
+        root.addView(btnDone)
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setView(root)
+            .create()
+
+        btnDone.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.setOnKeyListener { _, keyCode, event ->
+            if (waitingIndex != -1 && event.action == KeyEvent.ACTION_DOWN) {
+                if (keyCode == KeyEvent.KEYCODE_BACK) return@setOnKeyListener false
+                
+                val pressedKeyName = KeyEvent.keyCodeToString(keyCode).replace("KEYCODE_", "")
+                pref.edit().apply {
+                    putInt("key_code_${keyMode}_$waitingIndex", keyCode)
+                    putString("key_name_${keyMode}_$waitingIndex", pressedKeyName)
+                }.apply()
+
+                val tvKey = rowViews[waitingIndex].second
+                tvKey.text = pressedKeyName
+                tvKey.setTextColor(Color.parseColor("#A78BFA"))
+                
+                waitingIndex = -1
+                true
+            } else {
+                false
+            }
+        }
+
+        dialog.show()
+        // XÓA PHÔNG NỀN LỆCH MÀU CỦA HỆ THỐNG
+        dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
     }
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
@@ -493,7 +825,36 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         super.onResume()
         hideLoading()
         AppState.isAppVisible = true
+
+        updateSwitchEnableState()
+
+        // LIÊN KẾT LOGIC BẬT/TẮT TÀI NGUYÊN
+        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+        val inputSource = pref.getString("input_source", "touch")
+        if (inputSource == "touch") {
+            startShizukuPolling()
+        } else {
+            stopShizukuPolling()
+        }
+
         mainHandler.post(updateRunnable) // Bắt đầu vòng lặp cập nhật UI
+    }
+
+    private fun updateSwitchEnableState() {
+        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+        val inputSource = pref.getString("input_source", "touch")
+        if (inputSource == "touch") {
+            val isConnected = Shizuku.pingBinder()
+            val hasPermission = if (isConnected) {
+                Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
+            } else {
+                false
+            }
+            switchOverlay.isEnabled = isConnected && hasPermission
+        } else {
+            val hasAccessibility = isAccessibilityServiceEnabled(this, TouchRendererService::class.java)
+            switchOverlay.isEnabled = hasAccessibility
+        }
     }
 
     override fun onPause() {
@@ -519,11 +880,6 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
             if (isConnected && hasPermission) {
                 tvShizukuStatus.text = getString(R.string.shizuku_running)
                 tvShizukuStatus.setTextColor(Color.GREEN)
-
-                // Đã sẵn sàng: Mở khóa và khôi phục độ sáng 100%
-                switchOverlay.isEnabled = true
-                switchOverlay.alpha = 1.0f
-                (switchOverlay.parent as? View)?.alpha = 1.0f
             } else {
                 if (isConnected) {
                     tvShizukuStatus.text = getString(R.string.shizuku_not_connected_or_no_permission)
@@ -532,21 +888,21 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                 }
                 tvShizukuStatus.setTextColor(Color.RED)
 
-                // Mất kết nối: Tắt công tắc, khóa nhấn và làm mờ 60%
+                // Mất kết nối: Tắt công tắc, khóa nhấn
                 if (switchOverlay.isChecked) {
                     switchOverlay.setOnCheckedChangeListener(null)
                     switchOverlay.isChecked = false
                     setupSwitchListener()
                 }
-                switchOverlay.isEnabled = false
-                switchOverlay.alpha = 0.4f
-                (switchOverlay.parent as? View)?.alpha = 0.4f
 
                 // Ép dừng Service nếu đang chạy ngầm
                 if (OverlayService.isRunning) {
                     stopService(Intent(this, OverlayService::class.java))
                 }
             }
+
+            // Luôn cập nhật lại trạng thái enabled tổng quát
+            updateSwitchEnableState()
 
             // Cập nhật text của công tắc
             switchOverlay.text = if (OverlayService.isRunning) getString(R.string.overlay_use_notification) else getString(R.string.overlay_start_hint)
@@ -561,9 +917,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                 switchOverlay.isChecked = false
                 setupSwitchListener()
             }
-            switchOverlay.isEnabled = false
-            switchOverlay.alpha = 0.4f
-            (switchOverlay.parent as? View)?.alpha = 0.4f
+            updateSwitchEnableState()
 
             if (OverlayService.isRunning) {
                 stopService(Intent(this, OverlayService::class.java))
@@ -605,7 +959,6 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             appOps.unsafeCheckOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), packageName)
         } else {
-            @Suppress("DEPRECATION")
             appOps.checkOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), packageName)
         }
         return mode == android.app.AppOpsManager.MODE_ALLOWED

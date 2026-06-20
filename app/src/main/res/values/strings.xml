@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Key Viewer Overlay</string>
     <string name="accessibility_desc">Dịch vụ nhận diện điểm chạm màn hình cho Key Viewer Overlay</string>
+
     <!-- MainActivity -->
     <string name="control_panel">BẢNG ĐIỀU KHIỂN</string>
     <string name="check_shizuku">Kiểm tra Shizuku</string>
@@ -20,6 +21,18 @@
     <string name="shizuku_not_found">Chưa thấy Shizuku chạy</string>
     <string name="shizuku_ready">Shizuku đã sẵn sàng!</string>
     <string name="shizuku_requesting_permission">Đang yêu cầu cấp quyền...</string>
+    <string name="shizuku_paused">Shizuku: Tạm dừng</string>
+    <string name="main_mode_label">Chế độ</string>
+    <string name="main_source_touch">Cảm ứng (Shizuku)</string>
+    <string name="main_source_keyboard">Bàn phím (Trợ năng)</string>
+    <string name="main_card_shizuku_title">Quyền Shizuku (Cảm ứng)</string>
+    <string name="main_card_acc_title">Quyền Trợ Năng (Bàn phím)</string>
+    <string name="main_acc_status_granted">Trạng thái: Đã cấp quyền</string>
+    <string name="main_acc_status_pending">Trạng thái: Đang chờ cấp quyền...</string>
+    <string name="main_acc_btn">Cấp quyền Trợ Năng</string>
+    <string name="main_btn_mapping">Gán phím</string>
+    <string name="main_toast_restarted">Đã khởi động lại với %s</string>
+    <string name="main_toast_saved_mode">Đã lưu chế độ %s</string>
 
     <!-- Accessibility Prompt -->
     <string name="accessibility_requirement_title">YÊU CẦU QUYỀN TRỢ NĂNG</string>
@@ -43,7 +56,7 @@
 
     <!-- HitboxConfigActivity -->
     <string name="toast_config_saved">Đã lưu cấu hình</string>
-    <string name="toast_hitbox_reset">Đã chia khít 6 Hitbox lấp đầy màn hình</string>
+    <string name="toast_hitbox_reset">Đã đưa về mặc định chuẩn</string>
     <string name="hitbox_config_hint">Kéo thả vùng giữa để di chuyển, kéo 4 góc để thay đổi kích thước</string>
     <string name="reset_default">Đặt lại mặc định</string>
     <string name="save">Lưu</string>
@@ -90,6 +103,14 @@
     <string name="preset_custom_1">Tùy chỉnh 1</string>
     <string name="preset_custom_2">Tùy chỉnh 2</string>
     <string name="preset_custom_3">Tùy chỉnh 3</string>
+    <string name="theme_color_text_normal">Màu chữ (Bình thường)</string>
+    <string name="theme_color_text_pressed">Màu chữ (Khi nhấn)</string>
+    <string name="theme_color_bg_normal">Màu nền (Bình thường)</string>
+    <string name="theme_color_bg_pressed">Màu nền (Khi nhấn)</string>
+    <string name="theme_color_border_normal">Màu viền (Bình thường)</string>
+    <string name="theme_color_border_pressed">Màu viền (Khi nhấn)</string>
+    <string name="theme_color_rain">Màu Key Rain</string>
+    <string name="theme_color_rain_shadow">Màu bóng Rain</string>
     <string name="toast_cannot_overwrite_system">Không thể ghi đè lên mẫu cài sẵn của hệ thống!</string>
     <string name="toast_preset_saved">Đã ghi đè thành công vào %s!</string>
     <string name="log_save_success">Đã lưu file log thành công!</string>
@@ -119,4 +140,64 @@
     <string name="xiaomi_warning_continue">Đã tắt, tiếp tục</string>
     <string name="btn_export_log">Lưu Log (.txt)</string>
     <string name="toast_overlay_permission_required">Vui lòng cấp quyền Hiển thị trên ứng dụng khác!</string>
+
+    <!-- Onboarding -->
+    <string name="setup_title">CHỌN PHƯƠNG THỨC ĐIỀU KHIỂN</string>
+    <string name="setup_touch_title">Cảm ứng</string>
+    <string name="setup_touch_desc">Dùng Hitbox trên màn hình\n(Yêu cầu Shizuku)</string>
+    <string name="setup_keyboard_title">Bàn phím vật lý</string>
+    <string name="setup_keyboard_desc">Dành cho OTG/Bluetooth\n(Yêu cầu Quyền Trợ Năng)</string>
+
+    <string name="setup_step1_title">Chọn ngôn ngữ / Select Language</string>
+    <string name="setup_step1_desc">Vui lòng chọn ngôn ngữ hiển thị để bắt đầu thiết lập.</string>
+    <string name="setup_step2_title">Phương thức điều khiển</string>
+    <string name="setup_step2_desc">Chọn cách bạn sẽ điều khiển game. Điều này giúp hệ thống tối ưu hóa tài nguyên phần cứng để tránh giật lag.</string>
+    <string name="setup_step2_touch">Cảm ứng (Shizuku)</string>
+    <string name="setup_step2_keyboard">Bàn phím (Trợ năng)</string>
+    <string name="setup_step3_title">Cấp quyền hệ thống</string>
+    <string name="setup_step3_shizuku_title">Quyền Shizuku</string>
+    <string name="setup_step3_shizuku_desc">Ứng dụng cần quyền Shizuku để mô phỏng thao tác chạm trên màn hình.</string>
+    <string name="setup_step3_accessibility_title">Quyền Trợ năng</string>
+    <string name="setup_step3_accessibility_desc">Ứng dụng cần Quyền Trợ năng để lắng nghe tín hiệu phím vật lý mà không gây độ trễ.</string>
+    <string name="setup_step3_status_ready">Trạng thái: Đã sẵn sàng</string>
+    <string name="setup_step3_status_shizuku_denied">Trạng thái: Chưa cấp quyền Shizuku</string>
+    <string name="setup_step3_status_acc_pending">Trạng thái: Đang chờ cấp quyền...</string>
+    <string name="setup_step3_btn_shizuku">Thiết lập Shizuku</string>
+    <string name="setup_step3_btn_acc">Mở Cài đặt Trợ năng</string>
+    <string name="setup_step3_overlay_status">Quyền Hiển thị trên ứng dụng khác: %s</string>
+    <string name="setup_step3_overlay_btn">Cấp quyền Hiển thị</string>
+    <string name="setup_step3_status_granted">Đã cấp</string>
+    <string name="setup_step3_status_denied">Chưa cấp</string>
+    <string name="setup_step4_title">Số lượng phím hiển thị</string>
+    <string name="setup_step4_desc">Chọn số lượng phím bạn thường dùng nhất (ví dụ: 6 KEY). Bạn có thể thay đổi lại bất cứ lúc nào.</string>
+    <string name="setup_step5_title">Cài đặt chi tiết</string>
+    <string name="setup_step5_desc">Thiết lập vị trí điểm chạm trên màn hình hoặc gán các phím vật lý tương ứng để sẵn sàng bắt đầu.</string>
+    <string name="setup_step5_btn_hitbox">Tùy chỉnh Hitbox</string>
+    <string name="setup_step5_btn_mapping">Gán phím vật lý</string>
+    <string name="setup_step6_title">Tùy chỉnh giao diện</string>
+    <string name="setup_step6_desc">Tùy chỉnh màu sắc, kích thước và độ mờ của các phím bấm hiển thị trên màn hình theo sở thích của bạn.</string>
+    <string name="setup_step6_btn">Cài đặt KeyViewer</string>
+    <string name="setup_step7_title">Hoàn tất thiết lập</string>
+    <string name="setup_step7_desc">Chọn tựa game bạn muốn chơi. KeyViewer sẽ tự động khởi chạy và tắt cùng với tựa game này.</string>
+    <string name="setup_btn_back">Quay lại</string>
+    <string name="setup_btn_next">Tiếp tục</string>
+    <string name="setup_btn_finish">Hoàn thành</string>
+    <string name="setup_btn_grant_now">Cấp quyền ngay</string>
+    <string name="setup_skip">Bỏ qua bước này</string>
+    <string name="setup_toast_select_lang">Vui lòng chọn ngôn ngữ</string>
+    <string name="setup_toast_select_source">Vui lòng chọn nguồn đầu vào</string>
+    <string name="setup_toast_grant_both">Vui lòng cấp cả 2 quyền để tiếp tục</string>
+    <string name="setup_toast_grant_shizuku">Vui lòng cấp quyền Shizuku để tiếp tục</string>
+    <string name="setup_toast_grant_acc">Vui lòng cấp quyền Trợ năng để tiếp tục</string>
+    <string name="setup_toast_grant_overlay">Vui lòng cấp quyền Hiển thị trên ứng dụng khác</string>
+
+    <string name="mapping_dialog_title">Gán phím vật lý</string>
+    <string name="mapping_row_key">Phím %d</string>
+    <string name="mapping_status_none">Chưa có</string>
+    <string name="mapping_status_waiting">[ Đang chờ ấn phím... ]</string>
+    <string name="mapping_btn_done">XONG</string>
+
+    <string name="xiaomi_dialog_title">CẢNH BÁO THIẾT BỊ XIAOMI</string>
+    <string name="xiaomi_dialog_msg">MIUI/HyperOS thường tắt ngầm ứng dụng. Bạn VUI LÒNG vào Cài đặt của KeyViewer -> Tiết kiệm pin -> Chọn \'Không hạn chế\' (No restrictions), và cấp quyền \'Hiển thị cửa sổ pop-up\' để app hoạt động ổn định!</string>
+    <string name="xiaomi_dialog_btn">Đã hiểu, Tiếp tục</string>
 </resources>

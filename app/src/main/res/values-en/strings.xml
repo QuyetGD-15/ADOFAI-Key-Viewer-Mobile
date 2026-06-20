@@ -21,6 +21,18 @@
     <string name="shizuku_not_found">Shizuku not found</string>
     <string name="shizuku_ready">Shizuku is ready!</string>
     <string name="shizuku_requesting_permission">Requesting permission...</string>
+    <string name="shizuku_paused">Shizuku: Paused</string>
+    <string name="main_mode_label">Mode</string>
+    <string name="main_source_touch">Touch (Shizuku)</string>
+    <string name="main_source_keyboard">Keyboard (Accessibility)</string>
+    <string name="main_card_shizuku_title">Shizuku Permission (Touch)</string>
+    <string name="main_card_acc_title">Accessibility Permission (Keyboard)</string>
+    <string name="main_acc_status_granted">Status: Permission Granted</string>
+    <string name="main_acc_status_pending">Status: Waiting for permission...</string>
+    <string name="main_acc_btn">Grant Accessibility Permission</string>
+    <string name="main_btn_mapping">Key Mapping</string>
+    <string name="main_toast_restarted">Restarted with %s</string>
+    <string name="main_toast_saved_mode">Saved %s mode</string>
 
     <!-- Accessibility Prompt -->
     <string name="accessibility_requirement_title">ACCESSIBILITY PERMISSION REQUIRED</string>
@@ -33,8 +45,8 @@
     <string name="toast_landscape_only">Keyviewer overlay only works in landscape mode</string>
     <string name="notif_toggle_on">TURN OFF KEY</string>
     <string name="notif_toggle_off">TURN ON KEY</string>
-    <string name="notif_show_touches">SHOW TOUCH</string>
-    <string name="notif_hide_touches">HIDE TOUCH</string>
+    <string name="notif_show_touches">SHOW TOUCHES</string>
+    <string name="notif_hide_touches">HIDE TOUCHES</string>
     <string name="notif_open_app">APP</string>
     <string name="notif_content_title">Key Viewer Overlay</string>
     <string name="notif_content_text">Use the buttons below to control.</string>
@@ -44,7 +56,7 @@
 
     <!-- HitboxConfigActivity -->
     <string name="toast_config_saved">Configuration saved</string>
-    <string name="toast_hitbox_reset">Divided 6 Hitboxes to fill the screen</string>
+    <string name="toast_hitbox_reset">Reset to standard default</string>
     <string name="hitbox_config_hint">Drag the center to move, drag 4 corners to resize</string>
     <string name="reset_default">Reset to Default</string>
     <string name="save">Save</string>
@@ -91,6 +103,14 @@
     <string name="preset_custom_1">Custom 1</string>
     <string name="preset_custom_2">Custom 2</string>
     <string name="preset_custom_3">Custom 3</string>
+    <string name="theme_color_text_normal">Text Color (Normal)</string>
+    <string name="theme_color_text_pressed">Text Color (Pressed)</string>
+    <string name="theme_color_bg_normal">BG Color (Normal)</string>
+    <string name="theme_color_bg_pressed">BG Color (Pressed)</string>
+    <string name="theme_color_border_normal">Border Color (Normal)</string>
+    <string name="theme_color_border_pressed">Border Color (Pressed)</string>
+    <string name="theme_color_rain">Key Rain Color</string>
+    <string name="theme_color_rain_shadow">Rain Shadow Color</string>
     <string name="toast_cannot_overwrite_system">Cannot overwrite system presets!</string>
     <string name="toast_preset_saved">Successfully saved to %s!</string>
     <string name="log_save_success">Log file saved successfully!</string>
@@ -119,5 +139,65 @@
     <string name="xiaomi_warning_cancel">Cancel</string>
     <string name="xiaomi_warning_continue">Already disabled, continue</string>
     <string name="btn_export_log">Export Log (.txt)</string>
-    <string name="toast_overlay_permission_required">Please grant Overlay permission!</string>
+    <string name="toast_overlay_permission_required">Please grant Display Over Other Apps permission!</string>
+
+    <!-- Onboarding -->
+    <string name="setup_title">CHOOSE CONTROL METHOD</string>
+    <string name="setup_touch_title">Touchscreen</string>
+    <string name="setup_touch_desc">Use Hitboxes on screen\n(Requires Shizuku)</string>
+    <string name="setup_keyboard_title">Physical Keyboard</string>
+    <string name="setup_keyboard_desc">For OTG/Bluetooth\n(Requires Accessibility)</string>
+
+    <string name="setup_step1_title">Select Language / Chọn ngôn ngữ</string>
+    <string name="setup_step1_desc">Please select a display language to start setup.</string>
+    <string name="setup_step2_title">Control Method</string>
+    <string name="setup_step2_desc">Choose how you will control the game. This helps the system optimize hardware resources to avoid lag.</string>
+    <string name="setup_step2_touch">Touch (Shizuku)</string>
+    <string name="setup_step2_keyboard">Physical Keyboard (Accessibility)</string>
+    <string name="setup_step3_title">System Permissions</string>
+    <string name="setup_step3_shizuku_title">Shizuku Permission</string>
+    <string name="setup_step3_shizuku_desc">App needs Shizuku permission to simulate touch actions on screen.</string>
+    <string name="setup_step3_accessibility_title">Accessibility Permission</string>
+    <string name="setup_step3_accessibility_desc">App needs Accessibility permission to listen to physical key signals without lag.</string>
+    <string name="setup_step3_status_ready">Status: Ready</string>
+    <string name="setup_step3_status_shizuku_denied">Status: Shizuku permission not granted</string>
+    <string name="setup_step3_status_acc_pending">Status: Waiting for permission...</string>
+    <string name="setup_step3_btn_shizuku">Setup Shizuku</string>
+    <string name="setup_step3_btn_acc">Open Accessibility Settings</string>
+    <string name="setup_step3_overlay_status">Display Over Other Apps Permission: %s</string>
+    <string name="setup_step3_overlay_btn">Grant Display Permission</string>
+    <string name="setup_step3_status_granted">Granted</string>
+    <string name="setup_step3_status_denied">Not granted</string>
+    <string name="setup_step4_title">Number of Keys</string>
+    <string name="setup_step4_desc">Choose the number of keys you use most often (e.g., 6 KEY). You can change this at any time.</string>
+    <string name="setup_step5_title">Detailed Settings</string>
+    <string name="setup_step5_desc">Set up touch point positions on screen or map corresponding physical keys to get started.</string>
+    <string name="setup_step5_btn_hitbox">Hitbox Customization</string>
+    <string name="setup_step5_btn_mapping">Key Mapping</string>
+    <string name="setup_step6_title">UI Customization</string>
+    <string name="setup_step6_desc">Customize the color, size, and opacity of the keys displayed on the screen to your preference.</string>
+    <string name="setup_step6_btn">KeyViewer Settings</string>
+    <string name="setup_step7_title">Complete Setup</string>
+    <string name="setup_step7_desc">Select the game you want to play. KeyViewer will automatically start and close with this game.</string>
+    <string name="setup_btn_back">Back</string>
+    <string name="setup_btn_next">Continue</string>
+    <string name="setup_btn_finish">Finish</string>
+    <string name="setup_btn_grant_now">Grant Permission Now</string>
+    <string name="setup_skip">Skip this step</string>
+    <string name="setup_toast_select_lang">Please select a language</string>
+    <string name="setup_toast_select_source">Please select an input source</string>
+    <string name="setup_toast_grant_both">Please grant both permissions to continue</string>
+    <string name="setup_toast_grant_shizuku">Please grant Shizuku permission to continue</string>
+    <string name="setup_toast_grant_acc">Please grant Accessibility permission to continue</string>
+    <string name="setup_toast_grant_overlay">Please grant Display Over Other Apps permission</string>
+
+    <string name="mapping_dialog_title">Key Mapping</string>
+    <string name="mapping_row_key">Key %d</string>
+    <string name="mapping_status_none">Unbound</string>
+    <string name="mapping_status_waiting">[ Waiting for input... ]</string>
+    <string name="mapping_btn_done">DONE</string>
+
+    <string name="xiaomi_dialog_title">XIAOMI DEVICE WARNING</string>
+    <string name="xiaomi_dialog_msg">MIUI/HyperOS often kills background apps. Please go to KeyViewer Settings -> Battery Saver -> Choose \'No restrictions\', and grant \'Display pop-up windows\' permission for the app to work stably!</string>
+    <string name="xiaomi_dialog_btn">Understood, Continue</string>
 </resources>

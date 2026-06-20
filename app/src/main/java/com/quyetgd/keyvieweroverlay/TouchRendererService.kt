@@ -8,8 +8,10 @@ import android.graphics.PixelFormat
 import android.view.View
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
+import android.view.KeyEvent
 import android.os.Handler
 import android.os.Looper
+import android.content.Context
 
 class TouchRendererService : AccessibilityService() {
     private var pointerCanvasView: View? = null
@@ -20,6 +22,33 @@ class TouchRendererService : AccessibilityService() {
         super.onServiceConnected()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         setupOverlay()
+    }
+
+    override fun onKeyEvent(event: KeyEvent): Boolean {
+        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+        val keyMode = pref.getInt("current_key_mode", 6)
+        val currentKeyMap = HashMap<Int, Int>()
+        for (i in 0 until keyMode) {
+            val savedKeyCode = pref.getInt("key_code_${keyMode}_$i", -1)
+            if (savedKeyCode != -1) {
+                currentKeyMap[savedKeyCode] = i
+            }
+        }
+
+        val keyCode = event.keyCode
+        val keyIndex = currentKeyMap[keyCode]
+        
+        if (keyIndex != null) {
+            if (event.action == KeyEvent.ACTION_DOWN) {
+                if (event.repeatCount == 0) { // Tránh bị lặp phím khi giữ
+                    OverlayService.instance?.triggerKeyPressFromKeyboard(keyIndex, true)
+                }
+            } else if (event.action == KeyEvent.ACTION_UP) {
+                OverlayService.instance?.triggerKeyPressFromKeyboard(keyIndex, false)
+            }
+        }
+        
+        return false // Xuyên qua để vào game
     }
 
     private fun setupOverlay() {

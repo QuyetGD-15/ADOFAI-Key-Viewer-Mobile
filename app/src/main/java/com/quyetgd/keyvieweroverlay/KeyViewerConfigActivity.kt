@@ -152,6 +152,14 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         stopService(Intent(this, OverlayService::class.java))
 
         initViews()
+
+        // KIỂM TRA TỰ ĐỘNG NẠP MẶC ĐỊNH LẦN ĐẦU
+        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+        if (!pref.getBoolean("is_keyviewer_configured", false)) {
+            resetToDefault()
+            pref.edit().putBoolean("is_keyviewer_configured", true).apply()
+        }
+
         loadPreferences()
         setupListeners()
 
@@ -160,7 +168,33 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         viewerContainer.pivotY = 0f
 
         // Cập nhật giao diện ban đầu
-        viewerContainer.post { updateLivePreview() }
+        viewerContainer.post { 
+            renderKeyPreview()
+            updateLivePreview() 
+        }
+    }
+
+    private fun renderKeyPreview() {
+        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+        val keyMode = pref.getInt("current_key_mode", 6)
+
+        keysContainer.removeAllViews()
+        for (i in 1..keyMode) {
+            val tv = TextView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    (currentKeyWidth * resources.displayMetrics.density).toInt(),
+                    (currentKeyHeight * resources.displayMetrics.density).toInt()
+                )
+                gravity = Gravity.CENTER
+                text = i.toString()
+                setTextColor(Color.WHITE)
+                textSize = 20f
+                typeface = Typeface.DEFAULT_BOLD
+                // Gán ID tạm để dễ debug hoặc tham chiếu nếu cần
+                id = View.generateViewId()
+            }
+            keysContainer.addView(tv)
+        }
     }
 
     private fun initViews() {
@@ -528,14 +562,14 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             val et: EditText
             val title: String
             when (v.id) {
-                R.id.viewTextColorPreview -> { et = etTextColorHex; title = "Màu chữ (Bình thường)" }
-                R.id.viewTextColorPressedPreview -> { et = etTextColorPressedHex; title = "Màu chữ (Khi nhấn)" }
-                R.id.viewBgNormalPreview -> { et = etBgNormalHex; title = "Màu nền (Bình thường)" }
-                R.id.viewBgPressedPreview -> { et = etBgPressedHex; title = "Màu nền (Khi nhấn)" }
-                R.id.viewBorderNormalPreview -> { et = etBorderNormalHex; title = "Màu viền (Bình thường)" }
-                R.id.viewBorderPressedPreview -> { et = etBorderPressedHex; title = "Màu viền (Khi nhấn)" }
-                R.id.viewRainColorPreview -> { et = etRainColorHex; title = "Màu Key Rain" }
-                R.id.viewRainShadowPreview -> { et = etRainShadowHex; title = "Màu bóng Rain" }
+                R.id.viewTextColorPreview -> { et = etTextColorHex; title = getString(R.string.theme_color_text_normal) }
+                R.id.viewTextColorPressedPreview -> { et = etTextColorPressedHex; title = getString(R.string.theme_color_text_pressed) }
+                R.id.viewBgNormalPreview -> { et = etBgNormalHex; title = getString(R.string.theme_color_bg_normal) }
+                R.id.viewBgPressedPreview -> { et = etBgPressedHex; title = getString(R.string.theme_color_bg_pressed) }
+                R.id.viewBorderNormalPreview -> { et = etBorderNormalHex; title = getString(R.string.theme_color_border_normal) }
+                R.id.viewBorderPressedPreview -> { et = etBorderPressedHex; title = getString(R.string.theme_color_border_pressed) }
+                R.id.viewRainColorPreview -> { et = etRainColorHex; title = getString(R.string.theme_color_rain) }
+                R.id.viewRainShadowPreview -> { et = etRainShadowHex; title = getString(R.string.theme_color_rain_shadow) }
                 else -> return@OnClickListener
             }
             var currentColor = Color.WHITE
@@ -777,6 +811,11 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             localKpsValue?.text = "0"
             localTotalLabel?.text = totalLabelStr
             localTotalValue?.text = "0"
+
+            val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+            val keyMode = pref.getInt("current_key_mode", 6)
+            localTotalLabel?.visibility = if (keyMode == 4) View.GONE else View.VISIBLE
+            localTotalContainer.visibility = View.VISIBLE
 
             localKpsContainer.background = normalDrawable.constantState?.newDrawable()?.mutate() ?: normalDrawable
             localTotalContainer.background = normalDrawable.constantState?.newDrawable()?.mutate() ?: normalDrawable

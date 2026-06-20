@@ -47,6 +47,7 @@ class OverlayService : Service() {
 
     companion object {
         var isRunning = false
+        var instance: OverlayService? = null
         const val ACTION_START_FOREGROUND = "com.quyetgd.keyvieweroverlay.ACTION_START_FOREGROUND"
         const val ACTION_TOGGLE_KEY_VIEWER = "com.quyetgd.keyvieweroverlay.ACTION_TOGGLE_KEY_VIEWER"
         const val ACTION_TOGGLE_TOUCHES = "com.quyetgd.keyvieweroverlay.ACTION_TOGGLE_TOUCHES"
@@ -60,6 +61,7 @@ class OverlayService : Service() {
         const val NOTIFICATION_ID = 1
     }
 
+    private var currentInputSource = "touch"
     private lateinit var windowManager: WindowManager
     private lateinit var notificationManager: NotificationManager
     private lateinit var usageStatsManager: UsageStatsManager
@@ -96,11 +98,12 @@ class OverlayService : Service() {
     private val realMetrics = android.util.DisplayMetrics()
 
     // TỐI ƯU 2: Biến mảng O(1) siêu tốc đo ngón tay và tọa độ (Thay thế vòng lặp O(N) và hàm Math)
-    private val laneOccupants = IntArray(6)
-    private val hitboxCentersX = FloatArray(6)
-    private val hitboxCentersY = FloatArray(6)
+    private var keyMode = 6
+    private lateinit var laneOccupants: IntArray
+    private lateinit var hitboxCentersX: FloatArray
+    private lateinit var hitboxCentersY: FloatArray
 
-    private val keyViews = arrayOfNulls<TextView>(6)
+    private lateinit var keyViews: Array<TextView?>
     private var isOverlayShowing = false
     private var isKeyViewerOn = false
     private var isShowTouchesOn = false
@@ -188,25 +191,11 @@ class OverlayService : Service() {
 
     @Volatile
     private var totalClicks = 0
+    private lateinit var keyCounters: IntArray
     private lateinit var sharedPrefs: SharedPreferences
 
-    private val keyDownRunnables = Array(6) { lane ->
-        Runnable {
-            if (activeTrails[lane] != null) return@Runnable
-            val tv = keyViews[lane] ?: return@Runnable
-            activeTrails[lane] = keyTrailView.addTrail(tv.x, tv.width.toFloat())
-            tv.isPressed = true
-        }
-    }
-
-    private val keyUpRunnables = Array(6) { lane ->
-        Runnable {
-            activeTrails[lane]?.isReleased = true
-            activeTrails[lane] = null
-            val tv = keyViews[lane] ?: return@Runnable
-            tv.isPressed = false
-        }
-    }
+    private lateinit var keyDownRunnables: Array<Runnable>
+    private lateinit var keyUpRunnables: Array<Runnable>
 
     private fun getLatestForegroundApp(): String {
         val time = System.currentTimeMillis()
@@ -287,9 +276,9 @@ class OverlayService : Service() {
     private var currentSlot = 0
     private var maxRawX = 1f
     private var maxRawY = 1f
-    private val hitboxes = Array(6) { RectF() }
+    private lateinit var hitboxes: Array<RectF>
     private lateinit var keyTrailView: KeyTrailView
-    private val activeTrails = arrayOfNulls<KeyTrailView.Trail>(6)
+    private lateinit var activeTrails: Array<KeyTrailView.Trail?>
     private val mainHandler = Handler(Looper.getMainLooper())
 
     private var eventReaderThread: Thread? = null
@@ -300,7 +289,9 @@ class OverlayService : Service() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == "ACTION_RESET_TOTAL") {
                 totalClicks = 0
+                keyCounters.fill(0)
                 sharedPrefs.edit().putInt("TOTAL_CLICKS", 0).apply()
+
                 lastRenderedKps = -1
                 lastRenderedTotal = -1
                 updateKpsTotalUI(0, totalClicks)
@@ -318,7 +309,61 @@ class OverlayService : Service() {
                 }
 
                 ACTION_UPDATE_CONFIG -> {
-                    mainHandler.post { loadKeyViewerSettings() }
+                    mainHandler.post { 
+                        val newSource = sharedPrefs.getString("input_source", "touch") ?: "touch"
+                        if (newSource != currentInputSource) {
+                            currentInputSource = newSource
+                            if (currentInputSource == "keyboard") {
+                                stopReadingTouchEvents() // Đóng băng hoàn toàn tiến trình quét chạm
+                                isShowTouchesOn = false
+                                SharedTouchData.invalidateCallback?.invoke()
+                            } else if (currentInputSource == "touch" && Shizuku.pingBinder()) {
+                                initHardwareAndStartReading() // Đánh thức tiến trình quét chạm
+                            }
+                        }
+
+                        // Kiểm tra nếu KeyMode thay đổi thì phải re-init toàn bộ View
+                        val newMode = sharedPrefs.getInt("current_key_mode", 6)
+                        if (newMode != keyMode) {
+                            keyMode = newMode
+                            // Reset các mảng dữ liệu
+                            laneOccupants = IntArray(keyMode)
+                            keyCounters = IntArray(keyMode)
+                            hitboxCentersX = FloatArray(keyMode)
+                            hitboxCentersY = FloatArray(keyMode)
+                            keyViews = arrayOfNulls<TextView>(keyMode)
+                            hitboxes = Array(keyMode) { RectF() }
+                            
+                            activeTrails = arrayOfNulls<KeyTrailView.Trail>(keyMode)
+                            
+                            keyDownRunnables = Array(keyMode) { lane ->
+                                Runnable {
+                                    if (activeTrails[lane] != null) return@Runnable
+                                    val tv = keyViews[lane] ?: return@Runnable
+                                    activeTrails[lane] = keyTrailView.addTrail(tv.x, tv.width.toFloat())
+                                    tv.isPressed = true
+                                }
+                            }
+                            keyUpRunnables = Array(keyMode) { lane ->
+                                Runnable {
+                                    activeTrails[lane]?.isReleased = true
+                                    activeTrails[lane] = null
+                                    val tv = keyViews[lane] ?: return@Runnable
+                                    tv.isPressed = false
+                                }
+                            }
+
+                            // Re-init View
+                            setupViewerView()
+                            if (isOverlayShowing && wrapper.parent != null) {
+                                try {
+                                    windowManager.updateViewLayout(wrapper, viewerParams)
+                                } catch (e: Exception) {}
+                            }
+                        }
+                        loadKeyViewerSettings()
+                        loadHitboxesFromPrefs()
+                    }
                 }
 
                 ACTION_VISIBILITY -> {
@@ -340,6 +385,7 @@ class OverlayService : Service() {
         AppLogger.log(this, "OverlayService: Đã khởi tạo dịch vụ ngầm")
         super.onCreate()
         isRunning = true
+        instance = this
 
         createNotificationChannel()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
@@ -347,7 +393,36 @@ class OverlayService : Service() {
         usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
 
         sharedPrefs = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+        currentInputSource = sharedPrefs.getString("input_source", "touch") ?: "touch"
         totalClicks = sharedPrefs.getInt("TOTAL_CLICKS", 0)
+        keyMode = sharedPrefs.getInt("current_key_mode", 6)
+
+        laneOccupants = IntArray(keyMode)
+        keyCounters = IntArray(keyMode)
+        hitboxCentersX = FloatArray(keyMode)
+        hitboxCentersY = FloatArray(keyMode)
+        keyViews = arrayOfNulls<TextView>(keyMode)
+        hitboxes = Array(keyMode) { RectF() }
+
+        keyDownRunnables = Array(keyMode) { lane ->
+            Runnable {
+                if (activeTrails[lane] != null) return@Runnable
+                val tv = keyViews[lane] ?: return@Runnable
+                
+                activeTrails[lane] = keyTrailView.addTrail(tv.x, tv.width.toFloat())
+                tv.isPressed = true
+            }
+        }
+
+        keyUpRunnables = Array(keyMode) { lane ->
+            Runnable {
+                activeTrails[lane]?.isReleased = true
+                activeTrails[lane] = null
+                val tv = keyViews[lane] ?: return@Runnable
+                tv.isPressed = false
+            }
+        }
+        activeTrails = arrayOfNulls<KeyTrailView.Trail>(keyMode)
 
         setupViewerView()
         updateDisplayMetricsCache()
@@ -382,24 +457,6 @@ class OverlayService : Service() {
                 val currentTime = System.currentTimeMillis()
                 var currentKps = 0
 
-                try {
-                    @Suppress("DEPRECATION")
-                    val newRotation = windowManager.defaultDisplay.rotation
-                    if (newRotation != currentHardwareRotation) {
-                        currentHardwareRotation = newRotation
-                        lastCheckedRotation = newRotation
-                        updateDisplayMetricsCache()
-                        loadKeyViewerSettings()
-                        if (isOverlayShowing && wrapper.parent != null) {
-                            try {
-                                windowManager.updateViewLayout(wrapper, viewerParams)
-                            } catch (e: Exception) {
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-                }
-
                 synchronized(kpsLock) {
                     while (kpsTail != kpsHead && currentTime - kpsTimestamps[kpsTail] > 1000) {
                         kpsTail = (kpsTail + 1) and 255
@@ -413,7 +470,7 @@ class OverlayService : Service() {
             }
         })
 
-        if (Shizuku.pingBinder()) {
+        if (currentInputSource == "touch" && Shizuku.pingBinder()) {
             initHardwareAndStartReading()
         }
 
@@ -673,7 +730,7 @@ class OverlayService : Service() {
 
                 if (!slot.isActive) {
                     var directHitLane = -1
-                    for (j in 0 until 6) {
+                    for (j in 0 until keyMode) {
                         if (hitboxes[j].contains(finalMappedX, finalMappedY)) {
                             directHitLane = j
                             break
@@ -690,8 +747,10 @@ class OverlayService : Service() {
                             var nearestEmptyLane = -1
                             var minDistanceSq = Float.MAX_VALUE
 
-                            val startLane = if (directHitLane < 3) 0 else 3
-                            val endLane = if (directHitLane < 3) 3 else 6
+                            // Dàn hàng phím linh hoạt theo keyMode
+                            val half = keyMode / 2
+                            val startLane = if (directHitLane < half) 0 else half
+                            val endLane = if (directHitLane < half) half else keyMode
 
                             for (j in startLane until endLane) {
                                 if (j == directHitLane) continue
@@ -776,6 +835,37 @@ class OverlayService : Service() {
         mainHandler.post(keyUpRunnables[lane])
     }
 
+    /**
+     * Kích hoạt phím từ bàn phím vật lý (Accessibility Service gọi trực tiếp).
+     * Bỏ qua hoàn toàn tọa độ và chống nhấn nhầm của cảm ứng.
+     */
+    fun triggerKeyPressFromKeyboard(lane: Int, isDown: Boolean) {
+        if (currentInputSource != "keyboard") return
+        if (lane < 0 || lane >= keyMode) return
+        
+        mainHandler.post {
+            if (isDown) {
+                // Đánh dấu phím bị chiếm bởi bàn phím (Sử dụng quầy riêng hoặc cộng dồn)
+                laneOccupants[lane]++
+                onKeyDown(lane)
+                
+                // Cập nhật KPS và Total
+                val currentTime = System.currentTimeMillis()
+                synchronized(kpsLock) {
+                    kpsTimestamps[kpsHead] = currentTime
+                    kpsHead = (kpsHead + 1) and 255
+                    if (kpsHead == kpsTail) kpsTail = (kpsTail + 1) and 255
+                }
+                totalClicks++
+                updateKpsTotalUI(lastRenderedKps, totalClicks)
+            } else {
+                laneOccupants[lane]--
+                if (laneOccupants[lane] < 0) laneOccupants[lane] = 0
+                onKeyUp(lane)
+            }
+        }
+    }
+
     private fun stopReadingTouchEvents() {
         isReadingEvents = false
         shizukuProcess?.destroy()
@@ -784,10 +874,17 @@ class OverlayService : Service() {
     }
 
     private fun setupViewerView() {
-        wrapper = FrameLayout(this)
-        wrapper.visibility = View.VISIBLE
-        wrapper.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-        wrapper.alpha = 1.0f
+        if (!::wrapper.isInitialized) {
+            wrapper = FrameLayout(this)
+            wrapper.visibility = View.VISIBLE
+            wrapper.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            wrapper.alpha = 1.0f
+        }
+
+        // Xóa viewerContainer cũ nếu có
+        if (::viewerContainer.isInitialized) {
+            wrapper.removeView(viewerContainer)
+        }
 
         viewerContainer = LayoutInflater.from(this).inflate(R.layout.overlay_view, wrapper, false)
         viewerContainer.setBackgroundColor(android.graphics.Color.TRANSPARENT)
@@ -798,9 +895,26 @@ class OverlayService : Service() {
 
         wrapper.addView(viewerContainer)
 
-        for (i in 0 until 6) {
-            val keyId = resources.getIdentifier("key${i + 1}", "id", packageName)
-            keyViews[i] = viewerContainer.findViewById(keyId)
+        val keysContainer = viewerContainer.findViewById<LinearLayout>(R.id.keysContainer)
+        keysContainer.removeAllViews()
+        for (i in 0 until keyMode) {
+            val tv = TextView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(60, 60)
+                gravity = Gravity.CENTER
+                
+                if (currentInputSource == "keyboard") {
+                    val savedKeyName = sharedPrefs.getString("key_name_${keyMode}_$i", null)
+                    text = getAbbreviatedKeyName(savedKeyName)
+                } else {
+                    text = (i + 1).toString()
+                }
+                
+                setTextColor(Color.WHITE)
+                textSize = 20f
+                typeface = Typeface.DEFAULT_BOLD
+            }
+            keysContainer.addView(tv)
+            keyViews[i] = tv
         }
 
         kpsContainer =
@@ -820,6 +934,10 @@ class OverlayService : Service() {
             viewerContainer.findViewById(resources.getIdentifier("tvTotalLabel", "id", packageName))
         tvTotalValue =
             viewerContainer.findViewById(resources.getIdentifier("tvTotalValue", "id", packageName))
+
+        // CHỈ ẨN CHỮ "TOTAL" ĐỐI VỚI CHẾ ĐỘ 4 KEY, VẪN GIỮ SỐ
+        tvTotalLabel?.visibility = if (keyMode == 4) View.GONE else View.VISIBLE
+        totalContainer?.visibility = View.VISIBLE
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
             wrapper.isForceDarkAllowed = false
@@ -928,6 +1046,14 @@ class OverlayService : Service() {
                 }
                 keyView.layoutParams = params
 
+                // Cập nhật text phím (Bàn phím vật lý vs Cảm ứng)
+                if (currentInputSource == "keyboard") {
+                    val savedKeyName = pref.getString("key_name_${keyMode}_$i", null)
+                    keyView.text = getAbbreviatedKeyName(savedKeyName)
+                } else {
+                    keyView.text = (i + 1).toString()
+                }
+
                 applyThemeToTextView(keyView)
                 keyView.setTextColor(
                     createTextColorStateList(
@@ -958,6 +1084,10 @@ class OverlayService : Service() {
                 bottomParams.topMargin = (keySpacing * resources.displayMetrics.density).toInt()
                 bottomContainer.layoutParams = bottomParams
             }
+
+            // Cập nhật hiển thị Total dựa theo KeyMode
+            totalContainer?.visibility = View.VISIBLE
+            tvTotalLabel?.visibility = if (keyMode == 4) View.GONE else View.VISIBLE
 
             applyThemeToTextView(tvKpsLabel)
             applyThemeToTextView(tvKpsValue)
@@ -1007,14 +1137,94 @@ class OverlayService : Service() {
         }
     }
 
+    private fun getAbbreviatedKeyName(keyName: String?): String {
+        if (keyName.isNullOrBlank()) return "NULL"
+        return when (keyName.uppercase()) {
+            "SPACE" -> "SPC"
+            "ENTER", "NUMPAD_ENTER" -> "ENT"
+            "DEL", "FORWARD_DEL", "BACKSPACE" -> "⌫"
+            "DPAD_UP", "UP" -> "↑"
+            "DPAD_DOWN", "DOWN" -> "↓"
+            "DPAD_LEFT", "LEFT" -> "←"
+            "DPAD_RIGHT", "RIGHT" -> "→"
+            "ESCAPE" -> "ESC"
+            "PAGE_UP" -> "PGU"
+            "PAGE_DOWN" -> "PGD"
+            "SHIFT_LEFT", "SHIFT_RIGHT" -> "SHF"
+            "CTRL_LEFT", "CTRL_RIGHT" -> "CTL"
+            "ALT_LEFT", "ALT_RIGHT" -> "ALT"
+            "TAB" -> "TAB"
+            "MINUS" -> "-"
+            "EQUALS" -> "="
+            "PLUS" -> "+"
+            "GRAVE" -> "`"
+            "BACKSLASH" -> "\\"
+            "COMMA" -> ","
+            "PERIOD" -> "."
+            "SLASH" -> "/"
+            else -> if (keyName.length > 3) keyName.substring(0, 3) else keyName
+        }
+    }
+
+    private fun getHitboxKey(index: Int, type: String): String {
+        val id = index + 1
+        return if (keyMode == 6) {
+            "hitbox_${id}_$type"
+        } else {
+            val prefix = when(type) {
+                "x" -> "hitbox_left_"
+                "y" -> "hitbox_top_"
+                "w" -> "hitbox_width_"
+                "h" -> "hitbox_height_"
+                else -> "hitbox_"
+            }
+            "$prefix${keyMode}_$index"
+        }
+    }
+
     private fun loadHitboxesFromPrefs() {
         val pref = getSharedPreferences("HitboxPrefs", Context.MODE_PRIVATE)
-        for (i in 0 until 6) {
-            val id = i + 1
-            val x = pref.getFloat("hitbox_${id}_x", 0f)
-            val y = pref.getFloat("hitbox_${id}_y", 0f)
-            val w = pref.getInt("hitbox_${id}_w", 0)
-            val h = pref.getInt("hitbox_${id}_h", 0)
+        
+        // KIỂM TRA LẦN ĐẦU CHO CHẾ ĐỘ NÀY
+        val checkKey = getHitboxKey(0, "x")
+        if (!pref.contains(checkKey)) {
+            val editor = pref.edit()
+            val screenWidth = absMaxScreenDim
+            val screenHeight = absMinScreenDim
+            
+            if (keyMode == 6) {
+                // Tỉ lệ vàng cho 6 KEY
+                val w1 = screenWidth * 0.10f
+                val w2 = screenWidth * 0.15f
+                val w3 = screenWidth * 0.25f
+                val widths = floatArrayOf(w1, w2, w3, w3, w2, w1)
+                var currentX = 0f
+                for (i in 0 until 6) {
+                    val w = widths[i]
+                    editor.putFloat("hitbox_${i+1}_x", currentX - 20f)
+                    editor.putFloat("hitbox_${i+1}_y", -20f)
+                    editor.putInt("hitbox_${i+1}_w", (w + 40f).toInt())
+                    editor.putInt("hitbox_${i+1}_h", (screenHeight + 40f).toInt())
+                    currentX += w
+                }
+            } else {
+                // Dàn đều cho các chế độ khác
+                val colWidth = screenWidth / keyMode
+                for (i in 0 until keyMode) {
+                    editor.putFloat(getHitboxKey(i, "x"), (i * colWidth) - 20f)
+                    editor.putFloat(getHitboxKey(i, "y"), -20f)
+                    editor.putInt(getHitboxKey(i, "w"), (colWidth + 40f).toInt())
+                    editor.putInt(getHitboxKey(i, "h"), (screenHeight + 40f).toInt())
+                }
+            }
+            editor.apply()
+        }
+
+        for (i in 0 until keyMode) {
+            val x = pref.getFloat(getHitboxKey(i, "x"), 0f)
+            val y = pref.getFloat(getHitboxKey(i, "y"), 0f)
+            val w = pref.getInt(getHitboxKey(i, "w"), 0)
+            val h = pref.getInt(getHitboxKey(i, "h"), 0)
             hitboxes[i].set(x, y, x + w, y + h)
 
             // TỐI ƯU ZERO-MATH: Tính sẵn tâm Hitbox 1 lần duy nhất khi load cài đặt
@@ -1072,16 +1282,21 @@ class OverlayService : Service() {
         }
         val pendingOpenApp = PendingIntent.getActivity(this, 3, intentOpenApp, flag)
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+        val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification_key)
             .setContentTitle(getString(R.string.notif_content_title))
             .setContentText(getString(R.string.notif_content_text))
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .addAction(0, keyViewerText, pendingKeyViewer)
-            .addAction(0, showTouchesText, pendingTouches)
-            .addAction(0, getString(R.string.notif_open_app), pendingOpenApp)
-            .build()
+
+        if (currentInputSource == "touch") {
+            notificationBuilder.addAction(0, showTouchesText, pendingTouches)
+        }
+
+        notificationBuilder.addAction(0, getString(R.string.notif_open_app), pendingOpenApp)
+
+        val notification = notificationBuilder.build()
 
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -1180,6 +1395,21 @@ class OverlayService : Service() {
         if (isOverlayShowing) {
             wrapper.post { updateDisplayMetricsCache() }
         }
+
+        try {
+            @Suppress("DEPRECATION")
+            val newRotation = windowManager.defaultDisplay.rotation
+            if (newRotation != currentHardwareRotation) {
+                currentHardwareRotation = newRotation
+                lastCheckedRotation = newRotation
+                updateDisplayMetricsCache()
+                loadKeyViewerSettings()
+                if (isOverlayShowing && wrapper.parent != null) {
+                    windowManager.updateViewLayout(wrapper, viewerParams)
+                }
+            }
+        } catch (e: Exception) {
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -1220,6 +1450,7 @@ class OverlayService : Service() {
         AppLogger.log(this, "OverlayService: Đã hủy dịch vụ ngầm")
         super.onDestroy()
         isRunning = false
+        instance = null
         AppLogger.log(
             this,
             "OverlayService: Dịch vụ bị tắt. Tổng số click phiên vừa rồi: $totalClicks"

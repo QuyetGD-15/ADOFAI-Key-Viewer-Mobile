@@ -6,36 +6,6 @@
     android:layout_height="match_parent"
     android:background="@color/md3_background">
 
-    <com.quyetgd.keyvieweroverlay.HitboxView
-        android:id="@+id/hitbox1"
-        android:layout_width="100dp"
-        android:layout_height="100dp" />
-
-    <com.quyetgd.keyvieweroverlay.HitboxView
-        android:id="@+id/hitbox2"
-        android:layout_width="100dp"
-        android:layout_height="100dp" />
-
-    <com.quyetgd.keyvieweroverlay.HitboxView
-        android:id="@+id/hitbox3"
-        android:layout_width="100dp"
-        android:layout_height="100dp" />
-
-    <com.quyetgd.keyvieweroverlay.HitboxView
-        android:id="@+id/hitbox4"
-        android:layout_width="100dp"
-        android:layout_height="100dp" />
-
-    <com.quyetgd.keyvieweroverlay.HitboxView
-        android:id="@+id/hitbox5"
-        android:layout_width="100dp"
-        android:layout_height="100dp" />
-
-    <com.quyetgd.keyvieweroverlay.HitboxView
-        android:id="@+id/hitbox6"
-        android:layout_width="100dp"
-        android:layout_height="100dp" />
-
     <com.google.android.material.card.MaterialCardView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -64,7 +34,9 @@
         android:layout_margin="16dp"
         app:cardBackgroundColor="@color/md3_surface"
         app:cardCornerRadius="12dp"
-        app:cardElevation="0dp"
+        app:cardElevation="20dp"
+        android:elevation="20dp"
+        android:translationZ="20dp"
         app:strokeWidth="0dp">
 
         <LinearLayout

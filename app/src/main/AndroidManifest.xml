@@ -42,6 +42,10 @@
         </activity>
 
         <activity
+            android:name=".SetupActivity"
+            android:screenOrientation="portrait" />
+
+        <activity
             android:name=".HitboxConfigActivity"
             android:screenOrientation="sensorLandscape"
             android:configChanges="orientation|screenSize|screenLayout" />
