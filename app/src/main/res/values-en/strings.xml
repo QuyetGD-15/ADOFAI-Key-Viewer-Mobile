@@ -200,4 +200,14 @@
     <string name="xiaomi_dialog_title">XIAOMI DEVICE WARNING</string>
     <string name="xiaomi_dialog_msg">MIUI/HyperOS often kills background apps. Please go to KeyViewer Settings -> Battery Saver -> Choose \'No restrictions\', and grant \'Display pop-up windows\' permission for the app to work stably!</string>
     <string name="xiaomi_dialog_btn">Understood, Continue</string>
+
+    <!-- Update Manager -->
+    <string name="update_available_title">New version available! (%s)</string>
+    <string name="update_available_msg">New changes:\n\n%1$s\n\nDo you want to download and install it now?</string>
+    <string name="update_btn_now">Update Now</string>
+    <string name="update_btn_later">Later</string>
+    <string name="update_toast_downloading">Downloading update...</string>
+    <string name="update_notif_title">ADOFAI Key Viewer Update</string>
+    <string name="update_notif_desc">Downloading version %s...</string>
+    <string name="update_error_install">Error opening installer!</string>
 </resources>

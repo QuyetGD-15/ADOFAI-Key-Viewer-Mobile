@@ -200,4 +200,14 @@
     <string name="xiaomi_dialog_title">CẢNH BÁO THIẾT BỊ XIAOMI</string>
     <string name="xiaomi_dialog_msg">MIUI/HyperOS thường tắt ngầm ứng dụng. Bạn VUI LÒNG vào Cài đặt của KeyViewer -> Tiết kiệm pin -> Chọn \'Không hạn chế\' (No restrictions), và cấp quyền \'Hiển thị cửa sổ pop-up\' để app hoạt động ổn định!</string>
     <string name="xiaomi_dialog_btn">Đã hiểu, Tiếp tục</string>
+
+    <!-- Update Manager -->
+    <string name="update_available_title">Đã có bản cập nhật mới! (%s)</string>
+    <string name="update_available_msg">Những thay đổi mới:\n\n%1$s\n\nBạn có muốn tải xuống và cài đặt ngay không?</string>
+    <string name="update_btn_now">Cập nhật ngay</string>
+    <string name="update_btn_later">Để sau</string>
+    <string name="update_toast_downloading">Đang tải bản cập nhật...</string>
+    <string name="update_notif_title">ADOFAI Key Viewer Update</string>
+    <string name="update_notif_desc">Đang tải phiên bản %s...</string>
+    <string name="update_error_install">Lỗi khi mở trình cài đặt!</string>
 </resources>

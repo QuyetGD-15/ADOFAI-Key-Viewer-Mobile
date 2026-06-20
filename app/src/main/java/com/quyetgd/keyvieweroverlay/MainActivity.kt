@@ -469,6 +469,8 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                 .setCancelable(false)
                 .show()
         }
+
+        GitHubUpdateManager.checkForUpdate(this)
     }
 
     private fun showLoading() {
@@ -753,6 +755,8 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                 .setCancelable(false)
                 .show()
         }
+
+        GitHubUpdateManager.checkForUpdate(this)
     }
 
     /**
