@@ -18,8 +18,6 @@ An ultra-lightweight, ultra-low latency overlay tool designed specifically for A
 ## 📥 Installation
 1. Download the latest APK from the [Releases](https://github.com/QuyetGD-15/ADOFAI-Key-Viewer-Mobile/releases) section.
 2. Install the application.
-3. Grant "Display over other apps" permission.
-4. Enable Shizuku (required for the best zero-latency experience).
 
 ---
 **Developed with 💖 by [quyetgd]**
