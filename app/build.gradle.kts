@@ -14,8 +14,8 @@ android {
         applicationId = "com.quyetgd.keyvieweroverlay"
         minSdk = 24
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.0.7"
+        versionCode = 8
+        versionName = "1.0.82"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk {

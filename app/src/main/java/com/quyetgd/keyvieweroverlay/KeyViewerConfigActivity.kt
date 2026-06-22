@@ -98,6 +98,9 @@ class KeyViewerConfigActivity : AppCompatActivity() {
     private var currentKeyHeight = 60 // Mặc định 60dp
     private var currentKeySpacing = 0
 
+    private var currentX = 0f
+    private var currentY = 0f
+
     private var lastX = 0f
     private var lastY = 0f
 
@@ -155,12 +158,19 @@ class KeyViewerConfigActivity : AppCompatActivity() {
 
         // KIỂM TRA TỰ ĐỘNG NẠP MẶC ĐỊNH LẦN ĐẦU
         val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
-        if (!pref.getBoolean("is_keyviewer_configured", false)) {
-            resetToDefault()
+        val isKeyViewerConfigured = pref.getBoolean("is_keyviewer_configured", false)
+
+        if (!isKeyViewerConfigured) {
+            // KHÓA CỜ NGAY LẬP TỨC trước khi gọi hàm Reset để tránh Activity Recreate gọi Reset 2 lần làm mất tọa độ.
             pref.edit().putBoolean("is_keyviewer_configured", true).apply()
+            
+            // Gọi hàm load mặc định (đặt view ra giữa màn hình)
+            resetToDefault()
+        } else {
+            // Chỉ nạp tọa độ từ bộ nhớ nếu đã configured
+            loadPreferences()
         }
 
-        loadPreferences()
         setupListeners()
 
         // Cố định Pivot 0,0 để đồng bộ hệ tọa độ
@@ -319,7 +329,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                 applyValuesToUIControls(
                     textColorNormal = "#FFFFFF",
                     textColorPressed = "#FF000000",
-                    bgNormal = "#4D903CFF",
+                    bgNormal = "#338E3CFF",
                     bgPressed = "#FFFFFFFF",
                     borderNormal = "#FF8C3EFF",
                     borderPressed = "#FFFFFF",
@@ -492,11 +502,14 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         val x = sharedPref.getFloat("viewer_x", 0f)
         val y = sharedPref.getFloat("viewer_y", 0f)
         currentScale = sharedPref.getFloat("viewer_scale", 1.0f)
-        currentSpeed = sharedPref.getFloat("trail_speed", 1.0f)
+        currentSpeed = sharedPref.getFloat("trail_speed", 0.8f)
         currentLimit = sharedPref.getInt("trail_limit_px", 200)
         currentKeyWidth = sharedPref.getInt("key_width", 60)
         currentKeyHeight = sharedPref.getInt("key_height", 60)
-        currentKeySpacing = sharedPref.getInt("key_spacing", 0)
+        currentKeySpacing = sharedPref.getInt("key_spacing", 7)
+
+        currentX = x
+        currentY = y
 
         viewerContainer.x = x
         viewerContainer.y = y
@@ -641,6 +654,9 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                     view.y += (event.rawY - lastY)
                     lastX = event.rawX
                     lastY = event.rawY
+                    
+                    currentX = view.x
+                    currentY = view.y
 
                     // Cập nhật ngược lại Slider (Cộng thêm Center Offset)
                     val dm = resources.displayMetrics
@@ -697,6 +713,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             val actualX = value - centerX
             if (fromUser) {
                 viewerContainer.x = actualX
+                currentX = actualX
             }
             updateLabels()
         }
@@ -706,6 +723,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             val actualY = value - centerY
             if (fromUser) {
                 viewerContainer.y = actualY
+                currentY = actualY
             }
             updateLabels()
         }
@@ -761,7 +779,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         try { rainColor = Color.parseColor(rainColorHex) } catch (e: Exception) {}
         try { rainShadow = Color.parseColor(rainShadowHex) } catch (e: Exception) {}
 
-        val normalDrawable = createBoxDrawable(bgNormal, borderNormal, 5)
+        val normalDrawable = createBoxDrawable(bgNormal, borderNormal, 8)
 
         // Cập nhật phím
         for (i in 0 until keysContainer.childCount) {
@@ -942,7 +960,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
     private fun createBoxDrawable(bgColor: Int, borderColor: Int, strokeWidthPx: Int): GradientDrawable {
         return GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
-            cornerRadius = 12f
+            cornerRadius = 18f
             setColor(bgColor)
             setStroke(strokeWidthPx, borderColor)
         }
@@ -962,13 +980,9 @@ class KeyViewerConfigActivity : AppCompatActivity() {
     private fun saveAndExit() {
         val sharedPref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
 
-        // Sử dụng x, y trực tiếp từ View vì Activity đã tràn viền (no limits)
-        val savedX = viewerContainer.x
-        val savedY = viewerContainer.y
-
         sharedPref.edit().apply {
-            putFloat("viewer_x", savedX)
-            putFloat("viewer_y", savedY)
+            putFloat("viewer_x", currentX)
+            putFloat("viewer_y", currentY)
             putFloat("viewer_scale", currentScale)
             putFloat("trail_speed", currentSpeed)
             putInt("trail_limit_px", currentLimit)
@@ -989,8 +1003,14 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             putString("theme_border_pressed", etBorderPressedHex.text.toString())
             putString("theme_rain_color", etRainColorHex.text.toString())
             putString("theme_rain_shadow", etRainShadowHex.text.toString())
+            
+            // Khóa vĩnh viễn trạng thái đã setup, đảm bảo không bị reset ở lần mở sau
+            putBoolean("is_keyviewer_configured", true)
             apply()
         }
+
+        // Gửi tín hiệu để Service cập nhật ngay lập tức (nếu đang chạy ngầm)
+        triggerOverlayRefresh()
 
         Toast.makeText(this, getString(R.string.toast_config_saved), Toast.LENGTH_SHORT).show()
         finish()
@@ -1003,11 +1023,11 @@ class KeyViewerConfigActivity : AppCompatActivity() {
 
         // GIỮ NGUYÊN BẢN GIÁ TRỊ RESET CỦA BẠN
         currentScale = 0.5f
-        currentSpeed = 0.7f
+        currentSpeed = 0.8f
         currentLimit = 280
         currentKeyWidth = 55
         currentKeyHeight = 60
-        currentKeySpacing = 5
+        currentKeySpacing = 7
 
         // Cập nhật thanh trượt
         seekPosX.value = centerX.toFloat()
@@ -1025,19 +1045,23 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         viewerContainer.scaleX = currentScale
         viewerContainer.scaleY = currentScale
 
+        currentX = 0f
+        currentY = 0f
+
         updateLivePreview()
 
         // Lưu SharedPreferences (Lưu 0f)
         val sharedPref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
         sharedPref.edit().apply {
-            putFloat("viewer_x", 0f)
-            putFloat("viewer_y", 0f)
+            putFloat("viewer_x", currentX)
+            putFloat("viewer_y", currentY)
             putFloat("viewer_scale", currentScale)
             putFloat("trail_speed", currentSpeed)
             putInt("trail_limit_px", currentLimit)
             putInt("key_width", currentKeyWidth)
             putInt("key_height", currentKeyHeight)
             putInt("key_spacing", currentKeySpacing)
+            putBoolean("is_keyviewer_configured", true)
             apply()
         }
 

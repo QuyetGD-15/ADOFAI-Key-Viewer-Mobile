@@ -241,22 +241,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
-        // 1. Cài đặt mặc định cho KeyViewer
-        if (pref.getBoolean("is_first_run", true)) {
-            pref.edit().apply {
-                putFloat("viewer_x", 0f)
-                putFloat("viewer_y", 0f)
-                putFloat("viewer_scale", 0.5f)
-                putFloat("trail_speed", 0.7f)
-                putInt("trail_limit_px", 280)
-                putInt("key_width", 55)
-                putInt("key_height", 60)
-                putInt("key_spacing", 5)
-                putBoolean("is_first_run", false)
-            }.apply()
-        }
-
-        // 2. Cài đặt mặc định cho Hitbox (ĐÃ ĐỒNG BỘ CÔNG THỨC TỈ LỆ VÀNG & BÙ TRỪ 20px)
+        // 1. Cài đặt mặc định cho Hitbox (ĐÃ ĐỒNG BỘ CÔNG THỨC TỈ LỆ VÀNG & BÙ TRỪ 20px)
         val hitboxPref = getSharedPreferences("HitboxPrefs", Context.MODE_PRIVATE)
         if (hitboxPref.getBoolean("is_first_run", true)) {
             val realMetrics = android.util.DisplayMetrics()

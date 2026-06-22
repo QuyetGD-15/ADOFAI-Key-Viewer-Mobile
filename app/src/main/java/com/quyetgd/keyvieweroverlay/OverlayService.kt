@@ -985,12 +985,12 @@ class OverlayService : Service() {
         val x = pref.getFloat("viewer_x", 100f)
         val y = pref.getFloat("viewer_y", 100f)
         val scale = pref.getFloat("viewer_scale", 1.0f)
-        val speed = pref.getFloat("trail_speed", 1.0f)
+        val speed = pref.getFloat("trail_speed", 0.8f)
         val limitPx = pref.getInt("trail_limit_px", 300)
 
         val keyWidth = pref.getInt("key_width", 60)
         val keyHeight = pref.getInt("key_height", 60)
-        val keySpacing = pref.getInt("key_spacing", 0)
+        val keySpacing = pref.getInt("key_spacing", 7)
 
         val bgNormal = try {
             android.graphics.Color.parseColor(pref.getString("theme_bg_normal", "#000000"))
@@ -1116,7 +1116,7 @@ class OverlayService : Service() {
     ): android.graphics.drawable.GradientDrawable {
         return android.graphics.drawable.GradientDrawable().apply {
             shape = android.graphics.drawable.GradientDrawable.RECTANGLE
-            cornerRadius = 12f
+            cornerRadius = 18f
             setColor(bgColor)
             setStroke(strokeWidthPx, borderColor)
         }
@@ -1131,9 +1131,9 @@ class OverlayService : Service() {
         return android.graphics.drawable.StateListDrawable().apply {
             addState(
                 intArrayOf(android.R.attr.state_pressed),
-                createBoxDrawable(bgPressed, borderPressed, 5)
+                createBoxDrawable(bgPressed, borderPressed, 8)
             )
-            addState(intArrayOf(), createBoxDrawable(bgNormal, borderNormal, 5))
+            addState(intArrayOf(), createBoxDrawable(bgNormal, borderNormal, 8))
         }
     }
 
