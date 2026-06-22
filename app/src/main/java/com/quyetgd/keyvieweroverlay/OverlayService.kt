@@ -842,13 +842,17 @@ class OverlayService : Service() {
     fun triggerKeyPressFromKeyboard(lane: Int, isDown: Boolean) {
         if (currentInputSource != "keyboard") return
         if (lane < 0 || lane >= keyMode) return
-        
-        mainHandler.post {
+
+        // Đóng gói logic để thực thi trực tiếp, triệt tiêu Double-Post Delay
+        val executeAction = {
             if (isDown) {
-                // Đánh dấu phím bị chiếm bởi bàn phím (Sử dụng quầy riêng hoặc cộng dồn)
+                // Đánh dấu phím bị chiếm bởi bàn phím
                 laneOccupants[lane]++
-                onKeyDown(lane)
-                
+
+                // CHÌA KHÓA HIỆU NĂNG: Thực thi thẳng Runnable vẽ phím sáng lên
+                // Thay vì gọi onKeyDown() để bị nhét vào mainHandler.post thêm lần nữa
+                keyDownRunnables[lane].run()
+
                 // Cập nhật KPS và Total
                 val currentTime = System.currentTimeMillis()
                 synchronized(kpsLock) {
@@ -861,8 +865,21 @@ class OverlayService : Service() {
             } else {
                 laneOccupants[lane]--
                 if (laneOccupants[lane] < 0) laneOccupants[lane] = 0
-                onKeyUp(lane)
+
+                // CHÌA KHÓA HIỆU NĂNG: Nhả phím ngay lập tức không qua trung gian
+                if (laneOccupants[lane] == 0) {
+                    keyUpRunnables[lane].run()
+                }
             }
+        }
+
+        // AccessibilityService mặc định chạy trên Main Thread.
+        // Kiểm tra an toàn: Nếu đúng Main Thread -> Bấm là sáng luôn (0ms queue).
+        // Nếu khác Thread -> Bắt buộc post (chỉ post 1 lần).
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            executeAction()
+        } else {
+            mainHandler.post(executeAction)
         }
     }
 

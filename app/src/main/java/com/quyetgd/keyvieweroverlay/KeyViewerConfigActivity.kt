@@ -1017,10 +1017,6 @@ class KeyViewerConfigActivity : AppCompatActivity() {
     }
 
     private fun resetToDefault() {
-        val dm = resources.displayMetrics
-        val centerX = dm.widthPixels
-        val centerY = dm.heightPixels
-
         // GIỮ NGUYÊN BẢN GIÁ TRỊ RESET CỦA BẠN
         currentScale = 0.5f
         currentSpeed = 0.8f
@@ -1028,29 +1024,10 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         currentKeyWidth = 55
         currentKeyHeight = 60
         currentKeySpacing = 7
-
-        // Cập nhật thanh trượt
-        seekPosX.value = centerX.toFloat()
-        seekPosY.value = centerY.toFloat()
-        seekScale.value = (currentScale * 100).coerceIn(seekScale.valueFrom, seekScale.valueTo)
-        seekSpeed.value = (currentSpeed * 100).coerceIn(seekSpeed.valueFrom, seekSpeed.valueTo)
-        seekLimit.value = (currentLimit - 70).toFloat().coerceIn(seekLimit.valueFrom, seekLimit.valueTo)
-        seekKeyWidth.value = (currentKeyWidth - 30).toFloat().coerceIn(seekKeyWidth.valueFrom, seekKeyWidth.valueTo)
-        seekKeyHeight.value = (currentKeyHeight - 30).toFloat().coerceIn(seekKeyHeight.valueFrom, seekKeyHeight.valueTo)
-        seekKeySpacing.value = currentKeySpacing.toFloat().coerceIn(seekKeySpacing.valueFrom, seekKeySpacing.valueTo)
-
-        // Cập nhật UI Preview và Tọa độ View (Về 0f)
-        viewerContainer.x = 0f
-        viewerContainer.y = 0f
-        viewerContainer.scaleX = currentScale
-        viewerContainer.scaleY = currentScale
-
         currentX = 0f
         currentY = 0f
 
-        updateLivePreview()
-
-        // Lưu SharedPreferences (Lưu 0f)
+        // Lưu SharedPreferences (Lưu mặc định toàn bộ bao gồm Theme)
         val sharedPref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
         sharedPref.edit().apply {
             putFloat("viewer_x", currentX)
@@ -1061,9 +1038,31 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             putInt("key_width", currentKeyWidth)
             putInt("key_height", currentKeyHeight)
             putInt("key_spacing", currentKeySpacing)
+            
+            // BỔ SUNG THEME MẶC ĐỊNH
+            putString("theme_bg_normal", "#000000")
+            putString("theme_border_normal", "#FFFFFF")
+            putString("theme_bg_pressed", "#FFFFFF")
+            putString("theme_border_pressed", "#FFFFFF")
+            putString("theme_text_color", "#FFFFFF")
+            putString("theme_text_color_pressed", "#000000")
+            putString("theme_rain_color", "#FFFFFF")
+            putString("theme_rain_shadow", "#000000")
+            putFloat("theme_text_size", 20f)
+            putBoolean("theme_text_bold", true)
+            putBoolean("theme_text_italic", false)
+            putBoolean("theme_text_underline", false)
+            
             putBoolean("is_keyviewer_configured", true)
             apply()
         }
+
+        // Nạp lại toàn bộ giao diện từ Prefs để cập nhật Sliders, EditTexts, Màu sắc
+        loadPreferences()
+        
+        // Vẽ lại giao diện Preview
+        renderKeyPreview()
+        updateLivePreview()
 
         Toast.makeText(this, getString(R.string.toast_reset_default), Toast.LENGTH_SHORT).show()
     }
