@@ -103,7 +103,9 @@ class OverlayService : Service() {
     private lateinit var hitboxCentersX: FloatArray
     private lateinit var hitboxCentersY: FloatArray
 
-    private lateinit var keyViews: Array<TextView?>
+    private lateinit var keyContainers: Array<LinearLayout?>
+    private lateinit var keyLabels: Array<TextView?>
+    private lateinit var keyCountersTv: Array<TextView?>
     private var isOverlayShowing = false
     private var isKeyViewerOn = false
     private var isShowTouchesOn = false
@@ -290,6 +292,11 @@ class OverlayService : Service() {
             if (intent?.action == "ACTION_RESET_TOTAL") {
                 totalClicks = 0
                 keyCounters.fill(0)
+                mainHandler.post {
+                    for (i in 0 until keyMode) {
+                        keyCountersTv[i]?.text = "0"
+                    }
+                }
                 sharedPrefs.edit().putInt("TOTAL_CLICKS", 0).apply()
 
                 lastRenderedKps = -1
@@ -331,7 +338,9 @@ class OverlayService : Service() {
                             keyCounters = IntArray(keyMode)
                             hitboxCentersX = FloatArray(keyMode)
                             hitboxCentersY = FloatArray(keyMode)
-                            keyViews = arrayOfNulls<TextView>(keyMode)
+                            keyContainers = arrayOfNulls<LinearLayout>(keyMode)
+                            keyLabels = arrayOfNulls<TextView>(keyMode)
+                            keyCountersTv = arrayOfNulls<TextView>(keyMode)
                             hitboxes = Array(keyMode) { RectF() }
                             
                             activeTrails = arrayOfNulls<KeyTrailView.Trail>(keyMode)
@@ -339,17 +348,21 @@ class OverlayService : Service() {
                             keyDownRunnables = Array(keyMode) { lane ->
                                 Runnable {
                                     if (activeTrails[lane] != null) return@Runnable
-                                    val tv = keyViews[lane] ?: return@Runnable
-                                    activeTrails[lane] = keyTrailView.addTrail(tv.x, tv.width.toFloat())
-                                    tv.isPressed = true
+                                    val container = keyContainers[lane] ?: return@Runnable
+                                    activeTrails[lane] = keyTrailView.addTrail(container.x, container.width.toFloat())
+                                    container.isPressed = true
+                                    
+                                    // BƯỚC 4: TĂNG SỐ ĐẾM KHI BẤM
+                                    keyCounters[lane]++
+                                    mainHandler.post { keyCountersTv[lane]?.text = keyCounters[lane].toString() }
                                 }
                             }
                             keyUpRunnables = Array(keyMode) { lane ->
                                 Runnable {
                                     activeTrails[lane]?.isReleased = true
                                     activeTrails[lane] = null
-                                    val tv = keyViews[lane] ?: return@Runnable
-                                    tv.isPressed = false
+                                    val container = keyContainers[lane] ?: return@Runnable
+                                    container.isPressed = false
                                 }
                             }
 
@@ -401,16 +414,22 @@ class OverlayService : Service() {
         keyCounters = IntArray(keyMode)
         hitboxCentersX = FloatArray(keyMode)
         hitboxCentersY = FloatArray(keyMode)
-        keyViews = arrayOfNulls<TextView>(keyMode)
+        keyContainers = arrayOfNulls<LinearLayout>(keyMode)
+        keyLabels = arrayOfNulls<TextView>(keyMode)
+        keyCountersTv = arrayOfNulls<TextView>(keyMode)
         hitboxes = Array(keyMode) { RectF() }
 
         keyDownRunnables = Array(keyMode) { lane ->
             Runnable {
                 if (activeTrails[lane] != null) return@Runnable
-                val tv = keyViews[lane] ?: return@Runnable
+                val container = keyContainers[lane] ?: return@Runnable
                 
-                activeTrails[lane] = keyTrailView.addTrail(tv.x, tv.width.toFloat())
-                tv.isPressed = true
+                activeTrails[lane] = keyTrailView.addTrail(container.x, container.width.toFloat())
+                container.isPressed = true
+
+                // BƯỚC 4: TĂNG SỐ ĐẾM KHI BẤM
+                keyCounters[lane]++
+                mainHandler.post { keyCountersTv[lane]?.text = keyCounters[lane].toString() }
             }
         }
 
@@ -418,8 +437,8 @@ class OverlayService : Service() {
             Runnable {
                 activeTrails[lane]?.isReleased = true
                 activeTrails[lane] = null
-                val tv = keyViews[lane] ?: return@Runnable
-                tv.isPressed = false
+                val container = keyContainers[lane] ?: return@Runnable
+                container.isPressed = false
             }
         }
         activeTrails = arrayOfNulls<KeyTrailView.Trail>(keyMode)
@@ -915,8 +934,14 @@ class OverlayService : Service() {
         val keysContainer = viewerContainer.findViewById<LinearLayout>(R.id.keysContainer)
         keysContainer.removeAllViews()
         for (i in 0 until keyMode) {
-            val tv = TextView(this).apply {
+            val container = LinearLayout(this).apply {
                 layoutParams = LinearLayout.LayoutParams(60, 60)
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+            }
+
+            val tvLabel = TextView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
                 gravity = Gravity.CENTER
                 
                 if (currentInputSource == "keyboard") {
@@ -930,8 +955,32 @@ class OverlayService : Service() {
                 textSize = 20f
                 typeface = Typeface.DEFAULT_BOLD
             }
-            keysContainer.addView(tv)
-            keyViews[i] = tv
+
+            val tvCount = TextView(this).apply {
+                val density = resources.displayMetrics.density
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin = (4 * density).toInt()
+                }
+                gravity = Gravity.CENTER
+                text = keyCounters[i].toString()
+                maxLines = 1
+                includeFontPadding = false
+                // Ép tự động thu nhỏ chữ để chứa ít nhất 5 số
+                androidx.core.widget.TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(
+                    this, 6, 14, 1, TypedValue.COMPLEX_UNIT_SP
+                )
+            }
+
+            container.addView(tvLabel)
+            container.addView(tvCount)
+            keysContainer.addView(container)
+
+            keyContainers[i] = container
+            keyLabels[i] = tvLabel
+            keyCountersTv[i] = tvCount
         }
 
         kpsContainer =
@@ -1053,34 +1102,59 @@ class OverlayService : Service() {
             viewerContainer.scaleX = scale
             viewerContainer.scaleY = scale
 
-            for (i in 0 until keysContainer.childCount) {
-                val keyView = keysContainer.getChildAt(i) as? TextView ?: continue
-                val params = keyView.layoutParams as ViewGroup.MarginLayoutParams
-                params.width = (keyWidth * resources.displayMetrics.density).toInt()
-                params.height = (keyHeight * resources.displayMetrics.density).toInt()
-                if (i > 0) {
-                    params.leftMargin = (keySpacing * resources.displayMetrics.density).toInt()
-                }
-                keyView.layoutParams = params
+        val showCounters = pref.getBoolean("show_key_counters", false)
+        for (i in 0 until keysContainer.childCount) {
+            val container = keysContainer.getChildAt(i) as? LinearLayout ?: continue
+            val params = container.layoutParams as ViewGroup.MarginLayoutParams
+            params.width = (keyWidth * resources.displayMetrics.density).toInt()
+            params.height = (keyHeight * resources.displayMetrics.density).toInt()
+            if (i > 0) {
+                params.leftMargin = (keySpacing * resources.displayMetrics.density).toInt()
+            }
+            container.layoutParams = params
 
-                // Cập nhật text phím (Bàn phím vật lý vs Cảm ứng)
-                if (currentInputSource == "keyboard") {
-                    val savedKeyName = pref.getString("key_name_${keyMode}_$i", null)
-                    keyView.text = getAbbreviatedKeyName(savedKeyName)
-                } else {
-                    keyView.text = (i + 1).toString()
-                }
+            val tvLabel = keyLabels[i]
+            val tvCount = keyCountersTv[i]
 
-                applyThemeToTextView(keyView)
-                keyView.setTextColor(
+            // Cập nhật text phím (Bàn phím vật lý vs Cảm ứng)
+            if (currentInputSource == "keyboard") {
+                val savedKeyName = pref.getString("key_name_${keyMode}_$i", null)
+                tvLabel?.text = getAbbreviatedKeyName(savedKeyName)
+            } else {
+                tvLabel?.text = (i + 1).toString()
+            }
+
+            if (tvLabel != null) {
+                applyThemeToTextView(tvLabel)
+                tvLabel.setTextColor(
                     createTextColorStateList(
                         themeTextColor,
                         themeTextColorPressed
                     )
                 )
-                keyView.background =
-                    createAlphaSelector(bgNormal, borderNormal, bgPressed, borderPressed)
             }
+            
+            if (tvCount != null) {
+                // Áp dụng theme font/color nhưng giữ logic Auto-size
+                tvCount.typeface = themeTypeface
+                if (themeIsUnderline) {
+                    tvCount.paintFlags = tvCount.paintFlags or android.graphics.Paint.UNDERLINE_TEXT_FLAG
+                } else {
+                    tvCount.paintFlags = tvCount.paintFlags and android.graphics.Paint.UNDERLINE_TEXT_FLAG.inv()
+                }
+                tvCount.setTextColor(
+                    createTextColorStateList(
+                        themeTextColor,
+                        themeTextColorPressed
+                    )
+                )
+                tvCount.visibility = if (showCounters) View.VISIBLE else View.GONE
+                tvCount.text = keyCounters[i].toString()
+            }
+
+            container.background =
+                createAlphaSelector(bgNormal, borderNormal, bgPressed, borderPressed)
+        }
 
             kpsContainer?.background =
                 createAlphaSelector(bgNormal, borderNormal, bgPressed, borderPressed)

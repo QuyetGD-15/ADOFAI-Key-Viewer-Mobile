@@ -68,6 +68,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
     private lateinit var seekKeySpacing: Slider
 
     private lateinit var layoutThemeContent: LinearLayout
+    private lateinit var swShowKeyCounters: com.google.android.material.switchmaterial.SwitchMaterial
     private lateinit var cbBold: CheckBox
     private lateinit var cbItalic: CheckBox
     private lateinit var cbUnderline: CheckBox
@@ -187,23 +188,50 @@ class KeyViewerConfigActivity : AppCompatActivity() {
     private fun renderKeyPreview() {
         val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
         val keyMode = pref.getInt("current_key_mode", 6)
+        val showCounters = swShowKeyCounters.isChecked
 
         keysContainer.removeAllViews()
         for (i in 1..keyMode) {
-            val tv = TextView(this).apply {
+            val container = LinearLayout(this).apply {
                 layoutParams = LinearLayout.LayoutParams(
                     (currentKeyWidth * resources.displayMetrics.density).toInt(),
                     (currentKeyHeight * resources.displayMetrics.density).toInt()
                 )
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                id = View.generateViewId()
+            }
+
+            val tvLabel = TextView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
                 gravity = Gravity.CENTER
                 text = i.toString()
                 setTextColor(Color.WHITE)
                 textSize = 20f
                 typeface = Typeface.DEFAULT_BOLD
-                // Gán ID tạm để dễ debug hoặc tham chiếu nếu cần
-                id = View.generateViewId()
             }
-            keysContainer.addView(tv)
+
+            val tvCount = TextView(this).apply {
+                val density = resources.displayMetrics.density
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin = (4 * density).toInt()
+                }
+                gravity = Gravity.CENTER
+                text = "0"
+                maxLines = 1
+                includeFontPadding = false
+                visibility = if (showCounters) View.VISIBLE else View.GONE
+                androidx.core.widget.TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(
+                    this, 6, 14, 1, TypedValue.COMPLEX_UNIT_SP
+                )
+            }
+
+            container.addView(tvLabel)
+            container.addView(tvCount)
+            keysContainer.addView(container)
         }
     }
 
@@ -214,6 +242,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         bottomCountersContainer = findViewById(R.id.bottomCountersContainer)
 
         layoutThemeContent = findViewById(R.id.layoutThemeContent)
+        swShowKeyCounters = findViewById(R.id.swShowKeyCounters)
         tvThemeHeader = findViewById(R.id.tvThemeHeader)
         cbBold = findViewById(R.id.cbBold)
         cbItalic = findViewById(R.id.cbItalic)
@@ -526,6 +555,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         seekKeySpacing.value = currentKeySpacing.toFloat().coerceIn(seekKeySpacing.valueFrom, seekKeySpacing.valueTo)
 
         // Load THEME settings
+        swShowKeyCounters.isChecked = sharedPref.getBoolean("show_key_counters", false)
         cbBold.isChecked = sharedPref.getBoolean("theme_text_bold", false)
         cbItalic.isChecked = sharedPref.getBoolean("theme_text_italic", false)
         cbUnderline.isChecked = sharedPref.getBoolean("theme_text_underline", false)
@@ -633,6 +663,10 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         etRainShadowHex.addTextChangedListener(themeTextWatcher)
 
         // CheckBoxes and SeekBar
+        swShowKeyCounters.setOnCheckedChangeListener { _, _ -> 
+            renderKeyPreview()
+            updateLivePreview() 
+        }
         cbBold.setOnCheckedChangeListener { _, _ -> updateLivePreview() }
         cbItalic.setOnCheckedChangeListener { _, _ -> updateLivePreview() }
         cbUnderline.setOnCheckedChangeListener { _, _ -> updateLivePreview() }
@@ -782,26 +816,40 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         val normalDrawable = createBoxDrawable(bgNormal, borderNormal, 8)
 
         // Cập nhật phím
+        val showCounters = swShowKeyCounters.isChecked
         for (i in 0 until keysContainer.childCount) {
-            val keyView = keysContainer.getChildAt(i)
-            val params = keyView.layoutParams as ViewGroup.MarginLayoutParams
+            val container = keysContainer.getChildAt(i) as? LinearLayout ?: continue
+            val params = container.layoutParams as ViewGroup.MarginLayoutParams
             params.width = widthPx
             params.height = heightPx
             if (i > 0) {
                 params.leftMargin = spacingPx
             }
-            keyView.layoutParams = params
+            container.layoutParams = params
+            container.background = normalDrawable.constantState?.newDrawable()?.mutate() ?: normalDrawable
 
-            if (keyView is TextView) {
-                keyView.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize.toFloat())
-                keyView.setTextColor(textColor)
-                keyView.typeface = typeface
+            val tvLabel = container.getChildAt(0) as? TextView
+            val tvCount = container.getChildAt(1) as? TextView
+
+            tvLabel?.apply {
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize.toFloat())
+                setTextColor(textColor)
+                this.typeface = typeface
                 if (isUnderline) {
-                    keyView.paintFlags = keyView.paintFlags or Paint.UNDERLINE_TEXT_FLAG
+                    paintFlags = paintFlags or Paint.UNDERLINE_TEXT_FLAG
                 } else {
-                    keyView.paintFlags = keyView.paintFlags and Paint.UNDERLINE_TEXT_FLAG.inv()
+                    paintFlags = paintFlags and Paint.UNDERLINE_TEXT_FLAG.inv()
                 }
-                keyView.background = normalDrawable.constantState?.newDrawable()?.mutate() ?: normalDrawable
+            }
+
+            tvCount?.apply {
+                setTextColor(textColor)
+                this.typeface = typeface
+                visibility = if (showCounters) View.VISIBLE else View.GONE
+                // Ép tự động thu nhỏ chữ
+                androidx.core.widget.TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(
+                    this, 6, 14, 1, TypedValue.COMPLEX_UNIT_SP
+                )
             }
         }
 
@@ -991,6 +1039,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             putInt("key_spacing", currentKeySpacing)
 
             // Save THEME settings
+            putBoolean("show_key_counters", swShowKeyCounters.isChecked)
             putBoolean("theme_text_bold", cbBold.isChecked)
             putBoolean("theme_text_italic", cbItalic.isChecked)
             putBoolean("theme_text_underline", cbUnderline.isChecked)

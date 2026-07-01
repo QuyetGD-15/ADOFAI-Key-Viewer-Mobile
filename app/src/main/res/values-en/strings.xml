@@ -121,6 +121,7 @@
     <string name="crash_ignore">Ignore</string>
     <string name="toast_copied">Copied</string>
     <string name="reset_total">RESET TOTAL</string>
+    <string name="theme_show_counters">Show individual key counters</string>
     <string name="toast_total_reset">Total clicks reset to 0</string>
     <string name="toast_reset_default">Reset to standard default</string>
     <string name="current_language">Language: English</string>

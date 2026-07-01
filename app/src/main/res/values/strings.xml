@@ -121,6 +121,7 @@
     <string name="crash_ignore">Bỏ qua</string>
     <string name="toast_copied">Đã sao chép</string>
     <string name="reset_total">RESET TOTAL</string>
+    <string name="theme_show_counters">Hiển thị số đếm từng phím</string>
     <string name="toast_total_reset">Đã reset Total về 0</string>
     <string name="toast_reset_default">Đã đưa về mặc định chuẩn</string>
     <string name="current_language">Ngôn ngữ: Tiếng Việt</string>
