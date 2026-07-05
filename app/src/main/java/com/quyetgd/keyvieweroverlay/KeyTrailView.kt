@@ -12,57 +12,85 @@ class KeyTrailView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
-    init {
-        // Cho phép vẽ Shadow bằng phần mềm để đảm bảo tương thích
-        setLayerType(LAYER_TYPE_SOFTWARE, null)
+    // --- BƯỚC 1: CẤU TRÚC OBJECT POOL (CHỐNG RÁC BỘ NHỚ) ---
+    class Trail {
+        var startY: Float = 0f
+        var bottomY: Float = 0f
+        var leftX: Float = 0f
+        var rightX: Float = 0f
+        var isReleased: Boolean = false
+        var alpha: Float = 255f // Đổi sang Float để trừ mịn màng theo DeltaTime
+        var isActive: Boolean = false
+
+        // Hàm "đánh thức" vệt sáng tái sử dụng
+        fun reset(x: Float, width: Float, startBottomY: Float) {
+            this.leftX = x
+            this.rightX = x + width
+            this.startY = startBottomY
+            this.bottomY = startBottomY
+            this.isReleased = false
+            this.alpha = 255f
+            this.isActive = true
+        }
     }
 
-    data class Trail(
-        var startY: Float,
-        var bottomY: Float,
-        val leftX: Float,
-        val rightX: Float,
-        var isReleased: Boolean,
-        var alpha: Int = 255
-    )
+    // Giới hạn an toàn, 150 vệt sáng cùng lúc là dư sức cho 30-40 KPS mà không sụt FPS
+    private val MAX_TRAILS = 150
+    private val trailPool = Array(MAX_TRAILS) { Trail() }
 
-    private val trails = mutableListOf<Trail>()
-    private val paint = Paint().apply {
-        color = Color.WHITE
+    // --- BƯỚC 2: HỆ THỐNG PAINT GIA TỐC PHẦN CỨNG ---
+    private val corePaint = Paint().apply {
         style = Paint.Style.FILL
         isAntiAlias = true
-        setShadowLayer(12f, 0f, 0f, Color.parseColor("#B3000000"))
+    }
+
+    private val glowPaint = Paint().apply {
+        style = Paint.Style.FILL
+        isAntiAlias = true
+        // Sử dụng BlurMaskFilter cho GPU xử lý, thay vì setShadowLayer ép CPU chạy
+        maskFilter = android.graphics.BlurMaskFilter(16f, android.graphics.BlurMaskFilter.Blur.OUTER)
     }
 
     private var rainColor = Color.WHITE
     private var rainShadowColor = Color.CYAN
     private var isShadowEnabled = true
-    
-    private val baseSpeed = 25f
+
+    // Vận tốc nay tính theo GIÂY thay vì FRAME (25px/frame ở 60fps = ~1500px/giây)
+    private val baseSpeedPerSecond = 1500f
     private val baseMaxHeight = 1000f
+    private val fadeSpeedPerSecond = 1500f // Tốc độ mờ alpha theo giây
 
     var trailSpeed: Float = 1.0f
     var trailLimit: Float = 1.0f
 
     private var isRunning = false
+    private var lastFrameTimeNanos: Long = 0L
 
-    /**
-     * Vòng lặp Choreographer: Đảm bảo hoạt ảnh (animation) của RainKey 
-     * mượt mà nhất có thể theo tần số quét của màn hình (60/90/120Hz).
-     */
+    // --- BƯỚC 3: GAME LOOP CHUẨN VẬT LÝ ---
     private val frameCallback = object : Choreographer.FrameCallback {
         override fun doFrame(frameTimeNanos: Long) {
             if (isRunning) {
-                updateLogic()
-                invalidate()
+                if (lastFrameTimeNanos != 0L) {
+                    // Tính DeltaTime (Thời gian trôi qua giữa 2 khung hình, tính bằng giây)
+                    val deltaTime = (frameTimeNanos - lastFrameTimeNanos) / 1_000_000_000f
+                    updateLogic(deltaTime)
+                    invalidate()
+                }
+                lastFrameTimeNanos = frameTimeNanos
                 Choreographer.getInstance().postFrameCallback(this)
             }
         }
     }
 
+    init {
+        // LOẠI BỎ HOÀN TOÀN LAYER_TYPE_SOFTWARE: Bật Hardware Acceleration
+        setLayerType(LAYER_TYPE_HARDWARE, null)
+    }
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         isRunning = true
+        lastFrameTimeNanos = 0L
         Choreographer.getInstance().postFrameCallback(frameCallback)
     }
 
@@ -72,44 +100,56 @@ class KeyTrailView @JvmOverloads constructor(
         Choreographer.getInstance().removeFrameCallback(frameCallback)
     }
 
-    private fun updateLogic() {
-        synchronized(trails) {
-            val iterator = trails.iterator()
-            val actualSpeed = baseSpeed * trailSpeed
-            val limitY = height.toFloat() - (baseMaxHeight * trailLimit)
+    private fun updateLogic(deltaTime: Float) {
+        val actualSpeed = baseSpeedPerSecond * trailSpeed * deltaTime
+        val limitY = height.toFloat() - (baseMaxHeight * trailLimit)
+        val alphaDecrease = fadeSpeedPerSecond * deltaTime
 
-            while (iterator.hasNext()) {
-                val trail = iterator.next()
-                
-                if (!trail.isReleased) {
-                    trail.startY -= actualSpeed
-                } else {
-                    trail.startY -= actualSpeed
-                    trail.bottomY -= actualSpeed
-                }
+        // Vòng lặp For nguyên thủy (Không sinh Iterator = Không kích hoạt Garbage Collection)
+        for (i in 0 until MAX_TRAILS) {
+            val trail = trailPool[i]
+            if (!trail.isActive) continue
 
-                // Xử lý mờ dần khi chạm giới hạn bay
-                if (trail.startY < limitY) {
-                    trail.alpha -= 25 // Giảm alpha nhanh
-                    if (trail.alpha < 0) trail.alpha = 0
-                }
+            if (!trail.isReleased) {
+                trail.startY -= actualSpeed
+            } else {
+                trail.startY -= actualSpeed
+                trail.bottomY -= actualSpeed
+            }
 
-                // Xóa khi đã hoàn toàn biến mất hoặc bay quá xa
-                if (trail.alpha <= 0 || trail.bottomY < -100) {
-                    iterator.remove()
-                }
+            // Xử lý mờ dần khi chạm giới hạn bay
+            if (trail.startY < limitY) {
+                trail.alpha -= alphaDecrease
+            }
+
+            // Trả vệt sáng về giấc ngủ (Pool) khi hết Alpha hoặc bay khỏi màn hình
+            if (trail.alpha <= 0f || trail.bottomY < -100f) {
+                trail.isActive = false
             }
         }
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        synchronized(trails) {
-            trails.forEach { trail ->
-                paint.color = rainColor
-                paint.alpha = trail.alpha
-                canvas.drawRect(trail.leftX, trail.startY, trail.rightX, trail.bottomY, paint)
+
+        // Tối ưu Draw Calls
+        for (i in 0 until MAX_TRAILS) {
+            val trail = trailPool[i]
+            if (!trail.isActive) continue
+
+            val currentAlpha = trail.alpha.toInt().coerceIn(0, 255)
+
+            // 1. Vẽ lớp Glow (Hiệu ứng phát sáng bằng GPU)
+            if (isShadowEnabled) {
+                glowPaint.color = rainShadowColor
+                glowPaint.alpha = (currentAlpha * 0.7f).toInt() // Bóng đổ hơi mờ hơn lõi để tạo chiều sâu
+                canvas.drawRect(trail.leftX, trail.startY, trail.rightX, trail.bottomY, glowPaint)
             }
+
+            // 2. Vẽ lớp lõi (Core)
+            corePaint.color = rainColor
+            corePaint.alpha = currentAlpha
+            canvas.drawRect(trail.leftX, trail.startY, trail.rightX, trail.bottomY, corePaint)
         }
     }
 
@@ -117,35 +157,31 @@ class KeyTrailView @JvmOverloads constructor(
         this.rainColor = color
         this.rainShadowColor = shadowColor
         this.isShadowEnabled = Color.alpha(shadowColor) > 0
-        if (isShadowEnabled) {
-            paint.setShadowLayer(12f, 0f, 0f, rainShadowColor)
-        } else {
-            paint.clearShadowLayer()
-        }
         invalidate()
     }
 
-    fun addTrail(x: Float, width: Float): Trail {
+    // Không cần hàm synchronized do luồng vẽ và logic đều chạy trên MainThread
+    fun addTrail(x: Float, width: Float): Trail? {
         val bottomY = height.toFloat()
-        val newTrail = Trail(
-            startY = bottomY,
-            bottomY = bottomY,
-            leftX = x,
-            rightX = x + width,
-            isReleased = false
-        )
-        synchronized(trails) {
-            trails.add(newTrail)
+        // Kỹ thuật Pool: Quét tìm 1 object rảnh rỗi và tái sử dụng
+        for (i in 0 until MAX_TRAILS) {
+            if (!trailPool[i].isActive) {
+                trailPool[i].reset(x, width, bottomY)
+                return trailPool[i] // Trả về con trỏ để Service gọi lệnh release() sau này
+            }
         }
-        return newTrail
+        // Fallback: Nếu spam quá nhanh hết 150 vệt, bỏ qua lệnh vẽ để giữ vững khung hình
+        return null
     }
 
     fun releaseAll() {
-        synchronized(trails) {
-            trails.forEach { it.isReleased = true }
+        for (i in 0 until MAX_TRAILS) {
+            if (trailPool[i].isActive) {
+                trailPool[i].isReleased = true
+            }
         }
     }
-    
+
     fun setParameters(speed: Float, limit: Float) {
         this.trailSpeed = speed
         this.trailLimit = limit
