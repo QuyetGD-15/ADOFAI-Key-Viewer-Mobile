@@ -820,6 +820,10 @@ class OverlayService : Service() {
         val keyWidth = pref.getInt("key_width", 60)
         val keyHeight = pref.getInt("key_height", 60)
         val keySpacing = pref.getInt("key_spacing", 7)
+        val borderWidthDp = pref.getInt("theme_border_width", 2)
+        val cornerRadiusDp = pref.getInt("theme_corner_radius", 6)
+        val borderPx = (borderWidthDp * resources.displayMetrics.density).toInt()
+        val radiusPx = cornerRadiusDp * resources.displayMetrics.density
 
         val bgNormal = try { Color.parseColor(pref.getString("theme_bg_normal", "#000000")) } catch (e: Exception) { Color.BLACK }
         val borderNormal = try { Color.parseColor(pref.getString("theme_border_normal", "#FFFFFF")) } catch (e: Exception) { Color.WHITE }
@@ -858,11 +862,11 @@ class OverlayService : Service() {
                     tvCount.setTextColor(createTextColorStateList(themeTextColor, themeTextColorPressed))
                     tvCount.visibility = if (showCounters) View.VISIBLE else View.GONE
                 }
-                container.background = createAlphaSelector(bgNormal, borderNormal, bgPressed, borderPressed)
+                container.background = createAlphaSelector(bgNormal, borderNormal, bgPressed, borderPressed, borderPx, radiusPx)
             }
 
-            kpsContainer?.background = createAlphaSelector(bgNormal, borderNormal, bgPressed, borderPressed)
-            totalContainer?.background = createAlphaSelector(bgNormal, borderNormal, bgPressed, borderPressed)
+            kpsContainer?.background = createAlphaSelector(bgNormal, borderNormal, bgPressed, borderPressed, borderPx, radiusPx)
+            totalContainer?.background = createAlphaSelector(bgNormal, borderNormal, bgPressed, borderPressed, borderPx, radiusPx)
             kpsContainer?.let { (it.layoutParams as ViewGroup.MarginLayoutParams).rightMargin = dpToPxInt(keySpacing) }
             viewerContainer.findViewById<View>(R.id.bottomCountersContainer)?.let { (it.layoutParams as ViewGroup.MarginLayoutParams).topMargin = dpToPxInt(keySpacing) }
 
@@ -879,19 +883,29 @@ class OverlayService : Service() {
         }
     }
 
-    private fun createBoxDrawable(bgColor: Int, borderColor: Int, strokeWidthPx: Int): android.graphics.drawable.GradientDrawable {
+    private fun createBoxDrawable(bgColor: Int, borderColor: Int, strokeWidthPx: Int, cornerRadiusPx: Float): android.graphics.drawable.GradientDrawable {
         return android.graphics.drawable.GradientDrawable().apply {
             shape = android.graphics.drawable.GradientDrawable.RECTANGLE
-            cornerRadius = 18f
+            cornerRadius = cornerRadiusPx
             setColor(bgColor)
             setStroke(strokeWidthPx, borderColor)
         }
     }
 
-    private fun createAlphaSelector(bgNormal: Int, borderNormal: Int, bgPressed: Int, borderPressed: Int): android.graphics.drawable.StateListDrawable {
+    private fun createAlphaSelector(
+        bgNormal: Int,
+        borderNormal: Int,
+        bgPressed: Int,
+        borderPressed: Int,
+        strokePx: Int,
+        radiusPx: Float
+    ): android.graphics.drawable.StateListDrawable {
         return android.graphics.drawable.StateListDrawable().apply {
-            addState(intArrayOf(android.R.attr.state_pressed), createBoxDrawable(bgPressed, borderPressed, 8))
-            addState(intArrayOf(), createBoxDrawable(bgNormal, borderNormal, 8))
+            addState(
+                intArrayOf(android.R.attr.state_pressed),
+                createBoxDrawable(bgPressed, borderPressed, strokePx, radiusPx)
+            )
+            addState(intArrayOf(), createBoxDrawable(bgNormal, borderNormal, strokePx, radiusPx))
         }
     }
 
@@ -900,10 +914,10 @@ class OverlayService : Service() {
         return when (keyName.uppercase()) {
             "SPACE" -> "␣"; "ENTER", "NUMPAD_ENTER" -> "↵"; "DEL", "FORWARD_DEL", "BACKSPACE" -> "⌫"
             "DPAD_UP", "UP" -> "↑"; "DPAD_DOWN", "DOWN" -> "↓"; "DPAD_LEFT", "LEFT" -> "←"; "DPAD_RIGHT", "RIGHT" -> "→"
-            "ESCAPE" -> "ESC"; "PAGE_UP" -> "PGU"; "PAGE_DOWN" -> "PGD"; "SHIFT_LEFT", "SHIFT_RIGHT" -> "⇧"
-            "CTRL_LEFT", "CTRL_RIGHT" -> "CTL"; "ALT_LEFT", "ALT_RIGHT" -> "ALT"; "TAB" -> "TAB"; "MINUS" -> "-"
+            "ESCAPE" -> "ESC"; "PAGE_UP" -> "PG↑"; "PAGE_DOWN" -> "PG↓"; "SHIFT_LEFT", "SHIFT_RIGHT" -> "⇧"
+            "CTRL_LEFT", "CTRL_RIGHT" -> "CTL"; "ALT_LEFT", "ALT_RIGHT" -> "ALT"; "TAB" -> "⇥"; "MINUS" -> "-"
             "EQUALS" -> "="; "PLUS" -> "+"; "GRAVE" -> "`"; "BACKSLASH" -> "\\"; "COMMA" -> ","; "PERIOD" -> "."
-            "SLASH" -> "/"
+            "SLASH" -> "/"; "LEFT_BRACKET" -> "["; "RIGHT_BRACKET" -> "]"; "SEMICOLON" -> ";"; "APOSTROPHE" -> "'"
             else -> if (keyName.length > 3) keyName.substring(0, 3) else keyName
         }
     }

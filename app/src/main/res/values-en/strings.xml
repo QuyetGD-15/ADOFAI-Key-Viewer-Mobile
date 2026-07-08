@@ -70,6 +70,8 @@
     <string name="key_width_label">Key Width: %d</string>
     <string name="key_height_label">Key Height: %d</string>
     <string name="spacing_label">Spacing: %d</string>
+    <string name="border_width_label">Border Width: %d dp</string>
+    <string name="corner_radius_label">Corner Radius: %d dp</string>
     <string name="section_key_rain">2. KEY RAIN</string>
     <string name="section_theme">3. THEME</string>
     <string name="theme_text_group">1. TEXT</string>

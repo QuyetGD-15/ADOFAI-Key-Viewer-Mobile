@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.StateListDrawable
 import android.os.Build
 import android.os.Bundle
 import android.text.Editable
@@ -53,6 +54,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
     private lateinit var tvKeyWidthLabel: TextView
     private lateinit var tvKeyHeightLabel: TextView
     private lateinit var tvKeySpacingLabel: TextView
+    private lateinit var tvBorderWidthLabel: TextView
+    private lateinit var tvCornerRadiusLabel: TextView
 
     private lateinit var tvSection1Header: TextView
     private lateinit var tvSection2Header: TextView
@@ -66,6 +69,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
     private lateinit var seekKeyWidth: Slider
     private lateinit var seekKeyHeight: Slider
     private lateinit var seekKeySpacing: Slider
+    private lateinit var seekBorderWidth: Slider
+    private lateinit var seekCornerRadius: Slider
 
     private lateinit var layoutThemeContent: LinearLayout
     private lateinit var swShowKeyCounters: com.google.android.material.switchmaterial.SwitchMaterial
@@ -275,6 +280,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         tvKeyWidthLabel = findViewById(R.id.tvKeyWidthLabel)
         tvKeyHeightLabel = findViewById(R.id.tvKeyHeightLabel)
         tvKeySpacingLabel = findViewById(R.id.tvKeySpacingLabel)
+        tvBorderWidthLabel = findViewById(R.id.tvBorderWidthLabel)
+        tvCornerRadiusLabel = findViewById(R.id.tvCornerRadiusLabel)
 
         tvSection1Header = findViewById(R.id.tvSection1Header)
         section1ContentLayout = findViewById(R.id.section1ContentLayout)
@@ -289,6 +296,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         seekKeyWidth = findViewById(R.id.seekKeyWidth)
         seekKeyHeight = findViewById(R.id.seekKeyHeight)
         seekKeySpacing = findViewById(R.id.seekKeySpacing)
+        seekBorderWidth = findViewById(R.id.seekBorderWidth)
+        seekCornerRadius = findViewById(R.id.seekCornerRadius)
 
         // Thiết lập max cho Pos Sliders dựa trên màn hình (Dải gấp đôi để hỗ trợ âm/dương)
         val dm = resources.displayMetrics
@@ -553,6 +562,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         seekKeyWidth.value = (currentKeyWidth - 30).toFloat().coerceIn(seekKeyWidth.valueFrom, seekKeyWidth.valueTo)
         seekKeyHeight.value = (currentKeyHeight - 30).toFloat().coerceIn(seekKeyHeight.valueFrom, seekKeyHeight.valueTo)
         seekKeySpacing.value = currentKeySpacing.toFloat().coerceIn(seekKeySpacing.valueFrom, seekKeySpacing.valueTo)
+        seekBorderWidth.value = sharedPref.getInt("theme_border_width", 2).toFloat().coerceIn(seekBorderWidth.valueFrom, seekBorderWidth.valueTo)
+        seekCornerRadius.value = sharedPref.getInt("theme_corner_radius", 6).toFloat().coerceIn(seekCornerRadius.valueFrom, seekCornerRadius.valueTo)
 
         // Load THEME settings
         swShowKeyCounters.isChecked = sharedPref.getBoolean("show_key_counters", false)
@@ -739,6 +750,12 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             currentKeySpacing = value.toInt()
             updateLivePreview()
         }
+        seekBorderWidth.addOnChangeListener { _, value, fromUser ->
+            if (fromUser) updateLivePreview()
+        }
+        seekCornerRadius.addOnChangeListener { _, value, fromUser ->
+            if (fromUser) updateLivePreview()
+        }
 
         // Listeners cho PosX và PosY
         seekPosX.addOnChangeListener { _, value, fromUser ->
@@ -775,10 +792,39 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             sendBroadcast(Intent("ACTION_RESET_TOTAL"))
             Toast.makeText(this, getString(R.string.toast_total_reset), Toast.LENGTH_SHORT).show()
         }
-        // --- ĐỒNG BỘ SỐ HIỂN THỊ TRÊN BONG BÓNG (TOOLTIP) CỦA SLIDER ---
+        // --- ĐỒNG BỘ SỐ HIỂN TRÊN BONG BÓNG (TOOLTIP) CỦA SLIDER ---
         val dm = resources.displayMetrics
         val centerX = dm.widthPixels
         val centerY = dm.heightPixels
+
+        val floatFormatter = object : com.google.android.material.slider.LabelFormatter {
+            override fun getFormattedValue(value: Float): String {
+                return String.format(java.util.Locale.US, "%.1f", value / 10f)
+            }
+        }
+
+        val intFormatter = object : com.google.android.material.slider.LabelFormatter {
+            override fun getFormattedValue(value: Float): String {
+                return value.toInt().toString()
+            }
+        }
+
+        seekScale.setLabelFormatter(floatFormatter)
+        seekSpeed.setLabelFormatter(floatFormatter)
+
+        seekPosX.setLabelFormatter(intFormatter)
+        seekPosY.setLabelFormatter(intFormatter)
+        seekLimit.setLabelFormatter(intFormatter)
+        seekKeyWidth.setLabelFormatter(intFormatter)
+        seekKeyHeight.setLabelFormatter(intFormatter)
+        seekKeySpacing.setLabelFormatter(intFormatter)
+        seekThemeTextSize.setLabelFormatter(intFormatter)
+
+        // Thêm formatter cho 2 thanh trượt mới nếu Agent đã tạo
+        try {
+            findViewById<com.google.android.material.slider.Slider>(R.id.seekBorderWidth)?.setLabelFormatter(intFormatter)
+            findViewById<com.google.android.material.slider.Slider>(R.id.seekCornerRadius)?.setLabelFormatter(intFormatter)
+        } catch (e: Exception) {}
 
         // 1. Tọa độ (Trừ đi tâm màn hình)
         seekPosX.setLabelFormatter { value -> (value - centerX).toInt().toString() }
@@ -798,17 +844,22 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         seekKeyHeight.setLabelFormatter { value -> (value + 30).toInt().toString() }
 
         // 4. Khoảng cách (Giữ nguyên)
-        seekKeySpacing.setLabelFormatter { value -> value.toInt().toString() }
+        seekKeySpacing.setLabelFormatter(intFormatter)
+        seekBorderWidth.setLabelFormatter(intFormatter)
+        seekCornerRadius.setLabelFormatter(intFormatter)
 
         // 5. Cỡ chữ Theme (Cộng thêm 10 offset)
         seekThemeTextSize.setLabelFormatter { value -> (value + 10).toInt().toString() }
     }
 
     private fun updateLivePreview() {
-        val widthPx = (currentKeyWidth * resources.displayMetrics.density).toInt()
-        val heightPx = (currentKeyHeight * resources.displayMetrics.density).toInt()
-        val spacingPx = (currentKeySpacing * resources.displayMetrics.density).toInt()
-        val limitPx = (currentLimit * resources.displayMetrics.density).toInt()
+        val density = resources.displayMetrics.density
+        val widthPx = (currentKeyWidth * density).toInt()
+        val heightPx = (currentKeyHeight * density).toInt()
+        val spacingPx = (currentKeySpacing * density).toInt()
+        val limitPx = (currentLimit * density).toInt()
+        val borderPx = (seekBorderWidth.value.toInt() * density).toInt()
+        val radiusPx = seekCornerRadius.value * density
 
         val isBold = cbBold.isChecked
         val isItalic = cbItalic.isChecked
@@ -827,16 +878,18 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         val textColor = try { Color.parseColor(etTextColorHex.text.toString()) } catch (e: Exception) { Color.WHITE }
         val bgNormal = try { Color.parseColor(etBgNormalHex.text.toString()) } catch (e: Exception) { Color.BLACK }
         val borderNormal = try { Color.parseColor(etBorderNormalHex.text.toString()) } catch (e: Exception) { Color.WHITE }
+        val bgPressed = try { Color.parseColor(etBgPressedHex.text.toString()) } catch (e: Exception) { Color.WHITE }
+        val borderPressed = try { Color.parseColor(etBorderPressedHex.text.toString()) } catch (e: Exception) { Color.WHITE }
         val rainColor = try { Color.parseColor(etRainColorHex.text.toString()) } catch (e: Exception) { Color.WHITE }
         val rainShadow = try { Color.parseColor(etRainShadowHex.text.toString()) } catch (e: Exception) { Color.CYAN }
 
-        // TỐI ƯU 3: Cache Drawable, không sinh mới GradientDrawable trong vòng lặp
-        val normalDrawable = createBoxDrawable(bgNormal, borderNormal, 8)
-        val constantState = normalDrawable.constantState
+        // TỐI ƯU 3: Cache Drawable (Sử dụng createAlphaSelector để đồng nhất với OverlayService)
+        val alphaSelector = createAlphaSelector(bgNormal, borderNormal, bgPressed, borderPressed, borderPx, radiusPx)
+        val constantState = alphaSelector.constantState
 
         val showCounters = swShowKeyCounters.isChecked
 
-        // Vòng lặp gán UI siêu nhẹ (Không có logic phân tích nặng nề)
+        // Vòng lặp gán UI siêu nhẹ
         for (i in 0 until keysContainer.childCount) {
             val container = keysContainer.getChildAt(i) as? LinearLayout ?: continue
             val params = container.layoutParams as ViewGroup.MarginLayoutParams
@@ -845,7 +898,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             if (i > 0) params.leftMargin = spacingPx
             container.layoutParams = params
 
-            container.background = constantState?.newDrawable()?.mutate() ?: normalDrawable
+            container.background = constantState?.newDrawable()?.mutate() ?: alphaSelector
 
             (container.getChildAt(0) as? TextView)?.apply {
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize.toFloat())
@@ -870,8 +923,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         val localTotalContainer = viewerContainer.findViewById<View>(resources.getIdentifier("totalContainer", "id", packageName))
 
         if (localKpsContainer != null && localTotalContainer != null) {
-            localKpsContainer.background = constantState?.newDrawable()?.mutate() ?: normalDrawable
-            localTotalContainer.background = constantState?.newDrawable()?.mutate() ?: normalDrawable
+            localKpsContainer.background = constantState?.newDrawable()?.mutate() ?: alphaSelector
+            localTotalContainer.background = constantState?.newDrawable()?.mutate() ?: alphaSelector
 
             (localKpsContainer.layoutParams as ViewGroup.MarginLayoutParams).rightMargin = spacingPx
 
@@ -978,12 +1031,29 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun createBoxDrawable(bgColor: Int, borderColor: Int, strokeWidthPx: Int): GradientDrawable {
+    private fun createBoxDrawable(bgColor: Int, borderColor: Int, strokeWidthPx: Int, cornerRadiusPx: Float): GradientDrawable {
         return GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
-            cornerRadius = 18f
+            cornerRadius = cornerRadiusPx
             setColor(bgColor)
             setStroke(strokeWidthPx, borderColor)
+        }
+    }
+
+    private fun createAlphaSelector(
+        bgNormal: Int,
+        borderNormal: Int,
+        bgPressed: Int,
+        borderPressed: Int,
+        strokePx: Int,
+        radiusPx: Float
+    ): StateListDrawable {
+        return StateListDrawable().apply {
+            addState(
+                intArrayOf(android.R.attr.state_pressed),
+                createBoxDrawable(bgPressed, borderPressed, strokePx, radiusPx)
+            )
+            addState(intArrayOf(), createBoxDrawable(bgNormal, borderNormal, strokePx, radiusPx))
         }
     }
 
@@ -996,6 +1066,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         tvKeyWidthLabel.text = getString(R.string.key_width_label, currentKeyWidth)
         tvKeyHeightLabel.text = getString(R.string.key_height_label, currentKeyHeight)
         tvKeySpacingLabel.text = getString(R.string.spacing_label, currentKeySpacing)
+        tvBorderWidthLabel.text = getString(R.string.border_width_label, seekBorderWidth.value.toInt())
+        tvCornerRadiusLabel.text = getString(R.string.corner_radius_label, seekCornerRadius.value.toInt())
     }
 
     private fun saveAndExit() {
@@ -1010,6 +1082,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             putInt("key_width", currentKeyWidth)
             putInt("key_height", currentKeyHeight)
             putInt("key_spacing", currentKeySpacing)
+            putInt("theme_border_width", seekBorderWidth.value.toInt())
+            putInt("theme_corner_radius", seekCornerRadius.value.toInt())
 
             // Save THEME settings
             putBoolean("show_key_counters", swShowKeyCounters.isChecked)
@@ -1060,6 +1134,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             putInt("key_width", currentKeyWidth)
             putInt("key_height", currentKeyHeight)
             putInt("key_spacing", currentKeySpacing)
+            putInt("theme_border_width", 2)
+            putInt("theme_corner_radius", 6)
 
             // BỔ SUNG THEME MẶC ĐỊNH
             putString("theme_bg_normal", "#000000")
@@ -1120,6 +1196,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             editor.putBoolean("theme_text_bold", false)
             editor.putBoolean("theme_text_italic", false)
             editor.putBoolean("theme_text_underline", false)
+            editor.putInt("theme_border_width", 2)
+            editor.putInt("theme_corner_radius", 6)
 
             editor.apply()
         }
