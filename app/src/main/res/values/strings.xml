@@ -73,6 +73,7 @@
     <string name="border_width_label">Độ dày viền: %d dp</string>
     <string name="corner_radius_label">Độ bo góc: %d dp</string>
     <string name="section_key_rain">2. KEY RAIN</string>
+    <string name="theme_keyrain_enabled">Bật vệt sáng (KeyRain)</string>
     <string name="section_theme">3. CHỦ ĐỀ</string>
     <string name="theme_text_group">1. CHỮ</string>
     <string name="theme_colors_group">2. MÀU SẮC</string>

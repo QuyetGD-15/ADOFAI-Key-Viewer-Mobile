@@ -437,16 +437,28 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         // Kiểm tra lỗi crash từ phiên trước
         val crashPref = getSharedPreferences("CrashPrefs", Context.MODE_PRIVATE)
         val crashLog = crashPref.getString("CRASH_LOG", null)
+
         if (!crashLog.isNullOrEmpty()) {
-            val displayLog = if (crashLog.length > 500) crashLog.substring(0, 500) + "..." else crashLog
+            val displayLog = if (crashLog.length > 500) crashLog.substring(0, 500) + "...\n\n(Đã cắt bớt để hiển thị, khi Copy sẽ lấy toàn bộ)" else crashLog
+
             MaterialAlertDialogBuilder(this)
                 .setTitle(getString(R.string.crash_dialog_title))
                 .setMessage(displayLog)
                 .setPositiveButton(getString(R.string.crash_copy_code)) { _, _ ->
-                    val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    val clip = ClipData.newPlainText("Crash Log", crashLog)
-                    clipboard.setPrimaryClip(clip)
-                    Toast.makeText(this, getString(R.string.toast_copied), Toast.LENGTH_SHORT).show()
+                    try {
+                        // 1. Dùng đường dẫn tuyệt đối để chống lỗi Import nhầm thư viện cũ
+                        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        val clip = android.content.ClipData.newPlainText("KeyViewer Crash Log", crashLog)
+                        clipboard.setPrimaryClip(clip)
+
+                        Toast.makeText(this, getString(R.string.toast_copied), Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        Toast.makeText(this, "Lỗi khi chép vào bộ nhớ đệm!", Toast.LENGTH_SHORT).show()
+                    } finally {
+                        // 2. QUAN TRỌNG: Xóa log khỏi bộ nhớ để lần mở App sau không bị kẹt bảng thông báo
+                        crashPref.edit().remove("CRASH_LOG").apply()
+                    }
                 }
                 .setNegativeButton(getString(R.string.crash_ignore)) { _, _ ->
                     crashPref.edit().remove("CRASH_LOG").apply()

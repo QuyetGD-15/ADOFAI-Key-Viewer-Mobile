@@ -73,6 +73,7 @@
     <string name="border_width_label">Border Width: %d dp</string>
     <string name="corner_radius_label">Corner Radius: %d dp</string>
     <string name="section_key_rain">2. KEY RAIN</string>
+    <string name="theme_keyrain_enabled">Enable Key Rain effect</string>
     <string name="section_theme">3. THEME</string>
     <string name="theme_text_group">1. TEXT</string>
     <string name="theme_colors_group">2. COLORS</string>
@@ -131,8 +132,8 @@
     <string name="select_apps">Select Games for Auto-on</string>
     <string name="usage_stats_required">App needs Usage Access permission to auto-toggle KeyViewer</string>
     <string name="dialog_select_apps_title">Select Apps</string>
-    <string name="header_recommended">⭐ Recommended</string>
-    <string name="header_others">📱 Other Apps</string>
+    <string name="header_recommended">Recommended</string>
+    <string name="header_others">Other Apps</string>
     <string name="cancel">Cancel</string>
 
     <!-- Xiaomi Warning -->

@@ -820,6 +820,7 @@ class OverlayService : Service() {
         val keyWidth = pref.getInt("key_width", 60)
         val keyHeight = pref.getInt("key_height", 60)
         val keySpacing = pref.getInt("key_spacing", 7)
+        val isKeyRainEnabled = pref.getBoolean("theme_keyrain_enabled", true)
         val borderWidthDp = pref.getInt("theme_border_width", 2)
         val cornerRadiusDp = pref.getInt("theme_corner_radius", 6)
         val borderPx = (borderWidthDp * resources.displayMetrics.density).toInt()
@@ -876,6 +877,7 @@ class OverlayService : Service() {
             applyThemeToTextView(tvTotalValue)
             updateKpsTotalUI(lastRenderedKps, lastRenderedTotal, force = true)
 
+            keyTrailView.visibility = if (isKeyRainEnabled) View.VISIBLE else View.GONE
             keyTrailView.layoutParams.height = dpToPxInt(limitPx)
             keyTrailView.setParameters(speed, limitPx.toFloat())
             keyTrailView.setThemeColors(rainColor, shadowColor)

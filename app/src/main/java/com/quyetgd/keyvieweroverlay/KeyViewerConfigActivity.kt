@@ -72,6 +72,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
     private lateinit var seekBorderWidth: Slider
     private lateinit var seekCornerRadius: Slider
 
+    private lateinit var swEnableKeyRain: com.google.android.material.switchmaterial.SwitchMaterial
     private lateinit var layoutThemeContent: LinearLayout
     private lateinit var swShowKeyCounters: com.google.android.material.switchmaterial.SwitchMaterial
     private lateinit var cbBold: CheckBox
@@ -248,6 +249,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
 
         layoutThemeContent = findViewById(R.id.layoutThemeContent)
         swShowKeyCounters = findViewById(R.id.swShowKeyCounters)
+        swEnableKeyRain = findViewById(R.id.swEnableKeyRain)
         tvThemeHeader = findViewById(R.id.tvThemeHeader)
         cbBold = findViewById(R.id.cbBold)
         cbItalic = findViewById(R.id.cbItalic)
@@ -564,6 +566,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         seekKeySpacing.value = currentKeySpacing.toFloat().coerceIn(seekKeySpacing.valueFrom, seekKeySpacing.valueTo)
         seekBorderWidth.value = sharedPref.getInt("theme_border_width", 2).toFloat().coerceIn(seekBorderWidth.valueFrom, seekBorderWidth.valueTo)
         seekCornerRadius.value = sharedPref.getInt("theme_corner_radius", 6).toFloat().coerceIn(seekCornerRadius.valueFrom, seekCornerRadius.valueTo)
+        swEnableKeyRain.isChecked = sharedPref.getBoolean("theme_keyrain_enabled", true)
+        keyTrailView.visibility = if (swEnableKeyRain.isChecked) View.VISIBLE else View.GONE
 
         // Load THEME settings
         swShowKeyCounters.isChecked = sharedPref.getBoolean("show_key_counters", false)
@@ -672,6 +676,11 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         etBorderPressedHex.addTextChangedListener(themeTextWatcher)
         etRainColorHex.addTextChangedListener(themeTextWatcher)
         etRainShadowHex.addTextChangedListener(themeTextWatcher)
+
+        swEnableKeyRain.setOnCheckedChangeListener { _, isChecked ->
+            keyTrailView.visibility = if (isChecked) View.VISIBLE else View.GONE
+            updateLivePreview()
+        }
 
         // CheckBoxes and SeekBar
         swShowKeyCounters.setOnCheckedChangeListener { _, _ ->
@@ -1084,6 +1093,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             putInt("key_spacing", currentKeySpacing)
             putInt("theme_border_width", seekBorderWidth.value.toInt())
             putInt("theme_corner_radius", seekCornerRadius.value.toInt())
+            putBoolean("theme_keyrain_enabled", swEnableKeyRain.isChecked)
 
             // Save THEME settings
             putBoolean("show_key_counters", swShowKeyCounters.isChecked)

@@ -108,7 +108,7 @@ object GitHubUpdateManager {
             setTitle(context.getString(R.string.update_notif_title))
             setDescription(context.getString(R.string.update_notif_desc, version))
             setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "ADOFAI_Key_Viewer_$version.apk")
+            setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, "ADOFAI_Key_Viewer_$version.apk")
             setAllowedOverMetered(true)
             setAllowedOverRoaming(true)
         }
