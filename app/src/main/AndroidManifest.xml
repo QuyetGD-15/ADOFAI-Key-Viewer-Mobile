@@ -30,6 +30,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.KeyViewerOverlay">
+        <profileable android:shell="true" />
 
         <activity
             android:name=".MainActivity"
