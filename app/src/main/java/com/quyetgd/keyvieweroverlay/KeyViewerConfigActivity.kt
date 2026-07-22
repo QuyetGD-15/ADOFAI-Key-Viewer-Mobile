@@ -1124,7 +1124,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
 
     private fun resetToDefault() {
         // GIỮ NGUYÊN BẢN GIÁ TRỊ RESET CỦA BẠN
-        currentScale = 0.5f
+        currentScale = 0.35f
         currentSpeed = 0.8f
         currentLimit = 280
         currentKeyWidth = 55
