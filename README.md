@@ -18,7 +18,7 @@ The application completely isolates the execution code between the two modes, en
   * Transmits static data directly into RAM (Singleton Instance Access) via Accessibility Service for a true 0ms response time.
 
 ### 📊 Diverse Key Modes (Isolated Key Modes)
-* Expands your workspace with full layout configurations: 4 KEY, 6 KEY, 8 KEY, and 10 KEY.
+* Expands your workspace with full layout configurations: 4 KEY, 6 KEY, 8 KEY, 10 KEY, 12 KEY and 16 KEY.
 
 * **Minimalist UI:** The Drop Shadow design ensures the keyrain always stands out, even against bright white Flashbang maps.
 

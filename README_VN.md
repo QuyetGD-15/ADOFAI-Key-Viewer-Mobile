@@ -17,7 +17,7 @@ Một công cụ Overlay siêu nhẹ, trễ thấp (Ultra-low latency) dành ri�
   * Truyền dữ liệu tĩnh trực tiếp vào RAM (Singleton Instance Access) thông qua Accessibility Service cho tốc độ phản hồi 0ms.
 
 ### 📊 Đa Dạng Chế Độ Phím (Isolated Key Modes)
-* Mở rộng không gian với đầy đủ các cấu hình layout: 4 KEY, 6 KEY, 8 KEY, và 10 KEY.
+* Mở rộng không gian với đầy đủ các cấu hình layout: 4 KEY, 6 KEY, 8 KEY, 10 KEY, 12 KEY và 16 KEY.
 
 * **Giao diện tối giản:** Thiết kế chống chói (Drop Shadow) giúp keyrain luôn nổi bật trên nền map Flashbang trắng sáng.
 
