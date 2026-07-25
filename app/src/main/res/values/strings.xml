@@ -112,8 +112,10 @@
     <string name="theme_color_bg_pressed">Màu nền (Khi nhấn)</string>
     <string name="theme_color_border_normal">Màu viền (Bình thường)</string>
     <string name="theme_color_border_pressed">Màu viền (Khi nhấn)</string>
-    <string name="theme_color_rain">Màu Key Rain</string>
+    <string name="theme_color_rain">Màu Rain</string>
     <string name="theme_color_rain_shadow">Màu bóng Rain</string>
+    <string name="theme_rain_color_row2">Màu Rain (Hàng 2)</string>
+    <string name="theme_rain_shadow_row2">Bóng Rain (Hàng 2)</string>
     <string name="toast_cannot_overwrite_system">Không thể ghi đè lên mẫu cài sẵn của hệ thống!</string>
     <string name="toast_preset_saved">Đã ghi đè thành công vào %s!</string>
     <string name="log_save_success">Đã lưu file log thành công!</string>
@@ -216,4 +218,7 @@
     <string name="update_error_install">Lỗi khi mở trình cài đặt!</string>
     <string name="update_check_manual">Đang kiểm tra cập nhật...</string>
     <string name="update_content_desc">Kiểm tra cập nhật</string>
+    <string name="setup_step4_extended_enabled">Chế độ Mở rộng</string>
+    <string name="setup_step4_extended_disabled">Chế độ Mở rộng (Chỉ hỗ trợ Bàn phím)</string>
+    <string name="toast_force_10k_touch">Cảm ứng không hỗ trợ %d phím, đã ép về 10 phím</string>
 </resources>

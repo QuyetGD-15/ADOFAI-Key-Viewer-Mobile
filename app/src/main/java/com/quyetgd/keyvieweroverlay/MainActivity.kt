@@ -317,8 +317,23 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         toggleInputSource.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked) {
                 val newSource = if (checkedId == R.id.btnSourceKeyboard) "keyboard" else "touch"
+
+                // ================= BẮT ĐẦU LOGIC FALLBACK =================
+                if (newSource == "touch") {
+                    val currentMode = pref.getInt("current_key_mode", 6)
+                    // Nếu đang dùng >= 12 phím mà nhảy sang chạm cảm ứng -> Ép về 10K
+                    if (currentMode > 10) {
+                        pref.edit().putInt("current_key_mode", 10).apply()
+                        Toast.makeText(this, getString(R.string.toast_force_10k_touch, currentMode), Toast.LENGTH_LONG).show()
+                    }
+                }
+                // ================= KẾT THÚC LOGIC FALLBACK =================
+
                 pref.edit().putString("input_source", newSource).apply()
-                
+
+                // LOAD LẠI MENU DROPDOWN ĐỂ THÊM/BỚT 12K VÀ 16K
+                setupKeyModeDropdown()
+
                 if (newSource == "keyboard") {
                     cardShizuku.visibility = View.GONE
                     cardAccessibility.visibility = View.VISIBLE
@@ -331,12 +346,8 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                     startShizukuPolling()
                 }
 
-                // 1. Ép công tắc về trạng thái TẮT
-                switchOverlay.isChecked = false 
-                // 2. Tắt Service hiện tại
+                switchOverlay.isChecked = false
                 stopService(Intent(this, OverlayService::class.java))
-                
-                // 3. Cập nhật trạng thái enabled của switch
                 updateSwitchEnableState()
             }
         }
@@ -519,7 +530,15 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
     }
 
     private fun setupKeyModeDropdown() {
-        val modes = arrayOf("4 KEY", "6 KEY", "8 KEY", "10 KEY")
+        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+        val inputSource = pref.getString("input_source", "touch")
+
+        // 1. Phân luồng tùy chọn hiển thị
+        val modes = if (inputSource == "keyboard") {
+            arrayOf("4 KEY", "6 KEY", "8 KEY", "10 KEY", "12 KEY", "16 KEY")
+        } else {
+            arrayOf("4 KEY", "6 KEY", "8 KEY", "10 KEY")
+        }
 
         // Tạo Adapter Custom ghi đè hoàn toàn bộ lọc (Filter)
         val noFilterAdapter = object : ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, modes) {
@@ -527,7 +546,6 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                 return object : android.widget.Filter() {
                     override fun performFiltering(constraint: CharSequence?): FilterResults {
                         val results = FilterResults()
-                        // LUÔN LUÔN trả về toàn bộ danh sách gốc, bất chấp từ khóa tìm kiếm là gì
                         results.values = modes
                         results.count = modes.size
                         return results
@@ -539,13 +557,10 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
             }
         }
 
-        // 1. GÁN ADAPTER TRƯỚC
         dropdownKeyMode.setAdapter(noFilterAdapter)
 
-        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
         val currentMode = pref.getInt("current_key_mode", 6)
-        
-        // 2. SỬ DỤNG LỆNH .POST ĐỂ TRÁNH LỖI LỌC DANH SÁCH LẦN ĐẦU MỞ APP
+
         dropdownKeyMode.post {
             dropdownKeyMode.setText("${currentMode} KEY", false)
         }
@@ -558,13 +573,10 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                 6
             }
             pref.edit().putInt("current_key_mode", modeNumber).apply()
-            
-            // KIỂM TRA TRẠNG THÁI CÔNG TẮC ĐỂ RESTART SERVICE
+
             if (switchOverlay.isChecked) {
-                // Tắt Service
                 stopService(Intent(this, OverlayService::class.java))
-                
-                // Bật lại Service sau một khoảng trễ nhỏ để hệ thống giải phóng bộ nhớ
+
                 Handler(Looper.getMainLooper()).postDelayed({
                     val intentStart = Intent(this, OverlayService::class.java).apply {
                         action = "com.quyetgd.keyvieweroverlay.ACTION_START_FOREGROUND"
@@ -577,7 +589,6 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                     Toast.makeText(this, getString(R.string.main_toast_restarted, selected), Toast.LENGTH_SHORT).show()
                 }, 300)
             } else {
-                // Nếu chưa bật thì chỉ bắn cấu hình để màn hình Config (nếu đang mở) cập nhật
                 val intent = Intent("com.quyetgd.keyvieweroverlay.UPDATE_OVERLAY_CONFIG")
                 sendBroadcast(intent)
                 Toast.makeText(this, getString(R.string.main_toast_saved_mode, selected), Toast.LENGTH_SHORT).show()
@@ -613,11 +624,19 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         }
         root.addView(tvTitle)
 
-        // Container cho danh sách phím
+        // ================= THÊM SCROLLVIEW BẢO VỆ 16 DÒNG =================
+        val scrollView = ScrollView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
+            isScrollbarFadingEnabled = false
+        }
+
+        // Container chứa danh sách phím được nhét vào trong ScrollView
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
         }
-        root.addView(container)
+        scrollView.addView(container)
+        root.addView(scrollView)
+        // =================================================================
 
         val rowViews = mutableListOf<Pair<TextView, TextView>>()
 
@@ -631,13 +650,13 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                 val outValue = TypedValue()
                 theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
                 setBackgroundResource(outValue.resourceId)
-                
+
                 val bgItem = android.graphics.drawable.GradientDrawable().apply {
                     cornerRadius = dpToPx(12).toFloat()
                     setColor(Color.parseColor("#2A2A2A"))
                 }
                 background = bgItem
-                
+
                 val params = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                 if (i > 0) params.topMargin = dpToPx(8)
                 layoutParams = params
@@ -690,7 +709,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
             val outValue = TypedValue()
             theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
             setBackgroundResource(outValue.resourceId)
-            
+
             val params = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
                 gravity = Gravity.END
                 topMargin = dpToPx(24)
@@ -710,7 +729,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         dialog.setOnKeyListener { _, keyCode, event ->
             if (waitingIndex != -1 && event.action == KeyEvent.ACTION_DOWN) {
                 if (keyCode == KeyEvent.KEYCODE_BACK) return@setOnKeyListener false
-                
+
                 val pressedKeyName = KeyEvent.keyCodeToString(keyCode).replace("KEYCODE_", "")
                 pref.edit().apply {
                     putInt("key_code_${keyMode}_$waitingIndex", keyCode)
@@ -720,7 +739,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                 val tvKey = rowViews[waitingIndex].second
                 tvKey.text = pressedKeyName
                 tvKey.setTextColor(Color.parseColor("#A78BFA"))
-                
+
                 waitingIndex = -1
                 true
             } else {
@@ -729,7 +748,6 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         }
 
         dialog.show()
-        // XÓA PHÔNG NỀN LỆCH MÀU CỦA HỆ THỐNG
         dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
     }
     override fun onNewIntent(intent: Intent?) {
@@ -788,38 +806,38 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         }
     }
 
-    private fun setupSwitchListener() {
-        switchOverlay.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                if (!checkOverlayPermission()) {
-                    switchOverlay.isChecked = false
-                    return@setOnCheckedChangeListener
-                }
-                
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                        requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 102)
+        private fun setupSwitchListener() {
+            switchOverlay.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) {
+                    if (!checkOverlayPermission()) {
                         switchOverlay.isChecked = false
                         return@setOnCheckedChangeListener
                     }
-                }
 
-                val intent = Intent(this, OverlayService::class.java).apply {
-                    action = "com.quyetgd.keyvieweroverlay.ACTION_START_FOREGROUND"
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForegroundService(intent)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 102)
+                            switchOverlay.isChecked = false
+                            return@setOnCheckedChangeListener
+                        }
+                    }
+
+                    val intent = Intent(this, OverlayService::class.java).apply {
+                        action = "com.quyetgd.keyvieweroverlay.ACTION_START_FOREGROUND"
+                    }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(intent)
+                    } else {
+                        startService(intent)
+                    }
+
+                    switchOverlay.text = getString(R.string.overlay_use_notification)
                 } else {
-                    startService(intent)
+                    stopService(Intent(this, OverlayService::class.java))
+                    switchOverlay.text = getString(R.string.overlay_start_hint)
                 }
-                
-                switchOverlay.text = getString(R.string.overlay_use_notification)
-            } else {
-                stopService(Intent(this, OverlayService::class.java))
-                switchOverlay.text = getString(R.string.overlay_start_hint)
             }
         }
-    }
 
     override fun onStart() {
         super.onStart()

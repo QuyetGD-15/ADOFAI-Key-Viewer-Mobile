@@ -14,7 +14,6 @@ class KeyTrailView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
-    // KẾ THỪA THUẬT TOÁN ASYNC: LƯU THỜI GIAN THỰC TẾ
     class Trail {
         var laneIndex: Int = -1
         var x: Float = 0f
@@ -33,25 +32,27 @@ class KeyTrailView @JvmOverloads constructor(
         }
     }
 
-    // Bỏ qua bộ đệm nháp GPU, giải phóng sức mạnh kết xuất bóng đổ
     override fun hasOverlappingRendering(): Boolean = false
 
     private val MAX_TRAILS = 150
     private val trailPool = Array(MAX_TRAILS) { Trail() }
 
-    // TỐI ƯU RAM CỰC HẠN: Chỉ dùng đúng 1 cây cọ cho toàn bộ ứng dụng
-    private val trailPaint = Paint().apply {
-        style = Paint.Style.FILL
-        isAntiAlias = true
-    }
+    // ================= TỐI ƯU 2 CÂY CỌ VẼ TÁCH BIỆT =================
+    private val trailPaintRow1 = Paint().apply { style = Paint.Style.FILL; isAntiAlias = true }
+    private val trailPaintRow2 = Paint().apply { style = Paint.Style.FILL; isAntiAlias = true }
 
-    private var rainColor = Color.WHITE
-    private var rainShadowColor = Color.CYAN
-    private var isShadowEnabled = true
+    // Màu sắc Hàng 1
+    private var rainColor1 = Color.WHITE
+    private var rainShadowColor1 = Color.CYAN
+    private var isShadowEnabled1 = true
 
-    // Đổi sang tốc độ trên mili-giây cho phù hợp toán học mới
+    // Màu sắc Hàng 2 (Tạm gán mặc định màu Tím để bạn test Z-Index)
+    private var rainColor2 = Color.parseColor("#A78BFA")
+    private var rainShadowColor2 = Color.parseColor("#7C3AED")
+    private var isShadowEnabled2 = true
+    // ================================================================
+
     private val baseSpeedPerMs = 1.5f
-    private var maxTravelDistance = 1000f
 
     var trailSpeed: Float = 1.0f
     var trailLimit: Float = 1.0f
@@ -65,7 +66,6 @@ class KeyTrailView @JvmOverloads constructor(
                 invalidate()
                 Choreographer.getInstance().postFrameCallback(this)
             } else {
-                // HẾT VỆT SÁNG -> GPU ĐI NGỦ! (0% CPU/GPU Usage)
                 isRendering = false
             }
         }
@@ -73,7 +73,6 @@ class KeyTrailView @JvmOverloads constructor(
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        // Không gọi postFrameCallback ở đây nữa, chờ có vệt sáng mới gọi
         post {
             var currentParent = parent as? ViewGroup
             while (currentParent != null) {
@@ -94,79 +93,94 @@ class KeyTrailView @JvmOverloads constructor(
         canvas.save()
         canvas.clipRect(-200f, 0f, width.toFloat() + 200f, height.toFloat())
 
-        // ĐOẠN PHÉP THUẬT: TÍNH TỌA ĐỘ THEO THỜI GIAN CHUẨN XÁC DÙ GAME CÓ LAG
         val currentTimeMs = SystemClock.uptimeMillis()
         val actualSpeedPerMs = baseSpeedPerMs * trailSpeed
         val screenHeight = height.toFloat()
 
+        // PASS 1: Lọc và vẽ toàn bộ phím Hàng 1 (lane 0 -> 7) trước
         for (i in 0 until MAX_TRAILS) {
             val trail = trailPool[i]
-            if (!trail.isActive) continue
-
-            val timeSincePressed = currentTimeMs - trail.timePressed
-
-            // Đáy vệt sáng
-            val bottomY = if (trail.timeReleased == 0L) {
-                screenHeight
-            } else {
-                val timeSinceReleased = currentTimeMs - trail.timeReleased
-                screenHeight - (timeSinceReleased * actualSpeedPerMs)
-            }
-
-            // Đỉnh vệt sáng
-            val topY = screenHeight - (timeSincePressed * actualSpeedPerMs)
-            val distanceTraveled = screenHeight - topY
-            var alpha = 255
-
-            // Mờ dần khi hết giới hạn
-            if (distanceTraveled > maxTravelDistance) {
-                val overshoot = distanceTraveled - maxTravelDistance
-
-                // 255 / 200 = 1.275f. Dùng hằng số nhân trực tiếp, tiết kiệm 9000 phép chia mỗi giây!
-                alpha = 255 - (overshoot * 1.275f).toInt()
-            }
-
-            if (alpha <= 0 || bottomY < -100f) {
-                if (trail.isActive) {
-                    trail.isActive = false
-                    activeTrailCount-- // Trừ biến đếm khi vệt sáng chết
-                }
-                continue
-            }
-
-            alpha = alpha.coerceIn(0, 255)
-            // Thay đổi độ mờ trực tiếp vào cây cọ duy nhất (Tốn 0 RAM, 0 Object Allocation)
-            trailPaint.alpha = alpha
-
-            canvas.drawRect(trail.x, topY, trail.x + trail.width, bottomY, trailPaint)
+            if (!trail.isActive || trail.laneIndex >= 8) continue
+            drawSingleTrail(canvas, trail, trailPaintRow1, currentTimeMs, actualSpeedPerMs, screenHeight)
         }
+
+        // PASS 2: Lọc và vẽ các phím Hàng 2 (lane 8, 9) sau cùng để luôn nằm đè lên trên
+        for (i in 0 until MAX_TRAILS) {
+            val trail = trailPool[i]
+            if (!trail.isActive || trail.laneIndex < 8) continue
+            drawSingleTrail(canvas, trail, trailPaintRow2, currentTimeMs, actualSpeedPerMs, screenHeight)
+        }
+
         canvas.restore()
     }
 
+    // Tách riêng thuật toán vẽ để tái sử dụng cho 2 cọ
+    private fun drawSingleTrail(canvas: Canvas, trail: Trail, paint: Paint, currentTimeMs: Long, actualSpeedPerMs: Float, screenHeight: Float) {
+        val timeSincePressed = currentTimeMs - trail.timePressed
+        val bottomY = if (trail.timeReleased == 0L) {
+            screenHeight
+        } else {
+            val timeSinceReleased = currentTimeMs - trail.timeReleased
+            screenHeight - (timeSinceReleased * actualSpeedPerMs)
+        }
+
+        val topY = screenHeight - (timeSincePressed * actualSpeedPerMs)
+
+        // TỐI ƯU TUYỆT ĐỐI: Dọn dẹp RAM ngay khi toàn bộ cục Keyrain (bottomY) vượt qua đỉnh View
+        if (bottomY <= 0f) {
+            if (trail.isActive) {
+                trail.isActive = false
+                activeTrailCount--
+            }
+            return
+        }
+
+        // Vẽ 100% rõ nét, phần thừa bay ra ngoài sẽ do Android Canvas tự động cắt bỏ
+        paint.alpha = 255
+        canvas.drawRect(trail.x, topY, trail.x + trail.width, bottomY, paint)
+    }
+
+    // Hàm nhận màu cho Hàng 1
     fun setThemeColors(color: Int, shadowColor: Int) {
-        this.rainColor = color
-        this.rainShadowColor = shadowColor
-        this.isShadowEnabled = Color.alpha(shadowColor) > 0
+        this.rainColor1 = color
+        this.rainShadowColor1 = shadowColor
+        this.isShadowEnabled1 = Color.alpha(shadowColor) > 0
 
         val rainR = Color.red(color)
         val rainG = Color.green(color)
         val rainB = Color.blue(color)
+        trailPaintRow1.color = Color.rgb(rainR, rainG, rainB)
 
-        // Cài đặt màu gốc (Không cần Alpha)
-        trailPaint.color = Color.rgb(rainR, rainG, rainB)
-
-        if (isShadowEnabled) {
+        if (isShadowEnabled1) {
             val shadowR = Color.red(shadowColor)
             val shadowG = Color.green(shadowColor)
             val shadowB = Color.blue(shadowColor)
-
-            // Cài đặt bóng đổ 1 lần duy nhất
-            trailPaint.setShadowLayer(20f, 0f, 0f, Color.argb((255 * 0.7f).toInt(), shadowR, shadowG, shadowB))
+            trailPaintRow1.setShadowLayer(20f, 0f, 0f, Color.argb((255 * 0.7f).toInt(), shadowR, shadowG, shadowB))
         } else {
-            trailPaint.clearShadowLayer()
+            trailPaintRow1.clearShadowLayer()
         }
+        invalidate()
+    }
 
-        // Buộc hệ thống vẽ lại với màu mới
+    // Hàm mới: Nhận màu cho Hàng 2 (Sẽ kết nối với SharedPreferences ở bước sau)
+    fun setRow2ThemeColors(color: Int, shadowColor: Int) {
+        this.rainColor2 = color
+        this.rainShadowColor2 = shadowColor
+        this.isShadowEnabled2 = Color.alpha(shadowColor) > 0
+
+        val rainR = Color.red(color)
+        val rainG = Color.green(color)
+        val rainB = Color.blue(color)
+        trailPaintRow2.color = Color.rgb(rainR, rainG, rainB)
+
+        if (isShadowEnabled2) {
+            val shadowR = Color.red(shadowColor)
+            val shadowG = Color.green(shadowColor)
+            val shadowB = Color.blue(shadowColor)
+            trailPaintRow2.setShadowLayer(20f, 0f, 0f, Color.argb((255 * 0.7f).toInt(), shadowR, shadowG, shadowB))
+        } else {
+            trailPaintRow2.clearShadowLayer()
+        }
         invalidate()
     }
 
@@ -174,14 +188,11 @@ class KeyTrailView @JvmOverloads constructor(
         for (i in 0 until MAX_TRAILS) {
             if (!trailPool[i].isActive) {
                 trailPool[i].reset(laneIndex, x, width, pressTime)
-
-                // THỨC DẬY NGAY LẬP TỨC KHI CÓ TOUCH!
                 activeTrailCount++
                 if (!isRendering) {
                     isRendering = true
                     Choreographer.getInstance().postFrameCallback(frameCallback)
                 }
-
                 return trailPool[i]
             }
         }
@@ -191,7 +202,6 @@ class KeyTrailView @JvmOverloads constructor(
     fun releaseLane(laneIndex: Int, releaseTime: Long) {
         for (i in 0 until MAX_TRAILS) {
             if (trailPool[i].isActive && trailPool[i].laneIndex == laneIndex && trailPool[i].timeReleased == 0L) {
-                // Ghi nhận mốc thời gian thả tay cực chuẩn
                 trailPool[i].timeReleased = releaseTime
             }
         }
@@ -209,13 +219,7 @@ class KeyTrailView @JvmOverloads constructor(
     fun setParameters(speed: Float, limit: Float) {
         this.trailSpeed = speed
         this.trailLimit = limit
-        if (height > 0) {
-            maxTravelDistance = height.toFloat() * trailLimit
-        }
+        // Không cần tính toán bất cứ thứ gì ở đây nữa, trả lại tài nguyên cho CPU!
     }
 
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        super.onSizeChanged(w, h, oldw, oldh)
-        maxTravelDistance = h.toFloat() * trailLimit
-    }
 }

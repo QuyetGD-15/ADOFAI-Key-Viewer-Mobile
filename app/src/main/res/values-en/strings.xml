@@ -216,4 +216,9 @@
     <string name="update_error_install">Error opening installer!</string>
     <string name="update_check_manual">Checking for updates...</string>
     <string name="update_content_desc">Check for updates</string>
+    <string name="theme_rain_color_row2">Rain Color (Row 2)</string>
+    <string name="theme_rain_shadow_row2">Rain Shadow (Row 2)</string>
+    <string name="setup_step4_extended_enabled">Extended Modes</string>
+    <string name="setup_step4_extended_disabled">Extended Modes (Keyboard only)</string>
+    <string name="toast_force_10k_touch">Touch mode does not support %d keys, forced to 10 keys</string>
 </resources>

@@ -7,12 +7,11 @@
     android:fitsSystemWindows="false"
     android:background="@color/md3_background">
 
-    <!-- Khu vực Preview bên trái (TUYỆT ĐỐI CẤM padding/margin ở đây) -->
+    <!-- Khu vực Preview bên trái -->
     <FrameLayout
         android:id="@+id/viewerContainer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="#22FFFFFF"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -141,37 +140,7 @@
                                 android:valueFrom="0"
                                 android:valueTo="200" />
 
-                            <TextView
-                                android:id="@+id/tvKeyWidthLabel"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/key_width_label"
-                                android:textColor="#BBFFFFFF"
-                                android:textSize="12sp" />
-
-                            <com.google.android.material.slider.Slider
-                                android:id="@+id/seekKeyWidth"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:value="30"
-                                android:valueFrom="0"
-                                android:valueTo="70" />
-
-                            <TextView
-                                android:id="@+id/tvKeyHeightLabel"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/key_height_label"
-                                android:textColor="#BBFFFFFF"
-                                android:textSize="12sp" />
-
-                            <com.google.android.material.slider.Slider
-                                android:id="@+id/seekKeyHeight"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:value="30"
-                                android:valueFrom="0"
-                                android:valueTo="70" />
+                            <!-- ĐÃ XÓA SEEK_KEY_WIDTH VÀ SEEK_KEY_HEIGHT Ở ĐÂY -->
 
                             <TextView
                                 android:id="@+id/tvKeySpacingLabel"
@@ -305,7 +274,7 @@
                                 android:layout_height="wrap_content"
                                 android:value="130"
                                 android:valueFrom="0"
-                                android:valueTo="210" />
+                                android:valueTo="530" />
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -349,7 +318,6 @@
                             android:padding="16dp"
                             android:visibility="gone">
 
-                            <!-- BƯỚC 2: EXPOSED DROPDOWN MENU -->
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
@@ -495,10 +463,6 @@
                                     app:strokeColor="#33FFFFFF"
                                     app:strokeWidth="1dp" />
                             </LinearLayout>
-
-                            <!-- Thêm các trường màu khác ở đây nhưng rút gọn... -->
-                            <!-- Vì code dài nên tôi sẽ chỉ bọc một vài cái làm mẫu hoặc bọc hết nếu đủ chỗ -->
-                            <!-- Theo yêu cầu: Mọi EditText nhập mã HEX: Bọc trong TextInputLayout -->
 
                             <!-- Text Color Pressed -->
                             <LinearLayout
@@ -765,6 +729,85 @@
 
                                 <com.google.android.material.card.MaterialCardView
                                     android:id="@+id/viewRainShadowPreview"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:layout_marginStart="8dp"
+                                    app:cardCornerRadius="8dp"
+                                    app:cardElevation="0dp"
+                                    app:strokeColor="#33FFFFFF"
+                                    app:strokeWidth="1dp" />
+                            </LinearLayout>
+                            <!-- Rain Color (Row 2) -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="8dp"
+                                android:layout_marginTop="8dp"
+                                android:gravity="center_vertical">
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:hint="@string/theme_rain_color_row2"
+                                    app:boxCornerRadiusBottomEnd="8dp"
+                                    app:boxCornerRadiusBottomStart="8dp"
+                                    app:boxCornerRadiusTopEnd="8dp"
+                                    app:boxCornerRadiusTopStart="8dp">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/etRainColor2Hex"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="textNoSuggestions"
+                                        android:padding="8dp"
+                                        android:textColor="@color/white"
+                                        android:textSize="11sp" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.card.MaterialCardView
+                                    android:id="@+id/viewRainColor2Preview"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:layout_marginStart="8dp"
+                                    app:cardCornerRadius="8dp"
+                                    app:cardElevation="0dp"
+                                    app:strokeColor="#33FFFFFF"
+                                    app:strokeWidth="1dp" />
+                            </LinearLayout>
+
+                            <!-- Rain Shadow (Row 2) -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="16dp"
+                                android:layout_marginTop="0dp"
+                                android:gravity="center_vertical">
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:hint="@string/theme_rain_shadow_row2"
+                                    app:boxCornerRadiusBottomEnd="8dp"
+                                    app:boxCornerRadiusBottomStart="8dp"
+                                    app:boxCornerRadiusTopEnd="8dp"
+                                    app:boxCornerRadiusTopStart="8dp">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/etRainShadow2Hex"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="textNoSuggestions"
+                                        android:padding="8dp"
+                                        android:textColor="@color/white"
+                                        android:textSize="11sp" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.card.MaterialCardView
+                                    android:id="@+id/viewRainShadow2Preview"
                                     android:layout_width="40dp"
                                     android:layout_height="40dp"
                                     android:layout_marginStart="8dp"

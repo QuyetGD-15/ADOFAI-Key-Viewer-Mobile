@@ -118,7 +118,6 @@ class OverlayService : Service() {
     private val kpsTimestamps = LongArray(256)
     @Volatile private var kpsHead = 0
     @Volatile private var kpsTail = 0
-    // XÓA BỎ DÒNG: private val kpsLock = Any()
 
     @Volatile
     private var totalClicks = 0
@@ -175,7 +174,6 @@ class OverlayService : Service() {
         return android.content.res.ColorStateList(states, colors)
     }
 
-    // 3. CHỐNG RÁC: Khởi tạo vỏ bọc Event cố định
     private val sharedUsageEvent = UsageEvents.Event()
 
     private fun getLatestForegroundApp(): String {
@@ -185,7 +183,6 @@ class OverlayService : Service() {
             var latestApp = ""
 
             while (events.hasNextEvent()) {
-                // Đổ dữ liệu vào vỏ bọc cũ, không đẻ ra Object mới
                 events.getNextEvent(sharedUsageEvent)
                 if (sharedUsageEvent.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
                     latestApp = sharedUsageEvent.packageName ?: ""
@@ -216,7 +213,6 @@ class OverlayService : Service() {
                     isManualOverride = false
                 }
 
-                // Chỉ ghi log khi có sự thay đổi (chuyển app hoặc xoay màn hình) để tránh spam log
                 if (currentApp != lastForegroundApp || isLandscape != lastIsLandscape) {
                     AppLogger.i(this@OverlayService, "AutoShow", "Trạng thái đổi -> App: $currentApp | Cửa sổ ngang: $isLandscape | ManualOverride: $isManualOverride")
 
@@ -245,7 +241,7 @@ class OverlayService : Service() {
             }
         }
     }
-    // Chỉ giữ 1 class TouchSlot duy nhất, với biến mappedLane
+
     private class TouchSlot {
         var trackingId = -1
         var x = -1f
@@ -254,13 +250,12 @@ class OverlayService : Service() {
         var isActive = false
     }
 
-    // MỞ RỘNG MẢNG LÊN 32 ĐỂ KHÔNG BỊ TRÀN KHE CẮM
     private val slots = Array(32) { TouchSlot() }
     private var currentSlot = 0
     private var maxRawX = 1f
     private var maxRawY = 1f
     private var diagnosticClickCount = 0
-    // TỐI ƯU CỰC HẠN: Rã Object thành các mảng cơ sở (Primitive Array)
+
     private lateinit var hitboxLeft: FloatArray
     private lateinit var hitboxRight: FloatArray
     private lateinit var hitboxTop: FloatArray
@@ -284,7 +279,6 @@ class OverlayService : Service() {
                     updateKpsTotalUI(lastRenderedKps, totalClicks, force = true)
                 }
 
-                // Xóa trắng trong bộ nhớ
                 val editor = sharedPrefs.edit()
                 editor.putInt("TOTAL_CLICKS", 0)
                 for (i in 0 until keyMode) editor.putInt("KEY_COUNT_${keyMode}_$i", 0)
@@ -346,7 +340,6 @@ class OverlayService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
-        // Trục xuất Main Thread của Overlay sang lõi xử lý Đồ họa VIP nhất, né lõi của Game
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_DISPLAY)
         super.onCreate()
         AppLogger.i(this, "OverlayService", "=== BẮT ĐẦU KHỞI TẠO SERVICE ===")
@@ -393,10 +386,10 @@ class OverlayService : Service() {
                 val currentTime = SystemClock.uptimeMillis()
                 var currentKps = 0
 
-                    while (kpsTail != kpsHead && currentTime - kpsTimestamps[kpsTail] > 1000) {
-                        kpsTail = (kpsTail + 1) and 255
-                    }
-                    currentKps = if (kpsHead >= kpsTail) kpsHead - kpsTail else kpsHead + 256 - kpsTail
+                while (kpsTail != kpsHead && currentTime - kpsTimestamps[kpsTail] > 1000) {
+                    kpsTail = (kpsTail + 1) and 255
+                }
+                currentKps = if (kpsHead >= kpsTail) kpsHead - kpsTail else kpsHead + 256 - kpsTail
 
                 updateKpsTotalUI(currentKps, totalClicks)
                 mainHandler.postDelayed(this, 100)
@@ -414,7 +407,6 @@ class OverlayService : Service() {
     }
 
     private fun reinitializeArrays() {
-        // 1. Phục hồi toàn bộ các khởi tạo gốc đã bị mất
         laneOccupants = IntArray(keyMode)
         hitboxCentersX = FloatArray(keyMode)
         hitboxCentersY = FloatArray(keyMode)
@@ -427,29 +419,69 @@ class OverlayService : Service() {
         hitboxBottom = FloatArray(keyMode)
         activeTrails = arrayOfNulls(keyMode)
 
-        // 2. Khởi tạo mảng đếm và nạp lại số liệu cũ từ bộ nhớ
         keyCounters = IntArray(keyMode)
         for (i in 0 until keyMode) {
             keyCounters[i] = sharedPrefs.getInt("KEY_COUNT_${keyMode}_$i", 0)
         }
 
-        // 3. Khởi tạo 2 mảng thời gian Async
         pendingKeyDownTimes = LongArray(keyMode)
         pendingKeyUpTimes = LongArray(keyMode)
 
         keyDownRunnables = Array(keyMode) { lane ->
             Runnable {
                 val container = keyContainers[lane] ?: return@Runnable
-                // Lấy thời gian gốc đã chụp được từ luồng cảm ứng
-                val pressTime = pendingKeyDownTimes[lane]
+
+                // 1. ĐỒNG BỘ HỆ QUY CHIẾU THỜI GIAN (FIX LỖI BÀN PHÍM VẬT LÝ)
+                var pressTime = pendingKeyDownTimes[lane]
+                val uptimeNow = SystemClock.uptimeMillis()
+                // Nếu pressTime = 0 hoặc lệch quá 10 giây -> Ép về thời gian thực
+                if (pressTime == 0L || Math.abs(uptimeNow - pressTime) > 10000) {
+                    pressTime = uptimeNow
+                }
 
                 if (activeTrails[lane] != null) {
-                    // Nếu kẹt phím, ép nhả bằng thời gian gốc mới
                     keyTrailView.releaseLane(lane, pressTime)
                 }
 
-                // Truyền pressTime sang cho KeyTrailView
-                activeTrails[lane] = keyTrailView.addTrail(lane, container.x, container.width.toFloat(), pressTime)
+                // ================= XỬ LÝ KEYRAIN CHO ĐA HÀNG =================
+                var trailX = container.x
+                var trailW = container.width.toFloat()
+
+                if (keyMode == 10) {
+                    val targetIndex = if (lane == 8) 3 else if (lane == 9) 4 else -1
+                    if (targetIndex != -1) {
+                        val target = keyContainers[targetIndex]
+                        if (target != null) {
+                            trailW = target.width * 0.7f
+                            trailX = target.x + (target.width * 0.15f)
+                        }
+                    }
+                } else if (keyMode == 12) {
+                    val targetIndex = when (lane) {
+                        8 -> 2; 9 -> 3; 10 -> 4; 11 -> 5; else -> -1
+                    }
+                    if (targetIndex != -1) {
+                        val target = keyContainers[targetIndex]
+                        if (target != null) {
+                            trailW = target.width * 0.7f
+                            trailX = target.x + (target.width * 0.15f)
+                        }
+                    }
+                } else if (keyMode == 16) {
+                    // Phím 9-16 (lane 8-15) sẽ tự động bám vào Phím 1-8 (lane 0-7)
+                    val targetIndex = lane - 8
+                    if (targetIndex in 0..7) {
+                        val target = keyContainers[targetIndex]
+                        if (target != null) {
+                            // Tiếp tục giữ tỷ lệ 70% để 2 lớp vệt sáng không che khuất nhau
+                            trailW = target.width * 0.7f
+                            trailX = target.x + (target.width * 0.15f)
+                        }
+                    }
+                }
+                // =========================================================
+
+                activeTrails[lane] = keyTrailView.addTrail(lane, trailX, trailW, pressTime)
 
                 container.isPressed = true
                 keyCounters[lane]++
@@ -464,9 +496,14 @@ class OverlayService : Service() {
         keyUpRunnables = Array(keyMode) { lane ->
             Runnable {
                 keyContainers[lane]?.isPressed = false
-                // Lấy thời gian nhả phím gốc
-                val releaseTime = pendingKeyUpTimes[lane]
-                // Truyền releaseTime sang cho KeyTrailView
+
+                // ĐỒNG BỘ HỆ THỜI GIAN NHẢ PHÍM
+                var releaseTime = pendingKeyUpTimes[lane]
+                val uptimeNow = SystemClock.uptimeMillis()
+                if (releaseTime == 0L || Math.abs(uptimeNow - releaseTime) > 10000) {
+                    releaseTime = uptimeNow
+                }
+
                 keyTrailView.releaseLane(lane, releaseTime)
                 activeTrails[lane] = null
             }
@@ -570,13 +607,9 @@ class OverlayService : Service() {
                 candidates.add(DeviceInfo(currentDevice, currentName, tempMaxX, tempMaxY))
             }
 
-            AppLogger.d(this, "TouchReader", "Đã tìm thấy ${candidates.size} thiết bị cảm ứng.")
             var bestDevice: DeviceInfo? = null
 
             for (candidate in candidates) {
-                AppLogger.d(this, "TouchReader", "- Ứng viên: ${candidate.path} | Name: '${candidate.name}' | Max: ${candidate.maxX}x${candidate.maxY}")
-
-                // Ưu tiên 1: Tên màn hình thật của hãng (Samsung, Goodix, Synaptics...)
                 if (candidate.name.contains("sec_touchscreen") ||
                     candidate.name.contains("fts") ||
                     candidate.name.contains("goodix") ||
@@ -587,13 +620,10 @@ class OverlayService : Service() {
             }
 
             if (bestDevice == null) {
-                // Ưu tiên 2: Tên có chữ touch nhưng loại trừ triệt để thiết bị ảo (virtual)
                 bestDevice = candidates.firstOrNull { it.name.contains("touch") && !it.name.contains("virtual") }
             }
 
             if (bestDevice == null && candidates.isNotEmpty()) {
-                // Ưu tiên 3: Nếu tên lạ, luôn lấy thiết bị có MaxX lớn nhất
-                // (Màn hình vật lý thật luôn có Raw phân giải siêu cao, 100% lớn hơn hàng ảo)
                 bestDevice = candidates.maxByOrNull { it.maxX }
             }
 
@@ -602,7 +632,6 @@ class OverlayService : Service() {
                 maxRawY = bestDevice.maxY
                 invHwMaxX = 1f / maxRawX
                 invHwMaxY = 1f / maxRawY
-                AppLogger.i(this, "TouchReader", "=> THIẾT BỊ CHUẨN ĐƯỢC CHỌN: ${bestDevice.path}")
                 return bestDevice.path
             }
         } catch (e: Exception) {
@@ -611,28 +640,12 @@ class OverlayService : Service() {
         return null
     }
 
-    private fun parseHexInline(s: String, start: Int, end: Int): Int {
-        var res = 0
-        for (i in start until end) {
-            val c = s[i]
-            val v = when (c) {
-                in '0'..'9' -> c - '0'
-                in 'a'..'f' -> c - 'a' + 10
-                in 'A'..'F' -> c - 'A' + 10
-                else -> return res
-            }
-            res = (res shl 4) or v
-        }
-        return res
-    }
-
     private fun startReadingTouchEvents(devicePath: String) {
         isReadingEvents = true
         val hwMaxX = maxRawX
         val hwMaxY = maxRawY
 
         eventReaderThread = Thread {
-            // Ép Kernel cấp quyền ưu tiên ngang với phần cứng xử lý Âm thanh (Cao nhất, độ trễ thấp nhất)
             android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO)
             var inputStream: java.io.InputStream? = null
             try {
@@ -642,7 +655,6 @@ class OverlayService : Service() {
                 val process = newProcessMethod.invoke(null, cmd, null, null) as Process
                 shizukuProcess = process
 
-                // ZERO-ALLOCATION I/O READING: Cỗ máy đọc Byte thô không sinh rác
                 inputStream = process.inputStream
                 val buffer = ByteArray(4096)
                 var bytesRead: Int
@@ -676,14 +688,13 @@ class OverlayService : Service() {
                             }
                         } else if (char == '\n' || char == '\r') {
                             if (inToken) {
-                                value = hexTemp // Cột cuối cùng là Value
+                                value = hexTemp
                                 tokenCount++
                             }
 
-                            // Nếu đã thu thập đủ 3 cột (Type, Code, Value) -> Xử lý chạm!
                             if (tokenCount >= 3) {
                                 when (type) {
-                                    0x0003 -> { // EV_ABS
+                                    0x0003 -> {
                                         when (code) {
                                             0x002f -> currentSlot = value.coerceIn(0, 31)
                                             0x0039 -> slots[currentSlot].trackingId = value
@@ -691,20 +702,18 @@ class OverlayService : Service() {
                                             0x0036 -> slots[currentSlot].y = value.toFloat()
                                         }
                                     }
-                                    0x0000 -> { // EV_SYN
+                                    0x0000 -> {
                                         if (code == 0x0000) processSync(hwMaxX, hwMaxY)
                                     }
                                 }
                             }
 
-                            // Reset bộ nhớ cho dòng event tiếp theo
                             tokenCount = 0
                             hexTemp = 0
                             inToken = false
                             type = 0; code = 0; value = 0
 
                         } else {
-                            // Dịch bit nhị phân trực tiếp từ Hex sang Int
                             val digit = when (char) {
                                 in '0'..'9' -> char - '0'
                                 in 'a'..'f' -> char - 'a' + 10
@@ -734,7 +743,6 @@ class OverlayService : Service() {
     private fun processSync(hwMaxX: Float, hwMaxY: Float) {
         val rotation = currentHardwareRotation
 
-        // CẤM THUẬT: Tính trước nghịch đảo 1 lần duy nhất để biến mọi phép Chia thành phép Nhân
         val invHwMaxX = 1f / hwMaxX
         val invHwMaxY = 1f / hwMaxY
 
@@ -747,8 +755,6 @@ class OverlayService : Service() {
                 var rawMappedX = 0f
                 var rawMappedY = 0f
 
-                // CPU chạy mượt mà tuyệt đối vì chỉ còn phép Nhân (*)
-                // Bỏ qua mọi phép tính hằng số, lao thẳng vào xử lý bit
                 when (currentHardwareRotation) {
                     Surface.ROTATION_0 -> { rawMappedX = slot.x * invHwMaxX * cachedPhysWidth; rawMappedY = slot.y * invHwMaxY * cachedPhysHeight }
                     Surface.ROTATION_90 -> { rawMappedX = slot.y * invHwMaxY * cachedPhysWidth; rawMappedY = (hwMaxX - slot.x) * invHwMaxX * cachedPhysHeight }
@@ -761,7 +767,6 @@ class OverlayService : Service() {
                 if (!slot.isActive) {
                     var directHitLane = -1
                     for (j in 0 until keyMode) {
-                        // CPU tính toán thuần túy bằng Register, không tốn chi phí gọi hàm!
                         if (finalMappedX >= hitboxLeft[j] && finalMappedX < hitboxRight[j] &&
                             finalMappedY >= hitboxTop[j] && finalMappedY < hitboxBottom[j]) {
                             directHitLane = j
@@ -783,7 +788,6 @@ class OverlayService : Service() {
                             for (j in startLane until endLane) {
                                 if (j == directHitLane) continue
                                 if (laneOccupants[j] == 0) {
-                                    // Thay vì gọi hBox.width(), tính trực tiếp
                                     if (hitboxRight[j] <= hitboxLeft[j] || hitboxBottom[j] <= hitboxTop[j]) continue
                                     val dx = finalMappedX - hitboxCentersX[j]
                                     val dy = finalMappedY - hitboxCentersY[j]
@@ -799,7 +803,6 @@ class OverlayService : Service() {
                     }
 
                     if (finalLaneToActivate != -1) {
-                        // SỬ DỤNG mappedLane THAY VÌ lastHitLane
                         slot.mappedLane = finalLaneToActivate
                         slot.isActive = true
                         laneOccupants[finalLaneToActivate]++
@@ -808,15 +811,14 @@ class OverlayService : Service() {
 
                         val currentTime = SystemClock.uptimeMillis()
 
-                            kpsTimestamps[kpsHead] = currentTime
-                            kpsHead = (kpsHead + 1) and 255
-                            if (kpsHead == kpsTail) kpsTail = (kpsTail + 1) and 255
+                        kpsTimestamps[kpsHead] = currentTime
+                        kpsHead = (kpsHead + 1) and 255
+                        if (kpsHead == kpsTail) kpsTail = (kpsTail + 1) and 255
 
                         totalClicks++
                     }
                 }
             } else {
-                // SỬ DỤNG mappedLane ĐỂ TRÁNH QUÊN PHÍM KHI NHẢ
                 if (slot.isActive && slot.mappedLane != -1) {
                     laneOccupants[slot.mappedLane]--
                     if (laneOccupants[slot.mappedLane] < 0) laneOccupants[slot.mappedLane] = 0
@@ -827,7 +829,6 @@ class OverlayService : Service() {
                 }
             }
 
-            // BƯỚC 3 (BÊN DƯỚI) SẼ SỬA ĐOẠN NÀY ĐỂ TRÁNH CRASH APP
             if (isShowTouchesOn && i < SharedTouchData.points.size) {
                 val sharedPt = SharedTouchData.points[i]
                 if (slot.isActive && slot.trackingId != -1) {
@@ -858,9 +859,9 @@ class OverlayService : Service() {
                 keyDownRunnables[lane].run()
                 val currentTime = SystemClock.uptimeMillis()
 
-                    kpsTimestamps[kpsHead] = currentTime
-                    kpsHead = (kpsHead + 1) and 255
-                    if (kpsHead == kpsTail) kpsTail = (kpsTail + 1) and 255
+                kpsTimestamps[kpsHead] = currentTime
+                kpsHead = (kpsHead + 1) and 255
+                if (kpsHead == kpsTail) kpsTail = (kpsTail + 1) and 255
 
                 totalClicks++
                 updateKpsTotalUI(lastRenderedKps, totalClicks)
@@ -887,8 +888,7 @@ class OverlayService : Service() {
         AppLogger.d(this, "OverlayService", "Tiến hành nạp layout UI cho KeyViewer")
         if (!::wrapper.isInitialized) {
             wrapper = FrameLayout(this).apply {
-                visibility = View.VISIBLE
-                setBackgroundColor(Color.TRANSPARENT)
+                visibility = View.VISIBLE; setBackgroundColor(Color.TRANSPARENT)
             }
         }
 
@@ -905,56 +905,104 @@ class OverlayService : Service() {
         val keysContainer = viewerContainer.findViewById<LinearLayout>(R.id.keysContainer)
         keysContainer.removeAllViews()
 
-        val defaultSizePx = dpToPxInt(60)
+        val keyWidth = 55
+        val keyHeight = 60
+
+        // ================= ĐỒNG BỘ KHỞI TẠO TẤT CẢ CÁC MODE VÀO KIẾN TRÚC MỚI =================
+        // Ẩn khay XML cũ đi
+        viewerContainer.findViewById<View>(resources.getIdentifier("bottomCountersContainer", "id", packageName))?.visibility = View.GONE
+
+        // Khởi tạo FrameWorkspace bao trùm cho MỌI MODE
+        val frameWorkspace = FrameLayout(this).apply {
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            tag = "WORKSPACE_${keyMode}K"
+        }
+        keysContainer.addView(frameWorkspace)
+
+        // Khởi tạo N phím
         for (i in 0 until keyMode) {
             val container = LinearLayout(this).apply {
-                layoutParams = LinearLayout.LayoutParams(defaultSizePx, defaultSizePx)
-                orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER
+                layoutParams = FrameLayout.LayoutParams(dpToPxInt(keyWidth), dpToPxInt(keyHeight))
+                orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
             }
-
             val tvLabel = TextView(this).apply {
-                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
-                gravity = Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f); gravity = Gravity.CENTER
                 text = if (currentInputSource == "keyboard") getAbbreviatedKeyName(sharedPrefs.getString("key_name_${keyMode}_$i", null)) else (i + 1).toString()
-                setTextColor(Color.WHITE)
-                textSize = 20f
-                typeface = Typeface.DEFAULT_BOLD
+                setTextColor(Color.WHITE); textSize = 20f; typeface = Typeface.DEFAULT_BOLD
             }
-
             val tvCount = FastCounterView(this).apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    dpToPxInt(20) // Gắn cứng height để khỏi lo layout
-                ).apply {
-                    bottomMargin = dpToPxInt(4)
-                }
+                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dpToPxInt(20)).apply { bottomMargin = dpToPxInt(4) }
                 setCount(keyCounters[i])
             }
-
-            container.addView(tvLabel)
-            container.addView(tvCount)
-            keysContainer.addView(container)
-
-            keyContainers[i] = container
-            keyLabels[i] = tvLabel
-            keyCountersTv[i] = tvCount
+            container.addView(tvLabel); container.addView(tvCount); frameWorkspace.addView(container)
+            keyContainers[i] = container; keyLabels[i] = tvLabel; keyCountersTv[i] = tvCount
         }
 
-        kpsContainer = viewerContainer.findViewById(resources.getIdentifier("kpsContainer", "id", packageName))
-        tvKpsLabel = viewerContainer.findViewById(resources.getIdentifier("tvKpsLabel", "id", packageName))
-        tvKpsValue = viewerContainer.findViewById(resources.getIdentifier("tvKpsValue", "id", packageName))
-        totalContainer = viewerContainer.findViewById(resources.getIdentifier("totalContainer", "id", packageName))
-        tvTotalLabel = viewerContainer.findViewById(resources.getIdentifier("tvTotalLabel", "id", packageName))
-        tvTotalValue = viewerContainer.findViewById(resources.getIdentifier("tvTotalValue", "id", packageName))
+        // ================= TẠO KPS/TOTAL ẢO CHO MỌI MODE =================
+        // Layout Ngang (Horizontal) cho 4, 6, 8, 16. Layout Dọc (Vertical) cho 10, 12 vì hẹp
+        val isHorizontal = (keyMode == 4 || keyMode == 6 || keyMode == 8 || keyMode == 16)
 
-        tvTotalLabel?.visibility = if (keyMode == 4) View.GONE else View.VISIBLE
-        totalContainer?.visibility = View.VISIBLE
+        val labelParams = if (isHorizontal) LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        else LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        val valueParams = if (isHorizontal) LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        else LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+
+        // --- HỘP KPS ---
+        val newKpsContainer = LinearLayout(this).apply {
+            orientation = if (isHorizontal) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_VERTICAL
+            if (isHorizontal) setPadding(dpToPxInt(8), 0, dpToPxInt(12), 0)
+        }
+        val newTvKpsLabel = TextView(this).apply {
+            text = getString(R.string.kps_label) // <-- Sửa ở đây
+            gravity = if (isHorizontal) (Gravity.START or Gravity.CENTER_VERTICAL) else Gravity.CENTER
+            includeFontPadding = false
+        }
+        val newTvKpsValue = TextView(this).apply {
+            text = "0"
+            gravity = if (isHorizontal) (Gravity.END or Gravity.CENTER_VERTICAL) else Gravity.CENTER
+            includeFontPadding = false
+        }
+        newKpsContainer.addView(newTvKpsLabel, labelParams)
+        newKpsContainer.addView(newTvKpsValue, valueParams)
+
+        // --- HỘP TOTAL ---
+        val newTotalContainer = LinearLayout(this).apply {
+            orientation = if (isHorizontal) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_VERTICAL
+            if (isHorizontal) setPadding(dpToPxInt(12), 0, dpToPxInt(8), 0)
+        }
+
+        // Xử lý riêng cho 4K: Xóa nhãn Total
+        val is4K = (keyMode == 4)
+        val newTvTotalLabel = TextView(this).apply {
+            text = getString(R.string.total_label) // <-- Sửa ở đây
+            gravity = if (isHorizontal) (Gravity.START or Gravity.CENTER_VERTICAL) else Gravity.CENTER
+            includeFontPadding = false
+            visibility = if (is4K) View.GONE else View.VISIBLE
+        }
+
+        // 4K: Khi nhãn ẩn đi, ép số Value chiếm toàn bộ width để luôn căn sát lề phải
+        val totalValueParams = if (is4K) LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT) else valueParams
+
+        val newTvTotalValue = TextView(this).apply {
+            text = "0"
+            gravity = if (isHorizontal || is4K) (Gravity.END or Gravity.CENTER_VERTICAL) else Gravity.CENTER
+            includeFontPadding = false
+        }
+        newTotalContainer.addView(newTvTotalLabel, labelParams)
+        newTotalContainer.addView(newTvTotalValue, totalValueParams)
+
+        // --- KẾT NỐI VÀO FRAME ---
+        kpsContainer = newKpsContainer; tvKpsLabel = newTvKpsLabel; tvKpsValue = newTvKpsValue
+        totalContainer = newTotalContainer; tvTotalLabel = newTvTotalLabel; tvTotalValue = newTvTotalValue
+
+        frameWorkspace.addView(newKpsContainer)
+        frameWorkspace.addView(newTotalContainer)
+        // =================================================================================
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            wrapper.isForceDarkAllowed = false
-            viewerContainer.isForceDarkAllowed = false
-            keyTrailView.isForceDarkAllowed = false
+            wrapper.isForceDarkAllowed = false; viewerContainer.isForceDarkAllowed = false; keyTrailView.isForceDarkAllowed = false
         }
 
         viewerParams = WindowManager.LayoutParams(
@@ -979,9 +1027,12 @@ class OverlayService : Service() {
         val scale = pref.getFloat("viewer_scale", 1.0f)
         val speed = pref.getFloat("trail_speed", 0.8f)
         val limitPx = pref.getInt("trail_limit_px", 300)
-        val keyWidth = pref.getInt("key_width", 60)
-        val keyHeight = pref.getInt("key_height", 60)
+
+        // [KHÓA CỨNG KÍCH THƯỚC: Mặc định 50px chuẩn C#]
+        val keyWidth = 55
+        val keyHeight = 60
         val keySpacing = pref.getInt("key_spacing", 7)
+
         val isKeyRainEnabled = pref.getBoolean("theme_keyrain_enabled", true)
         val borderWidthDp = pref.getInt("theme_border_width", 2)
         val cornerRadiusDp = pref.getInt("theme_corner_radius", 6)
@@ -994,6 +1045,9 @@ class OverlayService : Service() {
         val borderPressed = try { Color.parseColor(pref.getString("theme_border_pressed", "#FFFFFF")) } catch (e: Exception) { Color.WHITE }
         val rainColor = try { Color.parseColor(pref.getString("theme_rain_color", "#FFFFFF")) } catch (e: Exception) { Color.WHITE }
         val shadowColor = try { Color.parseColor(pref.getString("theme_rain_shadow", "#00FFFF")) } catch (e: Exception) { Color.CYAN }
+        // THÊM 2 DÒNG NÀY: Khai báo màu hàng 2 (Mặc định là Tím nếu chưa có trong bộ nhớ)
+        val rainColor2 = try { Color.parseColor(pref.getString("theme_rain_color_2", "#A78BFA")) } catch (e: Exception) { Color.parseColor("#A78BFA") }
+        val shadowColor2 = try { Color.parseColor(pref.getString("theme_rain_shadow_2", "#7C3AED")) } catch (e: Exception) { Color.parseColor("#7C3AED") }
 
         val keysContainer = viewerContainer.findViewById<LinearLayout>(R.id.keysContainer)
         val showCounters = pref.getBoolean("show_key_counters", false)
@@ -1001,12 +1055,21 @@ class OverlayService : Service() {
         viewerContainer.post {
             viewerContainer.apply { pivotX = 0f; pivotY = 0f; this.x = x; this.y = y; scaleX = scale; scaleY = scale }
 
-            for (i in 0 until keysContainer.childCount) {
-                val container = keysContainer.getChildAt(i) as? LinearLayout ?: continue
+            val keyWidth = 55
+            val keyHeight = 60
+
+            // [ĐÃ SỬA]: Duyệt qua mảng keyContainers thay vì childCount của Layout cũ
+            for (i in 0 until keyMode) {
+                val container = keyContainers[i] ?: continue
                 val params = container.layoutParams as ViewGroup.MarginLayoutParams
+
                 params.width = dpToPxInt(keyWidth)
                 params.height = dpToPxInt(keyHeight)
-                if (i > 0) params.leftMargin = dpToPxInt(keySpacing)
+
+                if (keyMode != 10) {
+                    if (i > 0) params.leftMargin = dpToPxInt(keySpacing) else params.leftMargin = 0
+                }
+
                 container.layoutParams = params
 
                 val tvLabel = keyLabels[i]
@@ -1023,15 +1086,62 @@ class OverlayService : Service() {
                     tvCount.setUnderline(themeIsUnderline)
                     tvCount.setTextColor(createTextColorStateList(themeTextColor, themeTextColorPressed))
 
-                    // --- THÊM 2 DÒNG NÀY ---
-                    // Cài đặt size của số đếm bằng 65% size của phím gốc để nhìn hài hòa
                     val countSizePx = (themeTextSizeSp * 0.65f) * resources.displayMetrics.scaledDensity
                     tvCount.setTextSize(countSizePx)
-                    // -----------------------
 
                     tvCount.visibility = if (showCounters) View.VISIBLE else View.GONE
                 }
                 container.background = createAlphaSelector(bgNormal, borderNormal, bgPressed, borderPressed, borderPx, radiusPx)
+            }
+
+            // KÍCH HOẠT LAYOUT ENGINE CHO CÁC MODE ĐA HÀNG
+            // KÍCH HOẠT LAYOUT ENGINE CHO TẤT CẢ CÁC MODE
+            val frameWorkspace = keysContainer.findViewWithTag<FrameLayout>("WORKSPACE_${keyMode}K")
+            if (frameWorkspace != null) {
+                if (keyMode == 4 || keyMode == 6 || keyMode == 8) {
+                    LayoutEngine.applyStandardLayout(frameWorkspace, keyContainers, dpToPxInt(keyWidth), dpToPxInt(keyHeight), dpToPxInt(keySpacing), kpsContainer, totalContainer, keyMode)
+                } else if (keyMode == 10) {
+                    LayoutEngine.apply10KJipperLayout(frameWorkspace, keyContainers, dpToPxInt(keyWidth), dpToPxInt(keyHeight), dpToPxInt(keySpacing), kpsContainer, totalContainer)
+                } else if (keyMode == 12) {
+                    LayoutEngine.apply12KLayout(frameWorkspace, keyContainers, dpToPxInt(keyWidth), dpToPxInt(keyHeight), dpToPxInt(keySpacing), kpsContainer, totalContainer)
+                } else if (keyMode == 16) {
+                    LayoutEngine.apply16KLayout(frameWorkspace, keyContainers, dpToPxInt(keyWidth), dpToPxInt(keyHeight), dpToPxInt(keySpacing), kpsContainer, totalContainer)
+                }
+                // ================= ĐỒNG BỘ ĐỘ LỚN FONT CHỮ KPS/TOTAL =================
+                // 10K và 12K không gian hẹp -> Ép nhỏ 70% (0.7f)
+                // 16K không gian rộng -> Dùng 100% cỡ chữ cài đặt gốc
+                val kpsTextSizeSp = if (keyMode == 10 || keyMode == 12) (themeTextSizeSp * 0.7f) else themeTextSizeSp
+
+                // 1. Áp dụng cỡ chữ cho CHỮ (Label)
+                tvKpsLabel?.setTextSize(TypedValue.COMPLEX_UNIT_SP, kpsTextSizeSp)
+                tvTotalLabel?.setTextSize(TypedValue.COMPLEX_UNIT_SP, kpsTextSizeSp)
+
+                // 2. BẮT BUỘC: Áp dụng cỡ chữ gốc cho SỐ (Value) TRƯỚC KHI AutoSize hoạt động
+                tvKpsValue?.setTextSize(TypedValue.COMPLEX_UNIT_SP, kpsTextSizeSp)
+                tvTotalValue?.setTextSize(TypedValue.COMPLEX_UNIT_SP, kpsTextSizeSp)
+
+                // 3. Cấu hình AutoSize (Chỉ thu nhỏ lại nếu số quá dài)
+                val minSizeSp = 10
+                val maxSizeSp = kpsTextSizeSp.toInt().coerceAtLeast(minSizeSp + 2)
+
+                tvKpsValue?.apply {
+                    maxLines = 1
+                    androidx.core.widget.TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(
+                        this, minSizeSp, maxSizeSp, 1, TypedValue.COMPLEX_UNIT_SP
+                    )
+                }
+                tvTotalValue?.apply {
+                    maxLines = 1
+                    androidx.core.widget.TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(
+                        this, minSizeSp, maxSizeSp, 1, TypedValue.COMPLEX_UNIT_SP
+                    )
+                }
+                // ===================================================================
+
+            } else {
+                // Áp dụng khoảng cách (Margin) cũ cho các mode khác
+                kpsContainer?.let { (it.layoutParams as ViewGroup.MarginLayoutParams).rightMargin = dpToPxInt(keySpacing) }
+                viewerContainer.findViewById<View>(R.id.bottomCountersContainer)?.let { (it.layoutParams as ViewGroup.MarginLayoutParams).topMargin = dpToPxInt(keySpacing) }
             }
 
             kpsContainer?.background = createAlphaSelector(bgNormal, borderNormal, bgPressed, borderPressed, borderPx, radiusPx)
@@ -1049,6 +1159,8 @@ class OverlayService : Service() {
             keyTrailView.layoutParams.height = dpToPxInt(limitPx)
             keyTrailView.setParameters(speed, limitPx.toFloat())
             keyTrailView.setThemeColors(rainColor, shadowColor)
+            // THÊM 1 DÒNG NÀY: Truyền màu và kích hoạt bóng cho hàng 2!
+            keyTrailView.setRow2ThemeColors(rainColor2, shadowColor2)
             viewerContainer.requestLayout()
         }
     }
@@ -1197,7 +1309,6 @@ class OverlayService : Service() {
             val w = pref.getInt(getHitboxKey(i, "w"), 0)
             val h = pref.getInt(getHitboxKey(i, "h"), 0)
 
-            // Ép thẳng vào mảng cơ sở, không sinh Object
             hitboxLeft[i] = x
             hitboxRight[i] = x + w
             hitboxTop[i] = y
@@ -1288,7 +1399,6 @@ class OverlayService : Service() {
         if (isOverlayShowing) {
             AppLogger.i(this, "Overlay", "Lệnh ẩn khung KeyViewer được gọi")
 
-            // Lưu tổng số và từng phím
             val editor = sharedPrefs.edit()
             editor.putInt("TOTAL_CLICKS", totalClicks)
             for (i in 0 until keyMode) editor.putInt("KEY_COUNT_${keyMode}_$i", keyCounters[i])
@@ -1367,10 +1477,8 @@ class OverlayService : Service() {
         hideOverlay()
     }
 
-    // 1. CHỐNG RÁC: Khởi tạo biến Runnable CỐ ĐỊNH 1 lần duy nhất thay vì tạo mới liên tục
     private val kpsUiUpdateRunnable = Runnable {
         try {
-            // (Nếu được, ở tương lai ta sẽ đổi 2 TextView này thành FastCounterView để hết rác 100%)
             tvKpsValue?.text = lastRenderedKps.toString()
             tvTotalValue?.text = decimalFormatter.format(lastRenderedTotal)
         } catch (e: Exception) {}
@@ -1380,7 +1488,6 @@ class OverlayService : Service() {
         if (!force && kps == lastRenderedKps && total == lastRenderedTotal) return
         lastRenderedKps = kps; lastRenderedTotal = total
 
-        // 2. Tái sử dụng Runnable cố định, tuyệt đối không dùng { ... } Lambda ở đây nữa
         mainHandler.removeCallbacks(kpsUiUpdateRunnable)
         mainHandler.post(kpsUiUpdateRunnable)
     }

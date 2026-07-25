@@ -135,14 +135,29 @@ class SetupActivity : AppCompatActivity() {
         }
 
         // Step 4: Key Mode
-        findViewById<MaterialButtonToggleGroup>(R.id.toggleStepKeyMode).addOnButtonCheckedListener { _, checkedId, isChecked ->
+        val toggleRow1 = findViewById<MaterialButtonToggleGroup>(R.id.toggleStepKeyModeRow1)
+        val toggleRow2 = findViewById<MaterialButtonToggleGroup>(R.id.toggleStepKeyModeRow2)
+
+        toggleRow1.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked) {
+                toggleRow2.clearChecked() // Chọn hàng 1 thì bỏ tick hàng 2
                 selectedKeyMode = when (checkedId) {
                     R.id.btnMode4 -> 4
                     R.id.btnMode6 -> 6
                     R.id.btnMode8 -> 8
                     R.id.btnMode10 -> 10
-                    else -> 6
+                    else -> selectedKeyMode
+                }
+            }
+        }
+
+        toggleRow2.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) {
+                toggleRow1.clearChecked() // Chọn hàng 2 thì bỏ tick hàng 1
+                selectedKeyMode = when (checkedId) {
+                    R.id.btnMode12 -> 12
+                    R.id.btnMode16 -> 16
+                    else -> selectedKeyMode
                 }
             }
         }
@@ -278,6 +293,28 @@ class SetupActivity : AppCompatActivity() {
                 tvOverlayStatus.text = getString(R.string.setup_step3_overlay_status, if (hasOverlay) getString(R.string.setup_step3_status_granted) else getString(R.string.setup_step3_status_denied))
                 tvOverlayStatus.setTextColor(if (hasOverlay) Color.GREEN else Color.RED)
             }
+            3 -> { // Step 4: Key Mode
+                val toggleRow1 = findViewById<MaterialButtonToggleGroup>(R.id.toggleStepKeyModeRow1)
+                val toggleRow2 = findViewById<MaterialButtonToggleGroup>(R.id.toggleStepKeyModeRow2)
+                val tvExtendedLabel = findViewById<TextView>(R.id.tvExtendedModeLabel)
+
+                val isKeyboard = (selectedInputSource == "keyboard")
+
+                // Làm mờ hoặc Kích hoạt toàn bộ Hàng 2
+                for (i in 0 until toggleRow2.childCount) {
+                    toggleRow2.getChildAt(i).isEnabled = isKeyboard
+                }
+
+                if (!isKeyboard) {
+                    tvExtendedLabel.text = getString(R.string.setup_step4_extended_disabled)
+                    // BẢO VỆ: Nếu người dùng lỡ chọn 12/16 rồi nhấn Back quay lại chọn Touch, ta sẽ ép về 6K
+                    if (selectedKeyMode > 10) {
+                        toggleRow1.check(R.id.btnMode6)
+                    }
+                } else {
+                    tvExtendedLabel.text = getString(R.string.setup_step4_extended_enabled)
+                }
+            }
             4 -> { // Step 5: Advanced Settings
                 val btnDetails = findViewById<Button>(R.id.btnSetupDetails)
                 if (selectedInputSource == "touch") {
@@ -340,8 +377,24 @@ class SetupActivity : AppCompatActivity() {
         }
         root.addView(tvTitle)
 
-        val container = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        root.addView(container)
+        // ================== THÊM SCROLLVIEW ĐỂ CUỘN DANH SÁCH ==================
+        val scrollView = ScrollView(this).apply {
+            // Trọng số 1f (weight = 1f) giúp ScrollView tự động co giãn
+            // lấp đầy khoảng trống giữa Tiêu đề và nút "XONG", không bị tràn ra ngoài màn hình
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
+            isScrollbarFadingEnabled = false // Giữ thanh cuộn luôn hiện để dễ nhìn
+            scrollBarStyle = View.SCROLLBARS_OUTSIDE_OVERLAY
+        }
+
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        }
+
+        // Nhét container chứa danh sách vào trong ScrollView
+        scrollView.addView(container)
+        root.addView(scrollView)
+        // =======================================================================
 
         val rowViews = mutableListOf<Pair<TextView, TextView>>()
         for (i in 0 until keyMode) {

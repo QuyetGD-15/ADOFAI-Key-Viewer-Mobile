@@ -45,14 +45,20 @@ class KeyViewerConfigActivity : AppCompatActivity() {
     private lateinit var bottomCountersContainer: LinearLayout
     private lateinit var section1ContentLayout: LinearLayout
     private lateinit var section2ContentLayout: LinearLayout
+    // --- THÊM 6 BIẾN NÀY ĐỂ QUẢN LÝ KPS/TOTAL ---
+    private var kpsContainer: View? = null
+    private var tvKpsLabel: TextView? = null
+    private var tvKpsValue: TextView? = null
+    private var totalContainer: View? = null
+    private var tvTotalLabel: TextView? = null
+    private var tvTotalValue: TextView? = null
+    // --------------------------------------------
 
     private lateinit var tvPosXLabel: TextView
     private lateinit var tvPosYLabel: TextView
     private lateinit var tvScaleLabel: TextView
     private lateinit var tvSpeedLabel: TextView
     private lateinit var tvLimitLabel: TextView
-    private lateinit var tvKeyWidthLabel: TextView
-    private lateinit var tvKeyHeightLabel: TextView
     private lateinit var tvKeySpacingLabel: TextView
     private lateinit var tvBorderWidthLabel: TextView
     private lateinit var tvCornerRadiusLabel: TextView
@@ -66,8 +72,6 @@ class KeyViewerConfigActivity : AppCompatActivity() {
     private lateinit var seekScale: Slider
     private lateinit var seekSpeed: Slider
     private lateinit var seekLimit: Slider
-    private lateinit var seekKeyWidth: Slider
-    private lateinit var seekKeyHeight: Slider
     private lateinit var seekKeySpacing: Slider
     private lateinit var seekBorderWidth: Slider
     private lateinit var seekCornerRadius: Slider
@@ -89,6 +93,10 @@ class KeyViewerConfigActivity : AppCompatActivity() {
     private lateinit var etRainColorHex: EditText
     private lateinit var etRainShadowHex: EditText
 
+    // BIẾN CHO HÀNG 2
+    private lateinit var etRainColor2Hex: EditText
+    private lateinit var etRainShadow2Hex: EditText
+
     private lateinit var viewTextColorPreview: MaterialCardView
     private lateinit var viewTextColorPressedPreview: MaterialCardView
     private lateinit var viewBgNormalPreview: MaterialCardView
@@ -98,11 +106,15 @@ class KeyViewerConfigActivity : AppCompatActivity() {
     private lateinit var viewRainColorPreview: MaterialCardView
     private lateinit var viewRainShadowPreview: MaterialCardView
 
+    // PREVIEW CHO HÀNG 2
+    private lateinit var viewRainColor2Preview: MaterialCardView
+    private lateinit var viewRainShadow2Preview: MaterialCardView
+
     private var currentScale = 1.0f
     private var currentSpeed = 1.0f
-    private var currentLimit = 200 // Mặc định 200dp
-    private var currentKeyWidth = 60 // Mặc định 60dp
-    private var currentKeyHeight = 60 // Mặc định 60dp
+    private var currentLimit = 200
+    private val currentKeyWidth = 55
+    private val currentKeyHeight = 60
     private var currentKeySpacing = 0
 
     private var currentX = 0f
@@ -136,7 +148,6 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         }
     }
 
-    // Thêm biến gốc để tính toán scale chữ cho chuẩn với OverlayService
     private val baseTextSize = 20f
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -144,13 +155,12 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         initDefaultThemeOnFirstLaunch()
         supportActionBar?.hide()
 
-        // Thiết lập giao diện tràn viền để lấy tọa độ chuẩn xác nhất
         androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
         window.setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
             window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         }
-        // Ẩn thanh trạng thái, điều hướng
+
         androidx.core.view.WindowInsetsControllerCompat(window, window.decorView).let { controller ->
             controller.hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
             controller.systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
@@ -158,33 +168,25 @@ class KeyViewerConfigActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_key_viewer_config)
 
-        // 1. Tắt OverlayService khi bắt đầu cấu hình
         stopService(Intent(this, OverlayService::class.java))
 
         initViews()
 
-        // KIỂM TRA TỰ ĐỘNG NẠP MẶC ĐỊNH LẦN ĐẦU
         val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
         val isKeyViewerConfigured = pref.getBoolean("is_keyviewer_configured", false)
 
         if (!isKeyViewerConfigured) {
-            // KHÓA CỜ NGAY LẬP TỨC trước khi gọi hàm Reset để tránh Activity Recreate gọi Reset 2 lần làm mất tọa độ.
             pref.edit().putBoolean("is_keyviewer_configured", true).apply()
-
-            // Gọi hàm load mặc định (đặt view ra giữa màn hình)
             resetToDefault()
         } else {
-            // Chỉ nạp tọa độ từ bộ nhớ nếu đã configured
             loadPreferences()
         }
 
         setupListeners()
 
-        // Cố định Pivot 0,0 để đồng bộ hệ tọa độ
         viewerContainer.pivotX = 0f
         viewerContainer.pivotY = 0f
 
-        // Cập nhật giao diện ban đầu
         viewerContainer.post {
             renderKeyPreview()
             updateLivePreview()
@@ -197,32 +199,36 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         val showCounters = swShowKeyCounters.isChecked
 
         keysContainer.removeAllViews()
-        for (i in 1..keyMode) {
+
+        // Ẩn vĩnh viễn khay XML cũ cho TẤT CẢ các mode
+        val bottomCounters = viewerContainer.findViewById<View>(R.id.bottomCountersContainer)
+        bottomCounters?.visibility = View.GONE
+
+        // Tạo khung chứa tổng
+        val frameWorkspace = FrameLayout(this).apply {
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            tag = "WORKSPACE_${keyMode}K"
+        }
+        keysContainer.addView(frameWorkspace)
+
+        val density = resources.displayMetrics.density
+
+        for (i in 0 until keyMode) {
             val container = LinearLayout(this).apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    (currentKeyWidth * resources.displayMetrics.density).toInt(),
-                    (currentKeyHeight * resources.displayMetrics.density).toInt()
-                )
+                layoutParams = FrameLayout.LayoutParams((currentKeyWidth * density).toInt(), (currentKeyHeight * density).toInt())
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER
-                id = View.generateViewId()
             }
-
             val tvLabel = TextView(this).apply {
                 layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
                 gravity = Gravity.CENTER
-                text = i.toString()
+                text = (i + 1).toString()
                 setTextColor(Color.WHITE)
                 textSize = 20f
                 typeface = Typeface.DEFAULT_BOLD
             }
-
             val tvCount = TextView(this).apply {
-                val density = resources.displayMetrics.density
-                layoutParams = LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                ).apply {
+                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
                     bottomMargin = (4 * density).toInt()
                 }
                 gravity = Gravity.CENTER
@@ -234,17 +240,75 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                     this, 6, 14, 1, TypedValue.COMPLEX_UNIT_SP
                 )
             }
-
             container.addView(tvLabel)
             container.addView(tvCount)
-            keysContainer.addView(container)
+            frameWorkspace.addView(container)
         }
+
+        // ================= TẠO KPS/TOTAL ẢO CHO MỌI MODE =================
+        val dpToPx = { dp: Int -> (dp * density).toInt() }
+        val isHorizontal = (keyMode == 4 || keyMode == 6 || keyMode == 8 || keyMode == 16)
+
+        val labelParams = if (isHorizontal) LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        else LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        val valueParams = if (isHorizontal) LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        else LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+
+        val newKpsContainer = LinearLayout(this).apply {
+            orientation = if (isHorizontal) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_VERTICAL
+            if (isHorizontal) setPadding(dpToPx(8), 0, dpToPx(12), 0)
+        }
+        val newTvKpsLabel = TextView(this).apply {
+            text = getString(R.string.kps_label) // <-- Sửa ở đây
+            gravity = if (isHorizontal) (Gravity.START or Gravity.CENTER_VERTICAL) else Gravity.CENTER
+            includeFontPadding = false
+        }
+        val newTvKpsValue = TextView(this).apply {
+            text = "0"
+            gravity = if (isHorizontal) (Gravity.END or Gravity.CENTER_VERTICAL) else Gravity.CENTER
+            includeFontPadding = false
+        }
+        newKpsContainer.addView(newTvKpsLabel, labelParams)
+        newKpsContainer.addView(newTvKpsValue, valueParams)
+
+        val newTotalContainer = LinearLayout(this).apply {
+            orientation = if (isHorizontal) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_VERTICAL
+            if (isHorizontal) setPadding(dpToPx(12), 0, dpToPx(8), 0)
+        }
+
+        // 4K Không có chữ Total
+        val is4K = (keyMode == 4)
+        val newTvTotalLabel = TextView(this).apply {
+            text = getString(R.string.total_label) // <-- Sửa ở đây
+            gravity = if (isHorizontal) (Gravity.START or Gravity.CENTER_VERTICAL) else Gravity.CENTER
+            includeFontPadding = false
+            visibility = if (is4K) View.GONE else View.VISIBLE
+        }
+
+        val totalValueParams = if (is4K) LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT) else valueParams
+
+        val newTvTotalValue = TextView(this).apply {
+            text = "0"
+            gravity = if (isHorizontal || is4K) (Gravity.END or Gravity.CENTER_VERTICAL) else Gravity.CENTER
+            includeFontPadding = false
+        }
+        newTotalContainer.addView(newTvTotalLabel, labelParams)
+        newTotalContainer.addView(newTvTotalValue, totalValueParams)
+
+        kpsContainer = newKpsContainer; tvKpsLabel = newTvKpsLabel; tvKpsValue = newTvKpsValue
+        totalContainer = newTotalContainer; tvTotalLabel = newTvTotalLabel; tvTotalValue = newTvTotalValue
+
+        frameWorkspace.addView(newKpsContainer)
+        frameWorkspace.addView(newTotalContainer)
     }
 
     private fun initViews() {
         viewerContainer = findViewById(R.id.viewerContainer)
         keysContainer = findViewById(R.id.keysContainer)
         keyTrailView = findViewById(R.id.keyTrailView)
+        keyTrailView.setBackgroundColor(Color.parseColor("#33FFFFFF"))
         bottomCountersContainer = findViewById(R.id.bottomCountersContainer)
 
         layoutThemeContent = findViewById(R.id.layoutThemeContent)
@@ -265,6 +329,9 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         etRainColorHex = findViewById(R.id.etRainColorHex)
         etRainShadowHex = findViewById(R.id.etRainShadowHex)
 
+        etRainColor2Hex = findViewById(R.id.etRainColor2Hex)
+        etRainShadow2Hex = findViewById(R.id.etRainShadow2Hex)
+
         viewTextColorPreview = findViewById(R.id.viewTextColorPreview)
         viewTextColorPressedPreview = findViewById(R.id.viewTextColorPressedPreview)
         viewBgNormalPreview = findViewById(R.id.viewBgNormalPreview)
@@ -274,13 +341,14 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         viewRainColorPreview = findViewById(R.id.viewRainColorPreview)
         viewRainShadowPreview = findViewById(R.id.viewRainShadowPreview)
 
+        viewRainColor2Preview = findViewById(R.id.viewRainColor2Preview)
+        viewRainShadow2Preview = findViewById(R.id.viewRainShadow2Preview)
+
         tvPosXLabel = findViewById(R.id.tvPosXLabel)
         tvPosYLabel = findViewById(R.id.tvPosYLabel)
         tvScaleLabel = findViewById(R.id.tvScaleLabel)
         tvSpeedLabel = findViewById(R.id.tvSpeedLabel)
         tvLimitLabel = findViewById(R.id.tvLimitLabel)
-        tvKeyWidthLabel = findViewById(R.id.tvKeyWidthLabel)
-        tvKeyHeightLabel = findViewById(R.id.tvKeyHeightLabel)
         tvKeySpacingLabel = findViewById(R.id.tvKeySpacingLabel)
         tvBorderWidthLabel = findViewById(R.id.tvBorderWidthLabel)
         tvCornerRadiusLabel = findViewById(R.id.tvCornerRadiusLabel)
@@ -295,27 +363,20 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         seekScale = findViewById(R.id.seekScale)
         seekSpeed = findViewById(R.id.seekSpeed)
         seekLimit = findViewById(R.id.seekLimit)
-        seekKeyWidth = findViewById(R.id.seekKeyWidth)
-        seekKeyHeight = findViewById(R.id.seekKeyHeight)
         seekKeySpacing = findViewById(R.id.seekKeySpacing)
         seekBorderWidth = findViewById(R.id.seekBorderWidth)
         seekCornerRadius = findViewById(R.id.seekCornerRadius)
 
-        // Thiết lập max cho Pos Sliders dựa trên màn hình (Dải gấp đôi để hỗ trợ âm/dương)
         val dm = resources.displayMetrics
         val centerX = dm.widthPixels
         val centerY = dm.heightPixels
         seekPosX.valueTo = (centerX * 2).toFloat()
         seekPosY.valueTo = (centerY * 2).toFloat()
-
-        seekKeyHeight.valueTo = 70f
         seekKeySpacing.valueTo = 20f
 
-        // Tâm scale ở góc trên trái (Pivot 0,0)
         viewerContainer.pivotX = 0f
         viewerContainer.pivotY = 0f
 
-        // Áp dụng Accordion cho Mục 1, Mục 2 và Mục 3
         setupCollapsibleSection(tvSection1Header, tvSection1Header, section1ContentLayout, defaultExpanded = false)
         setupCollapsibleSection(tvSection2Header, tvSection2Header, section2ContentLayout, defaultExpanded = false)
         setupCollapsibleSection(tvThemeHeader, tvThemeHeader, layoutThemeContent, defaultExpanded = false)
@@ -327,29 +388,25 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         val presetDropdown = findViewById<android.widget.AutoCompleteTextView>(R.id.presetDropdown)
         val btnSavePreset = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSavePreset)
 
-        // 1. Khởi tạo Adapter cho AutoCompleteTextView (Material 3 Dropdown)
         val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, presetNames)
         presetDropdown.setAdapter(adapter)
 
         val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
-        // Lấy lại vị trí Mẫu chủ đề cuối cùng người dùng đã chọn (Mặc định là 0)
         val savedPresetIndex = pref.getInt("saved_preset_index", 0)
-        // Cập nhật vị trí hiển thị mặc định
+
         if (savedPresetIndex < presetNames.size) {
             presetDropdown.setText(adapter.getItem(savedPresetIndex), false)
         }
 
-        // Xử lý sự kiện khi chọn mẫu
         presetDropdown.setOnItemClickListener { parent, view, position, id ->
             if (!isUserInteractingWithSpinner) {
-                return@setOnItemClickListener // Từ chối thực thi nếu không phải người dùng tự tay vuốt chạm
+                return@setOnItemClickListener
             }
 
             currentSelectedPresetIndex = position
             val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
 
             if (position == 0) {
-                // MẪU 0: MẶC ĐỊNH
                 applyValuesToUIControls(
                     textColorNormal = "#FFFFFF",
                     textColorPressed = "#FF000000",
@@ -359,13 +416,14 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                     borderPressed = "#FFFFFF",
                     rainColor = "#FFFFFF",
                     rainShadow = "#FF000000",
+                    rainColor2 = "#FF999898",
+                    rainShadow2 = "#FFFFFF",
                     textSize = 20f,
                     isBold = false,
                     isItalic = false,
                     isUnderline = false
                 )
             } else if (position == 1) {
-                // MẪU 1: JIPPER
                 applyValuesToUIControls(
                     textColorNormal = "#FFFFFF",
                     textColorPressed = "#FF000000",
@@ -375,13 +433,14 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                     borderPressed = "#FFFFFF",
                     rainColor = "#FF8C3EFF",
                     rainShadow = "#FF000000",
+                    rainColor2 = "#FFFFFFFF",
+                    rainShadow2 = "#FF000000",
                     textSize = 20f,
                     isBold = false,
                     isItalic = false,
                     isUnderline = false
                 )
             } else {
-                // MẪU 2, 3, 4 (TÙY CHỈNH): Đọc từ SharedPreferences.
                 val suffix = "_preset_$position"
                 val textColorNormal = pref.getString("theme_text_color$suffix", "#FFFFFF") ?: "#FFFFFF"
                 val textColorPressed = pref.getString("theme_text_color_pressed$suffix", "#FF000000") ?: "#FF000000"
@@ -391,6 +450,9 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                 val borderPressed = pref.getString("theme_border_pressed$suffix", "#FFFFFF") ?: "#FFFFFF"
                 val rainColor = pref.getString("theme_rain_color$suffix", "#FFFFFF") ?: "#FFFFFF"
                 val rainShadow = pref.getString("theme_rain_shadow$suffix", "#FF000000") ?: "#FF000000"
+
+                val rainColor2 = pref.getString("theme_rain_color_2$suffix", "#A78BFA") ?: "#A78BFA"
+                val rainShadow2 = pref.getString("theme_rain_shadow_2$suffix", "#7C3AED") ?: "#7C3AED"
 
                 val textSize = try { pref.getFloat("theme_text_size$suffix", 20f) } catch (e: Exception) {
                     try { pref.getInt("theme_text_size$suffix", 20).toFloat() } catch (e2: Exception) { 20f }
@@ -403,20 +465,18 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                 applyValuesToUIControls(
                     textColorNormal, textColorPressed, bgNormal, bgPressed,
                     borderNormal, borderPressed, rainColor, rainShadow,
+                    rainColor2, rainShadow2,
                     textSize, isBold, isItalic, isUnderline
                 )
             }
 
-            // Lưu lại chỉ số preset đang chọn
             pref.edit().putInt("saved_preset_index", position).apply()
         }
 
-        // Xử lý sự kiện nút Lưu để ghi đè
         btnSavePreset.setOnClickListener {
             val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
             val editor = pref.edit()
 
-            // Tìm position hiện tại từ Text của Dropdown
             val currentText = presetDropdown.text.toString()
             val selectedPosition = presetNames.indexOf(currentText)
 
@@ -425,7 +485,6 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // 1. ĐỌC TẤT CẢ GIÁ TRỊ HIỆN TẠI TRÊN GIAO DIỆN UI
             val textSize = (seekThemeTextSize.value + 10)
             val textColor = etTextColorHex.text.toString()
             val textColorPressed = etTextColorPressedHex.text.toString()
@@ -435,11 +494,12 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             val borderPressed = etBorderPressedHex.text.toString()
             val rainColor = etRainColorHex.text.toString()
             val rainShadow = etRainShadowHex.text.toString()
+            val rainColor2 = etRainColor2Hex.text.toString()
+            val rainShadow2 = etRainShadow2Hex.text.toString()
             val isBold = cbBold.isChecked
             val isItalic = cbItalic.isChecked
             val isUnderline = cbUnderline.isChecked
 
-            // 2. LUÔN LUÔN LƯU VÀO CẤU HÌNH CHẠY CHÍNH (Để OverlayService đọc được ngay lập tức)
             editor.putFloat("theme_text_size", textSize)
             editor.putString("theme_text_color", textColor)
             editor.putString("theme_text_color_pressed", textColorPressed)
@@ -449,11 +509,12 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             editor.putString("theme_border_pressed", borderPressed)
             editor.putString("theme_rain_color", rainColor)
             editor.putString("theme_rain_shadow", rainShadow)
+            editor.putString("theme_rain_color_2", rainColor2)
+            editor.putString("theme_rain_shadow_2", rainShadow2)
             editor.putBoolean("theme_text_bold", isBold)
             editor.putBoolean("theme_text_italic", isItalic)
             editor.putBoolean("theme_text_underline", isUnderline)
 
-            // 3. LOGIC GHI ĐÈ BẢO VỆ PRESET: Nếu vị trí đang chọn >= 2 (tức là Tùy chỉnh 1, 2, 3...) thì ghi đè vào Slot đó
             val suffix = "_preset_$selectedPosition"
             editor.putFloat("theme_text_size$suffix", textSize)
             editor.putString("theme_text_color$suffix", textColor)
@@ -464,15 +525,15 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             editor.putString("theme_border_pressed$suffix", borderPressed)
             editor.putString("theme_rain_color$suffix", rainColor)
             editor.putString("theme_rain_shadow$suffix", rainShadow)
+            editor.putString("theme_rain_color_2$suffix", rainColor2)
+            editor.putString("theme_rain_shadow_2$suffix", rainShadow2)
             editor.putBoolean("theme_text_bold$suffix", isBold)
             editor.putBoolean("theme_text_italic$suffix", isItalic)
             editor.putBoolean("theme_text_underline$suffix", isUnderline)
 
-            // Lưu lại chỉ số preset đang chọn để không bị giật lùi giao diện
             editor.putInt("saved_preset_index", selectedPosition)
             editor.apply()
 
-            // 4. BẮN BROADCAST ĐỂ OVERLAY CẬP NHẬT NGAY LẬP TỨC
             triggerOverlayRefresh()
 
             Toast.makeText(this, getString(R.string.toast_preset_saved, currentText), Toast.LENGTH_SHORT).show()
@@ -480,16 +541,15 @@ class KeyViewerConfigActivity : AppCompatActivity() {
     }
 
     private fun setupCollapsibleSection(headerTitle: android.widget.TextView, clickableView: android.view.View, contentLayout: android.view.View, defaultExpanded: Boolean = false) {
-        // Lọc bỏ tam giác cũ nếu có để tránh bị lặp ký tự
         val originalText = headerTitle.text.toString().replace("▼ ", "").replace("▶ ", "").trim()
-        
+
         val updateUI = { isExpanded: Boolean ->
             contentLayout.visibility = if (isExpanded) android.view.View.VISIBLE else android.view.View.GONE
             headerTitle.text = if (isExpanded) "▼ $originalText" else "▶ $originalText"
         }
 
         var isExpanded = defaultExpanded
-        updateUI(isExpanded) // Áp dụng trạng thái ban đầu
+        updateUI(isExpanded)
 
         clickableView.setOnClickListener {
             isExpanded = !isExpanded
@@ -506,6 +566,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         borderPressed: String,
         rainColor: String,
         rainShadow: String,
+        rainColor2: String,
+        rainShadow2: String,
         textSize: Float,
         isBold: Boolean,
         isItalic: Boolean,
@@ -519,6 +581,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         etBorderPressedHex.setText(borderPressed)
         etRainColorHex.setText(rainColor)
         etRainShadowHex.setText(rainShadow)
+        etRainColor2Hex.setText(rainColor2)
+        etRainShadow2Hex.setText(rainShadow2)
 
         seekThemeTextSize.value = (textSize - 10).coerceIn(seekThemeTextSize.valueFrom, seekThemeTextSize.valueTo)
         cbBold.isChecked = isBold
@@ -538,14 +602,11 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         val centerX = dm.widthPixels
         val centerY = dm.heightPixels
 
-        // GIỮ NGUYÊN BẢN CÁC GIÁ TRI CỦA BẠN
         val x = sharedPref.getFloat("viewer_x", 0f)
         val y = sharedPref.getFloat("viewer_y", 0f)
         currentScale = sharedPref.getFloat("viewer_scale", 1.0f)
         currentSpeed = sharedPref.getFloat("trail_speed", 0.8f)
         currentLimit = sharedPref.getInt("trail_limit_px", 200)
-        currentKeyWidth = sharedPref.getInt("key_width", 60)
-        currentKeyHeight = sharedPref.getInt("key_height", 60)
         currentKeySpacing = sharedPref.getInt("key_spacing", 7)
 
         currentX = x
@@ -561,15 +622,12 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         seekScale.value = (currentScale * 100).coerceIn(seekScale.valueFrom, seekScale.valueTo)
         seekSpeed.value = (currentSpeed * 100).coerceIn(seekSpeed.valueFrom, seekSpeed.valueTo)
         seekLimit.value = (currentLimit - 70).toFloat().coerceIn(seekLimit.valueFrom, seekLimit.valueTo)
-        seekKeyWidth.value = (currentKeyWidth - 30).toFloat().coerceIn(seekKeyWidth.valueFrom, seekKeyWidth.valueTo)
-        seekKeyHeight.value = (currentKeyHeight - 30).toFloat().coerceIn(seekKeyHeight.valueFrom, seekKeyHeight.valueTo)
         seekKeySpacing.value = currentKeySpacing.toFloat().coerceIn(seekKeySpacing.valueFrom, seekKeySpacing.valueTo)
         seekBorderWidth.value = sharedPref.getInt("theme_border_width", 2).toFloat().coerceIn(seekBorderWidth.valueFrom, seekBorderWidth.valueTo)
         seekCornerRadius.value = sharedPref.getInt("theme_corner_radius", 6).toFloat().coerceIn(seekCornerRadius.valueFrom, seekCornerRadius.valueTo)
         swEnableKeyRain.isChecked = sharedPref.getBoolean("theme_keyrain_enabled", true)
         keyTrailView.visibility = if (swEnableKeyRain.isChecked) View.VISIBLE else View.GONE
 
-        // Load THEME settings
         swShowKeyCounters.isChecked = sharedPref.getBoolean("show_key_counters", false)
         cbBold.isChecked = sharedPref.getBoolean("theme_text_bold", false)
         cbItalic.isChecked = sharedPref.getBoolean("theme_text_italic", false)
@@ -588,6 +646,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         val borderPressed = sharedPref.getString("theme_border_pressed", "#FFEB3B") ?: "#FFEB3B"
         val rainColor = sharedPref.getString("theme_rain_color", "#FFFFFF") ?: "#FFFFFF"
         val rainShadow = sharedPref.getString("theme_rain_shadow", "#00FFFF") ?: "#00FFFF"
+        val rainColor2 = sharedPref.getString("theme_rain_color_2", "#A78BFA") ?: "#A78BFA"
+        val rainShadow2 = sharedPref.getString("theme_rain_shadow_2", "#7C3AED") ?: "#7C3AED"
 
         etTextColorHex.setText(textColor)
         etTextColorPressedHex.setText(textColorPressed)
@@ -597,6 +657,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         etBorderPressedHex.setText(borderPressed)
         etRainColorHex.setText(rainColor)
         etRainShadowHex.setText(rainShadow)
+        etRainColor2Hex.setText(rainColor2)
+        etRainShadow2Hex.setText(rainShadow2)
 
         syncColorPreview(etTextColorHex, viewTextColorPreview)
         syncColorPreview(etTextColorPressedHex, viewTextColorPressedPreview)
@@ -606,6 +668,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         syncColorPreview(etBorderPressedHex, viewBorderPressedPreview)
         syncColorPreview(etRainColorHex, viewRainColorPreview)
         syncColorPreview(etRainShadowHex, viewRainShadowPreview)
+        syncColorPreview(etRainColor2Hex, viewRainColor2Preview)
+        syncColorPreview(etRainShadow2Hex, viewRainShadow2Preview)
     }
 
     private fun syncColorPreview(et: EditText, preview: MaterialCardView) {
@@ -615,7 +679,6 @@ class KeyViewerConfigActivity : AppCompatActivity() {
     }
 
     private fun setupListeners() {
-        // Color Picker dialog listeners
         val colorClick = View.OnClickListener { v ->
             val et: EditText
             val title: String
@@ -628,6 +691,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                 R.id.viewBorderPressedPreview -> { et = etBorderPressedHex; title = getString(R.string.theme_color_border_pressed) }
                 R.id.viewRainColorPreview -> { et = etRainColorHex; title = getString(R.string.theme_color_rain) }
                 R.id.viewRainShadowPreview -> { et = etRainShadowHex; title = getString(R.string.theme_color_rain_shadow) }
+                R.id.viewRainColor2Preview -> { et = etRainColor2Hex; title = getString(R.string.theme_rain_color_row2) }
+                R.id.viewRainShadow2Preview -> { et = etRainShadow2Hex; title = getString(R.string.theme_rain_shadow_row2) }
                 else -> return@OnClickListener
             }
             var currentColor = Color.WHITE
@@ -651,8 +716,9 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         viewBorderPressedPreview.setOnClickListener(colorClick)
         viewRainColorPreview.setOnClickListener(colorClick)
         viewRainShadowPreview.setOnClickListener(colorClick)
+        viewRainColor2Preview.setOnClickListener(colorClick)
+        viewRainShadow2Preview.setOnClickListener(colorClick)
 
-        // TextWatcher for HEX EditTexts
         val themeTextWatcher = object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -665,6 +731,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                 syncColorPreview(etBorderPressedHex, viewBorderPressedPreview)
                 syncColorPreview(etRainColorHex, viewRainColorPreview)
                 syncColorPreview(etRainShadowHex, viewRainShadowPreview)
+                syncColorPreview(etRainColor2Hex, viewRainColor2Preview)
+                syncColorPreview(etRainShadow2Hex, viewRainShadow2Preview)
                 updateLivePreview()
             }
         }
@@ -676,13 +744,14 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         etBorderPressedHex.addTextChangedListener(themeTextWatcher)
         etRainColorHex.addTextChangedListener(themeTextWatcher)
         etRainShadowHex.addTextChangedListener(themeTextWatcher)
+        etRainColor2Hex.addTextChangedListener(themeTextWatcher)
+        etRainShadow2Hex.addTextChangedListener(themeTextWatcher)
 
         swEnableKeyRain.setOnCheckedChangeListener { _, isChecked ->
             keyTrailView.visibility = if (isChecked) View.VISIBLE else View.GONE
             updateLivePreview()
         }
 
-        // CheckBoxes and SeekBar
         swShowKeyCounters.setOnCheckedChangeListener { _, _ ->
             renderKeyPreview()
             updateLivePreview()
@@ -695,7 +764,6 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             if (fromUser) updateLivePreview()
         }
 
-        // Kéo thả toàn bộ cụm
         viewerContainer.setOnTouchListener { view, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
@@ -712,7 +780,6 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                     currentX = view.x
                     currentY = view.y
 
-                    // Cập nhật ngược lại Slider (Cộng thêm Center Offset)
                     val dm = resources.displayMetrics
                     seekPosX.value = (view.x.toInt() + dm.widthPixels).toFloat().coerceIn(seekPosX.valueFrom, seekPosX.valueTo)
                     seekPosY.value = (view.y.toInt() + dm.heightPixels).toFloat().coerceIn(seekPosY.valueFrom, seekPosY.valueTo)
@@ -723,14 +790,12 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             }
         }
 
-        // Slider Limit
         seekLimit.addOnChangeListener { _, value, fromUser ->
             if (!fromUser) return@addOnChangeListener
             currentLimit = value.toInt() + 70
             updateLivePreview()
         }
 
-        // Các Slider khác
         seekScale.addOnChangeListener { _, value, fromUser ->
             if (!fromUser) return@addOnChangeListener
             currentScale = value / 100f
@@ -744,19 +809,10 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             currentSpeed = value / 100f
             updateLivePreview()
         }
-        seekKeyWidth.addOnChangeListener { _, value, fromUser ->
-            if (!fromUser) return@addOnChangeListener
-            currentKeyWidth = value.toInt() + 30
-            updateLivePreview()
-        }
-        seekKeyHeight.addOnChangeListener { _, value, fromUser ->
-            if (!fromUser) return@addOnChangeListener
-            currentKeyHeight = value.toInt() + 30
-            updateLivePreview()
-        }
         seekKeySpacing.addOnChangeListener { _, value, fromUser ->
             if (!fromUser) return@addOnChangeListener
             currentKeySpacing = value.toInt()
+            renderKeyPreview()
             updateLivePreview()
         }
         seekBorderWidth.addOnChangeListener { _, value, fromUser ->
@@ -766,7 +822,6 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             if (fromUser) updateLivePreview()
         }
 
-        // Listeners cho PosX và PosY
         seekPosX.addOnChangeListener { _, value, fromUser ->
             val dm = resources.displayMetrics
             val centerX = dm.widthPixels
@@ -801,10 +856,10 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             sendBroadcast(Intent("ACTION_RESET_TOTAL"))
             Toast.makeText(this, getString(R.string.toast_total_reset), Toast.LENGTH_SHORT).show()
         }
-        // --- ĐỒNG BỘ SỐ HIỂN TRÊN BONG BÓNG (TOOLTIP) CỦA SLIDER ---
-        val dm = resources.displayMetrics
-        val centerX = dm.widthPixels
-        val centerY = dm.heightPixels
+
+        val dm2 = resources.displayMetrics
+        val centerX2 = dm2.widthPixels
+        val centerY2 = dm2.heightPixels
 
         val floatFormatter = object : com.google.android.material.slider.LabelFormatter {
             override fun getFormattedValue(value: Float): String {
@@ -824,22 +879,17 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         seekPosX.setLabelFormatter(intFormatter)
         seekPosY.setLabelFormatter(intFormatter)
         seekLimit.setLabelFormatter(intFormatter)
-        seekKeyWidth.setLabelFormatter(intFormatter)
-        seekKeyHeight.setLabelFormatter(intFormatter)
         seekKeySpacing.setLabelFormatter(intFormatter)
         seekThemeTextSize.setLabelFormatter(intFormatter)
 
-        // Thêm formatter cho 2 thanh trượt mới nếu Agent đã tạo
         try {
             findViewById<com.google.android.material.slider.Slider>(R.id.seekBorderWidth)?.setLabelFormatter(intFormatter)
             findViewById<com.google.android.material.slider.Slider>(R.id.seekCornerRadius)?.setLabelFormatter(intFormatter)
         } catch (e: Exception) {}
 
-        // 1. Tọa độ (Trừ đi tâm màn hình)
-        seekPosX.setLabelFormatter { value -> (value - centerX).toInt().toString() }
-        seekPosY.setLabelFormatter { value -> (value - centerY).toInt().toString() }
+        seekPosX.setLabelFormatter { value -> (value - centerX2).toInt().toString() }
+        seekPosY.setLabelFormatter { value -> (value - centerY2).toInt().toString() }
 
-        // 2. Tỷ lệ & Tốc độ (Chia 100 để ra số thập phân)
         seekScale.setLabelFormatter { value ->
             String.format(java.util.Locale.US, "%.2f", value / 100f)
         }
@@ -847,17 +897,12 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             String.format(java.util.Locale.US, "%.2f", value / 100f)
         }
 
-        // 3. Kích thước (Cộng thêm offset như cấu hình gốc)
         seekLimit.setLabelFormatter { value -> (value + 70).toInt().toString() }
-        seekKeyWidth.setLabelFormatter { value -> (value + 30).toInt().toString() }
-        seekKeyHeight.setLabelFormatter { value -> (value + 30).toInt().toString() }
 
-        // 4. Khoảng cách (Giữ nguyên)
         seekKeySpacing.setLabelFormatter(intFormatter)
         seekBorderWidth.setLabelFormatter(intFormatter)
         seekCornerRadius.setLabelFormatter(intFormatter)
 
-        // 5. Cỡ chữ Theme (Cộng thêm 10 offset)
         seekThemeTextSize.setLabelFormatter { value -> (value + 10).toInt().toString() }
     }
 
@@ -875,7 +920,6 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         val isUnderline = cbUnderline.isChecked
         val textSize = seekThemeTextSize.value.toInt() + 10
 
-        // TỐI ƯU 1: Tính toán Font 1 lần duy nhất
         val typeface = when {
             isBold && isItalic -> Typeface.create(getAdofaiBaseFont(), Typeface.BOLD_ITALIC)
             isBold -> Typeface.create(getAdofaiBaseFont(), Typeface.BOLD)
@@ -883,7 +927,6 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             else -> getAdofaiBaseFont()
         }
 
-        // TỐI ƯU 2: Tính toán Màu 1 lần duy nhất
         val textColor = try { Color.parseColor(etTextColorHex.text.toString()) } catch (e: Exception) { Color.WHITE }
         val bgNormal = try { Color.parseColor(etBgNormalHex.text.toString()) } catch (e: Exception) { Color.BLACK }
         val borderNormal = try { Color.parseColor(etBorderNormalHex.text.toString()) } catch (e: Exception) { Color.WHITE }
@@ -891,70 +934,96 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         val borderPressed = try { Color.parseColor(etBorderPressedHex.text.toString()) } catch (e: Exception) { Color.WHITE }
         val rainColor = try { Color.parseColor(etRainColorHex.text.toString()) } catch (e: Exception) { Color.WHITE }
         val rainShadow = try { Color.parseColor(etRainShadowHex.text.toString()) } catch (e: Exception) { Color.CYAN }
+        val rainColor2 = try { Color.parseColor(etRainColor2Hex.text.toString()) } catch (e: Exception) { Color.parseColor("#A78BFA") }
+        val rainShadow2 = try { Color.parseColor(etRainShadow2Hex.text.toString()) } catch (e: Exception) { Color.parseColor("#7C3AED") }
 
-        // TỐI ƯU 3: Cache Drawable (Sử dụng createAlphaSelector để đồng nhất với OverlayService)
         val alphaSelector = createAlphaSelector(bgNormal, borderNormal, bgPressed, borderPressed, borderPx, radiusPx)
         val constantState = alphaSelector.constantState
 
+        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+        val keyMode = pref.getInt("current_key_mode", 6)
         val showCounters = swShowKeyCounters.isChecked
 
-        // Vòng lặp gán UI siêu nhẹ
-        for (i in 0 until keysContainer.childCount) {
-            val container = keysContainer.getChildAt(i) as? LinearLayout ?: continue
-            val params = container.layoutParams as ViewGroup.MarginLayoutParams
-            params.width = widthPx
-            params.height = heightPx
-            if (i > 0) params.leftMargin = spacingPx
-            container.layoutParams = params
+        kpsContainer?.background = constantState?.newDrawable()?.mutate() ?: alphaSelector
+        totalContainer?.background = constantState?.newDrawable()?.mutate() ?: alphaSelector
 
-            container.background = constantState?.newDrawable()?.mutate() ?: alphaSelector
-
-            (container.getChildAt(0) as? TextView)?.apply {
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize.toFloat())
+        val applyToTextView = { tv: TextView? ->
+            tv?.apply {
                 setTextColor(textColor)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize.toFloat())
                 this.typeface = typeface
                 paintFlags = if (isUnderline) paintFlags or Paint.UNDERLINE_TEXT_FLAG else paintFlags and Paint.UNDERLINE_TEXT_FLAG.inv()
             }
-
-            (container.getChildAt(1) as? TextView)?.apply {
-                setTextColor(textColor)
-                this.typeface = typeface
-                visibility = if (showCounters) View.VISIBLE else View.GONE
-            }
         }
+        applyToTextView(tvKpsLabel)
+        applyToTextView(tvKpsValue)
+        applyToTextView(tvTotalLabel)
+        applyToTextView(tvTotalValue)
 
-        // Cập nhật bộ đếm đáy
-        val counterParams = bottomCountersContainer.layoutParams as ViewGroup.MarginLayoutParams
-        counterParams.topMargin = spacingPx
-        bottomCountersContainer.layoutParams = counterParams
+        // ================= KÍCH HOẠT LAYOUT ENGINE CHO TẤT CẢ CÁC MODE =================
+        val frameWorkspace = keysContainer.findViewWithTag<FrameLayout>("WORKSPACE_${keyMode}K")
+        if (frameWorkspace != null) {
+            val keyContainersArr = arrayOfNulls<LinearLayout>(keyMode)
 
-        val localKpsContainer = viewerContainer.findViewById<View>(resources.getIdentifier("kpsContainer", "id", packageName))
-        val localTotalContainer = viewerContainer.findViewById<View>(resources.getIdentifier("totalContainer", "id", packageName))
+            for (i in 0 until keyMode) {
+                val container = frameWorkspace.getChildAt(i) as? LinearLayout ?: continue
+                keyContainersArr[i] = container
 
-        if (localKpsContainer != null && localTotalContainer != null) {
-            localKpsContainer.background = constantState?.newDrawable()?.mutate() ?: alphaSelector
-            localTotalContainer.background = constantState?.newDrawable()?.mutate() ?: alphaSelector
-
-            (localKpsContainer.layoutParams as ViewGroup.MarginLayoutParams).rightMargin = spacingPx
-
-            val applyToTextView = { idName: String ->
-                viewerContainer.findViewById<TextView>(resources.getIdentifier(idName, "id", packageName))?.apply {
-                    setTextColor(textColor)
+                container.background = constantState?.newDrawable()?.mutate() ?: alphaSelector
+                (container.getChildAt(0) as? TextView)?.apply {
                     setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize.toFloat())
+                    setTextColor(textColor)
                     this.typeface = typeface
                     paintFlags = if (isUnderline) paintFlags or Paint.UNDERLINE_TEXT_FLAG else paintFlags and Paint.UNDERLINE_TEXT_FLAG.inv()
                 }
+                (container.getChildAt(1) as? TextView)?.apply {
+                    setTextColor(textColor)
+                    this.typeface = typeface
+                    visibility = if (showCounters) View.VISIBLE else View.GONE
+                }
             }
-            applyToTextView("tvKpsLabel")
-            applyToTextView("tvKpsValue")
-            applyToTextView("tvTotalLabel")
-            applyToTextView("tvTotalValue")
+
+            // Gọi Engine tính toán tọa độ
+            if (keyMode == 4 || keyMode == 6 || keyMode == 8) {
+                LayoutEngine.applyStandardLayout(frameWorkspace, keyContainersArr, widthPx, heightPx, spacingPx, kpsContainer, totalContainer, keyMode)
+            } else if (keyMode == 10) {
+                LayoutEngine.apply10KJipperLayout(frameWorkspace, keyContainersArr, widthPx, heightPx, spacingPx, kpsContainer, totalContainer)
+            } else if (keyMode == 12) {
+                LayoutEngine.apply12KLayout(frameWorkspace, keyContainersArr, widthPx, heightPx, spacingPx, kpsContainer, totalContainer)
+            } else if (keyMode == 16) {
+                LayoutEngine.apply16KLayout(frameWorkspace, keyContainersArr, widthPx, heightPx, spacingPx, kpsContainer, totalContainer)
+            }
+
+            // ĐỒNG BỘ ĐỘ LỚN FONT CHỮ KPS/TOTAL VÀ AUTOSIZE
+            val kpsTextSizeSp = if (keyMode == 10 || keyMode == 12) (textSize * 0.7f) else textSize.toFloat()
+
+            tvKpsLabel?.setTextSize(TypedValue.COMPLEX_UNIT_SP, kpsTextSizeSp)
+            tvTotalLabel?.setTextSize(TypedValue.COMPLEX_UNIT_SP, kpsTextSizeSp)
+
+            tvKpsValue?.setTextSize(TypedValue.COMPLEX_UNIT_SP, kpsTextSizeSp)
+            tvTotalValue?.setTextSize(TypedValue.COMPLEX_UNIT_SP, kpsTextSizeSp)
+
+            val minSizeSp = 10
+            val maxSizeSp = kpsTextSizeSp.toInt().coerceAtLeast(minSizeSp + 2)
+
+            tvKpsValue?.apply {
+                maxLines = 1
+                androidx.core.widget.TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(
+                    this, minSizeSp, maxSizeSp, 1, TypedValue.COMPLEX_UNIT_SP
+                )
+            }
+            tvTotalValue?.apply {
+                maxLines = 1
+                androidx.core.widget.TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(
+                    this, minSizeSp, maxSizeSp, 1, TypedValue.COMPLEX_UNIT_SP
+                )
+            }
         }
 
-        // Cập nhật RainKey
         keyTrailView.layoutParams.height = limitPx
         keyTrailView.setParameters(currentSpeed, currentLimit.toFloat())
         keyTrailView.setThemeColors(rainColor, rainShadow)
+        keyTrailView.setRow2ThemeColors(rainColor2, rainShadow2)
 
         updateLabels()
     }
@@ -966,7 +1035,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         val seekR = dialogView.findViewById<Slider>(R.id.seekR)
         val seekG = dialogView.findViewById<Slider>(R.id.seekG)
         val seekB = dialogView.findViewById<Slider>(R.id.seekB)
-        
+
         val etA = dialogView.findViewById<EditText>(R.id.etA)
         val etR = dialogView.findViewById<EditText>(R.id.etR)
         val etG = dialogView.findViewById<EditText>(R.id.etG)
@@ -1072,8 +1141,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         tvScaleLabel.text = getString(R.string.scale_label, currentScale)
         tvSpeedLabel.text = getString(R.string.speed_label, currentSpeed)
         tvLimitLabel.text = getString(R.string.limit_label, currentLimit)
-        tvKeyWidthLabel.text = getString(R.string.key_width_label, currentKeyWidth)
-        tvKeyHeightLabel.text = getString(R.string.key_height_label, currentKeyHeight)
+
         tvKeySpacingLabel.text = getString(R.string.spacing_label, currentKeySpacing)
         tvBorderWidthLabel.text = getString(R.string.border_width_label, seekBorderWidth.value.toInt())
         tvCornerRadiusLabel.text = getString(R.string.corner_radius_label, seekCornerRadius.value.toInt())
@@ -1088,14 +1156,12 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             putFloat("viewer_scale", currentScale)
             putFloat("trail_speed", currentSpeed)
             putInt("trail_limit_px", currentLimit)
-            putInt("key_width", currentKeyWidth)
-            putInt("key_height", currentKeyHeight)
+
             putInt("key_spacing", currentKeySpacing)
             putInt("theme_border_width", seekBorderWidth.value.toInt())
             putInt("theme_corner_radius", seekCornerRadius.value.toInt())
             putBoolean("theme_keyrain_enabled", swEnableKeyRain.isChecked)
 
-            // Save THEME settings
             putBoolean("show_key_counters", swShowKeyCounters.isChecked)
             putBoolean("theme_text_bold", cbBold.isChecked)
             putBoolean("theme_text_italic", cbItalic.isChecked)
@@ -1109,31 +1175,26 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             putString("theme_border_pressed", etBorderPressedHex.text.toString())
             putString("theme_rain_color", etRainColorHex.text.toString())
             putString("theme_rain_shadow", etRainShadowHex.text.toString())
+            putString("theme_rain_color_2", etRainColor2Hex.text.toString())
+            putString("theme_rain_shadow_2", etRainShadow2Hex.text.toString())
 
-            // Khóa vĩnh viễn trạng thái đã setup, đảm bảo không bị reset ở lần mở sau
             putBoolean("is_keyviewer_configured", true)
             apply()
         }
 
-        // Gửi tín hiệu để Service cập nhật ngay lập tức (nếu đang chạy ngầm)
         triggerOverlayRefresh()
-
         Toast.makeText(this, getString(R.string.toast_config_saved), Toast.LENGTH_SHORT).show()
         finish()
     }
 
     private fun resetToDefault() {
-        // GIỮ NGUYÊN BẢN GIÁ TRỊ RESET CỦA BẠN
         currentScale = 0.35f
         currentSpeed = 0.8f
         currentLimit = 280
-        currentKeyWidth = 55
-        currentKeyHeight = 60
         currentKeySpacing = 7
         currentX = 0f
         currentY = 0f
 
-        // Lưu SharedPreferences (Lưu mặc định toàn bộ bao gồm Theme)
         val sharedPref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
         sharedPref.edit().apply {
             putFloat("viewer_x", currentX)
@@ -1141,13 +1202,10 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             putFloat("viewer_scale", currentScale)
             putFloat("trail_speed", currentSpeed)
             putInt("trail_limit_px", currentLimit)
-            putInt("key_width", currentKeyWidth)
-            putInt("key_height", currentKeyHeight)
             putInt("key_spacing", currentKeySpacing)
             putInt("theme_border_width", 2)
             putInt("theme_corner_radius", 6)
 
-            // BỔ SUNG THEME MẶC ĐỊNH
             putString("theme_bg_normal", "#000000")
             putString("theme_border_normal", "#FFFFFF")
             putString("theme_bg_pressed", "#FFFFFF")
@@ -1156,6 +1214,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             putString("theme_text_color_pressed", "#000000")
             putString("theme_rain_color", "#FFFFFF")
             putString("theme_rain_shadow", "#000000")
+            putString("theme_rain_color_2", "#FF999898")
+            putString("theme_rain_shadow_2", "#FFFFFF")
             putFloat("theme_text_size", 20f)
             putBoolean("theme_text_bold", true)
             putBoolean("theme_text_italic", false)
@@ -1165,13 +1225,9 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             apply()
         }
 
-        // Nạp lại toàn bộ giao diện từ Prefs để cập nhật Sliders, EditTexts, Màu sắc
         loadPreferences()
-
-        // Vẽ lại giao diện Preview
         renderKeyPreview()
         updateLivePreview()
-
         Toast.makeText(this, getString(R.string.toast_reset_default), Toast.LENGTH_SHORT).show()
     }
 
@@ -1185,15 +1241,11 @@ class KeyViewerConfigActivity : AppCompatActivity() {
     private fun initDefaultThemeOnFirstLaunch() {
         val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
 
-        // Kiểm tra cờ đánh dấu lần đầu setup theme
         if (!pref.contains("is_first_theme_setup")) {
             val editor = pref.edit()
             editor.putBoolean("is_first_theme_setup", true)
-
-            // Chọn sẵn Spinner ở Mẫu 0 (Mặc định)
             editor.putInt("saved_preset_index", 0)
 
-            // Ghi cứng toàn bộ thông số chuẩn của Mẫu Mặc Định vào cấu hình chính
             editor.putString("theme_text_color", "#FFFFFF")
             editor.putString("theme_text_color_pressed", "#FF000000")
             editor.putString("theme_bg_normal", "#000000")
@@ -1202,6 +1254,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             editor.putString("theme_border_pressed", "#FFFFFF")
             editor.putString("theme_rain_color", "#FFFFFF")
             editor.putString("theme_rain_shadow", "#FF000000")
+            editor.putString("theme_rain_color_2", "#FF999898")
+            editor.putString("theme_rain_shadow_2", "#FFFFFF")
             editor.putFloat("theme_text_size", 20f)
             editor.putBoolean("theme_text_bold", false)
             editor.putBoolean("theme_text_italic", false)
@@ -1217,7 +1271,6 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         super.onResume()
         AppState.isAppVisible = true
         hideSystemUI()
-        // Đảm bảo OverlayService được tắt khi quay lại màn hình này
         stopService(Intent(this, OverlayService::class.java))
     }
 
