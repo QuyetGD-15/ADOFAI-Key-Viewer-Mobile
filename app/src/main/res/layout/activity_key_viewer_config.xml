@@ -408,6 +408,26 @@
                                 android:textColor="@color/white"
                                 android:textSize="14sp" />
 
+                            <!-- Bật/Tắt bóng KeyRain -->
+                            <com.google.android.material.switchmaterial.SwitchMaterial
+                                android:id="@+id/swEnableShadow"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/pref_enable_shadow"
+                                android:textColor="@color/white"
+                                android:textSize="14sp" />
+
+                            <!-- Chọn kiểu đổ bóng: Nặng (ShadowLayer) hoặc Nhẹ (Fake Glow) -->
+                            <com.google.android.material.switchmaterial.SwitchMaterial
+                                android:id="@+id/swPerformanceShadow"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/pref_performance_shadow"
+                                android:textColor="@color/white"
+                                android:textSize="14sp" />
+
                             <TextView
                                 android:id="@+id/tvThemeTextSizeLabel"
                                 android:layout_width="wrap_content"

@@ -221,4 +221,7 @@
     <string name="setup_step4_extended_enabled">Chế độ Mở rộng</string>
     <string name="setup_step4_extended_disabled">Chế độ Mở rộng (Chỉ hỗ trợ Bàn phím)</string>
     <string name="toast_force_10k_touch">Cảm ứng không hỗ trợ %d phím, đã ép về 10 phím</string>
+    <!-- Tùy chỉnh đổ bóng -->
+    <string name="pref_enable_shadow">Bóng KeyRain</string>
+    <string name="pref_performance_shadow">Đổ bóng tối ưu</string>
 </resources>

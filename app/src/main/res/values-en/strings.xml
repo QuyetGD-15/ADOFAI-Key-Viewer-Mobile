@@ -221,4 +221,7 @@
     <string name="setup_step4_extended_enabled">Extended Modes</string>
     <string name="setup_step4_extended_disabled">Extended Modes (Keyboard only)</string>
     <string name="toast_force_10k_touch">Touch mode does not support %d keys, forced to 10 keys</string>
+    <!-- Shadow Settings -->
+    <string name="pref_enable_shadow">KeyRain Shadow</string>
+    <string name="pref_performance_shadow">Lightweight Shadow</string>
 </resources>

@@ -79,6 +79,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
     private lateinit var swEnableKeyRain: com.google.android.material.switchmaterial.SwitchMaterial
     private lateinit var layoutThemeContent: LinearLayout
     private lateinit var swShowKeyCounters: com.google.android.material.switchmaterial.SwitchMaterial
+    private lateinit var swEnableShadow: com.google.android.material.switchmaterial.SwitchMaterial
+    private lateinit var swPerformanceShadow: com.google.android.material.switchmaterial.SwitchMaterial
     private lateinit var cbBold: CheckBox
     private lateinit var cbItalic: CheckBox
     private lateinit var cbUnderline: CheckBox
@@ -313,6 +315,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
 
         layoutThemeContent = findViewById(R.id.layoutThemeContent)
         swShowKeyCounters = findViewById(R.id.swShowKeyCounters)
+        swEnableShadow = findViewById(R.id.swEnableShadow)
+        swPerformanceShadow = findViewById(R.id.swPerformanceShadow)
         swEnableKeyRain = findViewById(R.id.swEnableKeyRain)
         tvThemeHeader = findViewById(R.id.tvThemeHeader)
         cbBold = findViewById(R.id.cbBold)
@@ -629,6 +633,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         keyTrailView.visibility = if (swEnableKeyRain.isChecked) View.VISIBLE else View.GONE
 
         swShowKeyCounters.isChecked = sharedPref.getBoolean("show_key_counters", false)
+        swEnableShadow.isChecked = sharedPref.getBoolean("theme_shadow_enabled", true)
+        swPerformanceShadow.isChecked = sharedPref.getBoolean("theme_performance_shadow", false)
         cbBold.isChecked = sharedPref.getBoolean("theme_text_bold", false)
         cbItalic.isChecked = sharedPref.getBoolean("theme_text_italic", false)
         cbUnderline.isChecked = sharedPref.getBoolean("theme_text_underline", false)
@@ -756,6 +762,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             renderKeyPreview()
             updateLivePreview()
         }
+        swEnableShadow.setOnCheckedChangeListener { _, _ -> updateLivePreview() }
+        swPerformanceShadow.setOnCheckedChangeListener { _, _ -> updateLivePreview() }
         cbBold.setOnCheckedChangeListener { _, _ -> updateLivePreview() }
         cbItalic.setOnCheckedChangeListener { _, _ -> updateLivePreview() }
         cbUnderline.setOnCheckedChangeListener { _, _ -> updateLivePreview() }
@@ -1024,6 +1032,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         keyTrailView.setParameters(currentSpeed, currentLimit.toFloat())
         keyTrailView.setThemeColors(rainColor, rainShadow)
         keyTrailView.setRow2ThemeColors(rainColor2, rainShadow2)
+        // Gửi trạng thái bật/tắt bóng xuống cho KeyTrailView
+        keyTrailView.setShadowConfig(swEnableShadow.isChecked, swPerformanceShadow.isChecked)
 
         updateLabels()
     }
@@ -1163,6 +1173,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             putBoolean("theme_keyrain_enabled", swEnableKeyRain.isChecked)
 
             putBoolean("show_key_counters", swShowKeyCounters.isChecked)
+            putBoolean("theme_shadow_enabled", swEnableShadow.isChecked)
+            putBoolean("theme_performance_shadow", swPerformanceShadow.isChecked)
             putBoolean("theme_text_bold", cbBold.isChecked)
             putBoolean("theme_text_italic", cbItalic.isChecked)
             putBoolean("theme_text_underline", cbUnderline.isChecked)

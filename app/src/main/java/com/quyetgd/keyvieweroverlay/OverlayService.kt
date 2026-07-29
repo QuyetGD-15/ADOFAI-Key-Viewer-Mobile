@@ -894,9 +894,10 @@ class OverlayService : Service() {
 
         if (::viewerContainer.isInitialized) wrapper.removeView(viewerContainer)
 
-        viewerContainer = LayoutInflater.from(this).inflate(R.layout.overlay_view, wrapper, false).apply {
-            setBackgroundColor(Color.TRANSPARENT)
-        }
+        viewerContainer =
+            LayoutInflater.from(this).inflate(R.layout.overlay_view, wrapper, false).apply {
+                setBackgroundColor(Color.TRANSPARENT)
+            }
 
         keyTrailView = viewerContainer.findViewById(R.id.keyTrailView)
         keyTrailView.setBackgroundColor(Color.TRANSPARENT)
@@ -910,11 +911,20 @@ class OverlayService : Service() {
 
         // ================= ĐỒNG BỘ KHỞI TẠO TẤT CẢ CÁC MODE VÀO KIẾN TRÚC MỚI =================
         // Ẩn khay XML cũ đi
-        viewerContainer.findViewById<View>(resources.getIdentifier("bottomCountersContainer", "id", packageName))?.visibility = View.GONE
+        viewerContainer.findViewById<View>(
+            resources.getIdentifier(
+                "bottomCountersContainer",
+                "id",
+                packageName
+            )
+        )?.visibility = View.GONE
 
         // Khởi tạo FrameWorkspace bao trùm cho MỌI MODE
         val frameWorkspace = FrameLayout(this).apply {
-            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
             tag = "WORKSPACE_${keyMode}K"
         }
         keysContainer.addView(frameWorkspace)
@@ -926,12 +936,21 @@ class OverlayService : Service() {
                 orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
             }
             val tvLabel = TextView(this).apply {
-                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f); gravity = Gravity.CENTER
-                text = if (currentInputSource == "keyboard") getAbbreviatedKeyName(sharedPrefs.getString("key_name_${keyMode}_$i", null)) else (i + 1).toString()
+                layoutParams =
+                    LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f); gravity =
+                Gravity.CENTER
+                text = if (currentInputSource == "keyboard") getAbbreviatedKeyName(
+                    sharedPrefs.getString(
+                        "key_name_${keyMode}_$i",
+                        null
+                    )
+                ) else (i + 1).toString()
                 setTextColor(Color.WHITE); textSize = 20f; typeface = Typeface.DEFAULT_BOLD
             }
             val tvCount = FastCounterView(this).apply {
-                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dpToPxInt(20)).apply { bottomMargin = dpToPxInt(4) }
+                layoutParams =
+                    LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dpToPxInt(20))
+                        .apply { bottomMargin = dpToPxInt(4) }
                 setCount(keyCounters[i])
             }
             container.addView(tvLabel); container.addView(tvCount); frameWorkspace.addView(container)
@@ -942,10 +961,20 @@ class OverlayService : Service() {
         // Layout Ngang (Horizontal) cho 4, 6, 8, 16. Layout Dọc (Vertical) cho 10, 12 vì hẹp
         val isHorizontal = (keyMode == 4 || keyMode == 6 || keyMode == 8 || keyMode == 16)
 
-        val labelParams = if (isHorizontal) LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
-        else LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        val valueParams = if (isHorizontal) LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        else LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        val labelParams =
+            if (isHorizontal) LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            else LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        val valueParams = if (isHorizontal) LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+        else LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
 
         // --- HỘP KPS ---
         val newKpsContainer = LinearLayout(this).apply {
@@ -955,7 +984,8 @@ class OverlayService : Service() {
         }
         val newTvKpsLabel = TextView(this).apply {
             text = getString(R.string.kps_label) // <-- Sửa ở đây
-            gravity = if (isHorizontal) (Gravity.START or Gravity.CENTER_VERTICAL) else Gravity.CENTER
+            gravity =
+                if (isHorizontal) (Gravity.START or Gravity.CENTER_VERTICAL) else Gravity.CENTER
             includeFontPadding = false
         }
         val newTvKpsValue = TextView(this).apply {
@@ -977,17 +1007,22 @@ class OverlayService : Service() {
         val is4K = (keyMode == 4)
         val newTvTotalLabel = TextView(this).apply {
             text = getString(R.string.total_label) // <-- Sửa ở đây
-            gravity = if (isHorizontal) (Gravity.START or Gravity.CENTER_VERTICAL) else Gravity.CENTER
+            gravity =
+                if (isHorizontal) (Gravity.START or Gravity.CENTER_VERTICAL) else Gravity.CENTER
             includeFontPadding = false
             visibility = if (is4K) View.GONE else View.VISIBLE
         }
 
         // 4K: Khi nhãn ẩn đi, ép số Value chiếm toàn bộ width để luôn căn sát lề phải
-        val totalValueParams = if (is4K) LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT) else valueParams
+        val totalValueParams = if (is4K) LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ) else valueParams
 
         val newTvTotalValue = TextView(this).apply {
             text = "0"
-            gravity = if (isHorizontal || is4K) (Gravity.END or Gravity.CENTER_VERTICAL) else Gravity.CENTER
+            gravity =
+                if (isHorizontal || is4K) (Gravity.END or Gravity.CENTER_VERTICAL) else Gravity.CENTER
             includeFontPadding = false
         }
         newTotalContainer.addView(newTvTotalLabel, labelParams)
@@ -995,14 +1030,16 @@ class OverlayService : Service() {
 
         // --- KẾT NỐI VÀO FRAME ---
         kpsContainer = newKpsContainer; tvKpsLabel = newTvKpsLabel; tvKpsValue = newTvKpsValue
-        totalContainer = newTotalContainer; tvTotalLabel = newTvTotalLabel; tvTotalValue = newTvTotalValue
+        totalContainer = newTotalContainer; tvTotalLabel = newTvTotalLabel; tvTotalValue =
+            newTvTotalValue
 
         frameWorkspace.addView(newKpsContainer)
         frameWorkspace.addView(newTotalContainer)
         // =================================================================================
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            wrapper.isForceDarkAllowed = false; viewerContainer.isForceDarkAllowed = false; keyTrailView.isForceDarkAllowed = false
+            wrapper.isForceDarkAllowed = false; viewerContainer.isForceDarkAllowed =
+                false; keyTrailView.isForceDarkAllowed = false
         }
 
         viewerParams = WindowManager.LayoutParams(
@@ -1034,6 +1071,8 @@ class OverlayService : Service() {
         val keySpacing = pref.getInt("key_spacing", 7)
 
         val isKeyRainEnabled = pref.getBoolean("theme_keyrain_enabled", true)
+        val isShadowEnabled = pref.getBoolean("theme_shadow_enabled", true)
+        val isPerformanceShadow = pref.getBoolean("theme_performance_shadow", false)
         val borderWidthDp = pref.getInt("theme_border_width", 2)
         val cornerRadiusDp = pref.getInt("theme_corner_radius", 6)
         val borderPx = (borderWidthDp * resources.displayMetrics.density).toInt()
@@ -1161,6 +1200,7 @@ class OverlayService : Service() {
             keyTrailView.setThemeColors(rainColor, shadowColor)
             // THÊM 1 DÒNG NÀY: Truyền màu và kích hoạt bóng cho hàng 2!
             keyTrailView.setRow2ThemeColors(rainColor2, shadowColor2)
+            keyTrailView.setShadowConfig(isShadowEnabled, isPerformanceShadow)
             viewerContainer.requestLayout()
         }
     }
