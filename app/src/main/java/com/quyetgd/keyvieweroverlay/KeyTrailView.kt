@@ -245,6 +245,12 @@ class KeyTrailView @JvmOverloads constructor(
         }
     }
 
+    fun releaseTrail(trail: Trail?, releaseTime: Long) {
+        if (trail != null && trail.isActive && trail.timeReleased == 0L) {
+            trail.timeReleased = releaseTime
+        }
+    }
+
     fun releaseAll() {
         val releaseTime = SystemClock.uptimeMillis()
         for (i in 0 until MAX_TRAILS) {

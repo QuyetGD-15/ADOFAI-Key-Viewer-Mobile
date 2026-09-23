@@ -12,31 +12,42 @@ import android.view.KeyEvent
 import android.os.Handler
 import android.os.Looper
 import android.content.Context
+import android.content.SharedPreferences
 
-class TouchRendererService : AccessibilityService() {
+class TouchRendererService : AccessibilityService(), SharedPreferences.OnSharedPreferenceChangeListener {
     private var pointerCanvasView: View? = null
     private lateinit var windowManager: WindowManager
-    private val mainHandler = Handler(Looper.getMainLooper())
+    private val currentKeyMap = HashMap<Int, Int>()
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         setupOverlay()
+        
+        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+        pref.registerOnSharedPreferenceChangeListener(this)
+        updateKeyMap(pref)
     }
 
-    override fun onKeyEvent(event: KeyEvent): Boolean {
-        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+    private fun updateKeyMap(pref: SharedPreferences) {
+        currentKeyMap.clear()
         val keyMode = pref.getInt("current_key_mode", 6)
-        val currentKeyMap = HashMap<Int, Int>()
         for (i in 0 until keyMode) {
             val savedKeyCode = pref.getInt("key_code_${keyMode}_$i", -1)
             if (savedKeyCode != -1) {
                 currentKeyMap[savedKeyCode] = i
             }
         }
+    }
 
-        val keyCode = event.keyCode
-        val keyIndex = currentKeyMap[keyCode]
+    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
+        if (key != null && (key.startsWith("key_code_") || key == "current_key_mode")) {
+            sharedPreferences?.let { updateKeyMap(it) }
+        }
+    }
+
+    override fun onKeyEvent(event: KeyEvent): Boolean {
+        val keyIndex = currentKeyMap[event.keyCode]
         
         if (keyIndex != null) {
             if (event.action == KeyEvent.ACTION_DOWN) {
@@ -91,7 +102,7 @@ class TouchRendererService : AccessibilityService() {
 
         // Nhận lệnh vẽ lại từ Shizuku
         SharedTouchData.invalidateCallback = {
-            mainHandler.post { pointerCanvasView?.invalidate() }
+            pointerCanvasView?.postInvalidate()
         }
     }
 
@@ -99,6 +110,7 @@ class TouchRendererService : AccessibilityService() {
     override fun onInterrupt() {}
     
     override fun onDestroy() {
+        getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(this)
         pointerCanvasView?.let { 
             if (it.parent != null || it.windowToken != null) {
                 try {

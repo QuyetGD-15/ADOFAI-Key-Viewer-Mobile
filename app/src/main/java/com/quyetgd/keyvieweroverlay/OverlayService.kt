@@ -71,10 +71,10 @@ class OverlayService : Service() {
 
     private var kpsContainer: View? = null
     private var tvKpsLabel: TextView? = null
-    private var tvKpsValue: TextView? = null
+    private var tvKpsValue: FastCounterView? = null
     private var totalContainer: View? = null
     private var tvTotalLabel: TextView? = null
-    private var tvTotalValue: TextView? = null
+    private var tvTotalValue: FastCounterView? = null
     private var lastRenderedKps = -1
     private var lastRenderedTotal = -1
 
@@ -440,7 +440,7 @@ class OverlayService : Service() {
                 }
 
                 if (activeTrails[lane] != null) {
-                    keyTrailView.releaseLane(lane, pressTime)
+                    keyTrailView.releaseTrail(activeTrails[lane], pressTime)
                 }
 
                 // ================= XỬ LÝ KEYRAIN CHO ĐA HÀNG =================
@@ -504,7 +504,7 @@ class OverlayService : Service() {
                     releaseTime = uptimeNow
                 }
 
-                keyTrailView.releaseLane(lane, releaseTime)
+                keyTrailView.releaseTrail(activeTrails[lane], releaseTime)
                 activeTrails[lane] = null
             }
         }
@@ -840,7 +840,9 @@ class OverlayService : Service() {
                 }
             }
         }
-        SharedTouchData.invalidateCallback?.invoke()
+        if (isShowTouchesOn) {
+            SharedTouchData.invalidateCallback?.invoke()
+        }
     }
 
     private fun onKeyDown(lane: Int) = mainHandler.post(keyDownRunnables[lane])
@@ -853,26 +855,30 @@ class OverlayService : Service() {
     fun triggerKeyPressFromKeyboard(lane: Int, isDown: Boolean) {
         if (currentInputSource != "keyboard" || lane !in 0 until keyMode) return
 
-        val executeAction = {
-            if (isDown) {
-                laneOccupants[lane]++
-                keyDownRunnables[lane].run()
-                val currentTime = SystemClock.uptimeMillis()
-
-                kpsTimestamps[kpsHead] = currentTime
-                kpsHead = (kpsHead + 1) and 255
-                if (kpsHead == kpsTail) kpsTail = (kpsTail + 1) and 255
-
-                totalClicks++
-                updateKpsTotalUI(lastRenderedKps, totalClicks)
-            } else {
-                laneOccupants[lane]--
-                if (laneOccupants[lane] < 0) laneOccupants[lane] = 0
-                if (laneOccupants[lane] == 0) keyUpRunnables[lane].run()
-            }
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            executeKeyPress(lane, isDown)
+        } else {
+            mainHandler.post { executeKeyPress(lane, isDown) }
         }
+    }
 
-        if (Looper.myLooper() == Looper.getMainLooper()) executeAction() else mainHandler.post(executeAction)
+    private fun executeKeyPress(lane: Int, isDown: Boolean) {
+        if (isDown) {
+            laneOccupants[lane]++
+            keyDownRunnables[lane].run()
+            val currentTime = SystemClock.uptimeMillis()
+
+            kpsTimestamps[kpsHead] = currentTime
+            kpsHead = (kpsHead + 1) and 255
+            if (kpsHead == kpsTail) kpsTail = (kpsTail + 1) and 255
+
+            totalClicks++
+            updateKpsTotalUI(lastRenderedKps, totalClicks)
+        } else {
+            laneOccupants[lane]--
+            if (laneOccupants[lane] < 0) laneOccupants[lane] = 0
+            if (laneOccupants[lane] == 0) keyUpRunnables[lane].run()
+        }
     }
 
     private fun stopReadingTouchEvents() {
@@ -962,14 +968,18 @@ class OverlayService : Service() {
         val isHorizontal = (keyMode == 4 || keyMode == 6 || keyMode == 8 || keyMode == 16)
 
         val labelParams =
-            if (isHorizontal) LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            if (isHorizontal) LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
             else LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             )
         val valueParams = if (isHorizontal) LinearLayout.LayoutParams(
+            0,
             ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
+            1f
         )
         else LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
@@ -988,10 +998,10 @@ class OverlayService : Service() {
                 if (isHorizontal) (Gravity.START or Gravity.CENTER_VERTICAL) else Gravity.CENTER
             includeFontPadding = false
         }
-        val newTvKpsValue = TextView(this).apply {
-            text = "0"
-            gravity = if (isHorizontal) (Gravity.END or Gravity.CENTER_VERTICAL) else Gravity.CENTER
-            includeFontPadding = false
+        val newTvKpsValue = FastCounterView(this).apply {
+            formatWithComma = false
+            textAlignment = if (isHorizontal) android.graphics.Paint.Align.RIGHT else android.graphics.Paint.Align.CENTER
+            setCount(0)
         }
         newKpsContainer.addView(newTvKpsLabel, labelParams)
         newKpsContainer.addView(newTvKpsValue, valueParams)
@@ -1019,11 +1029,9 @@ class OverlayService : Service() {
             ViewGroup.LayoutParams.WRAP_CONTENT
         ) else valueParams
 
-        val newTvTotalValue = TextView(this).apply {
-            text = "0"
-            gravity =
-                if (isHorizontal || is4K) (Gravity.END or Gravity.CENTER_VERTICAL) else Gravity.CENTER
-            includeFontPadding = false
+        val newTvTotalValue = FastCounterView(this).apply {
+            formatWithComma = true
+            setCount(0)
         }
         newTotalContainer.addView(newTvTotalLabel, labelParams)
         newTotalContainer.addView(newTvTotalValue, totalValueParams)
@@ -1155,26 +1163,10 @@ class OverlayService : Service() {
                 tvKpsLabel?.setTextSize(TypedValue.COMPLEX_UNIT_SP, kpsTextSizeSp)
                 tvTotalLabel?.setTextSize(TypedValue.COMPLEX_UNIT_SP, kpsTextSizeSp)
 
-                // 2. BẮT BUỘC: Áp dụng cỡ chữ gốc cho SỐ (Value) TRƯỚC KHI AutoSize hoạt động
-                tvKpsValue?.setTextSize(TypedValue.COMPLEX_UNIT_SP, kpsTextSizeSp)
-                tvTotalValue?.setTextSize(TypedValue.COMPLEX_UNIT_SP, kpsTextSizeSp)
-
-                // 3. Cấu hình AutoSize (Chỉ thu nhỏ lại nếu số quá dài)
-                val minSizeSp = 10
-                val maxSizeSp = kpsTextSizeSp.toInt().coerceAtLeast(minSizeSp + 2)
-
-                tvKpsValue?.apply {
-                    maxLines = 1
-                    androidx.core.widget.TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(
-                        this, minSizeSp, maxSizeSp, 1, TypedValue.COMPLEX_UNIT_SP
-                    )
-                }
-                tvTotalValue?.apply {
-                    maxLines = 1
-                    androidx.core.widget.TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(
-                        this, minSizeSp, maxSizeSp, 1, TypedValue.COMPLEX_UNIT_SP
-                    )
-                }
+                // 2. Áp dụng cỡ chữ gốc cho SỐ (Value)
+                val countSizePx = kpsTextSizeSp * resources.displayMetrics.scaledDensity
+                tvKpsValue?.setTextSize(countSizePx)
+                tvTotalValue?.setTextSize(countSizePx)
                 // ===================================================================
 
             } else {
@@ -1189,9 +1181,14 @@ class OverlayService : Service() {
             viewerContainer.findViewById<View>(R.id.bottomCountersContainer)?.let { (it.layoutParams as ViewGroup.MarginLayoutParams).topMargin = dpToPxInt(keySpacing) }
 
             applyThemeToTextView(tvKpsLabel)
-            applyThemeToTextView(tvKpsValue)
+            tvKpsValue?.setTypeface(themeTypeface)
+            tvKpsValue?.setUnderline(themeIsUnderline)
+            tvKpsValue?.setTextColor(createTextColorStateList(themeTextColor, themeTextColorPressed))
+
             applyThemeToTextView(tvTotalLabel)
-            applyThemeToTextView(tvTotalValue)
+            tvTotalValue?.setTypeface(themeTypeface)
+            tvTotalValue?.setUnderline(themeIsUnderline)
+            tvTotalValue?.setTextColor(createTextColorStateList(themeTextColor, themeTextColorPressed))
             updateKpsTotalUI(lastRenderedKps, lastRenderedTotal, force = true)
 
             keyTrailView.visibility = if (isKeyRainEnabled) View.VISIBLE else View.GONE
@@ -1519,8 +1516,8 @@ class OverlayService : Service() {
 
     private val kpsUiUpdateRunnable = Runnable {
         try {
-            tvKpsValue?.text = lastRenderedKps.toString()
-            tvTotalValue?.text = decimalFormatter.format(lastRenderedTotal)
+            tvKpsValue?.setCount(lastRenderedKps)
+            tvTotalValue?.setCount(lastRenderedTotal)
         } catch (e: Exception) {}
     }
 

@@ -25,6 +25,8 @@ class FastCounterView @JvmOverloads constructor(
     // Bỏ qua bộ đệm nháp GPU, tăng tốc độ render phần cứng
     override fun hasOverlappingRendering(): Boolean = false
 
+    var formatWithComma = false
+
     fun setCount(value: Int) {
         if (this.currentValue == value) return
         this.currentValue = value
@@ -36,10 +38,14 @@ class FastCounterView @JvmOverloads constructor(
             digitChars[0] = '0'
             charCount = 1
         } else {
+            var digitIndex = 0
             while (temp > 0) {
-                // Tách số thuần túy, loại bỏ hoàn toàn logic dấu chấm
+                if (formatWithComma && digitIndex > 0 && digitIndex % 3 == 0) {
+                    digitChars[charCount++] = ','
+                }
                 digitChars[charCount++] = (temp % 10 + '0'.code).toChar()
                 temp /= 10
+                digitIndex++
             }
 
             // Đảo ngược mảng
@@ -74,6 +80,15 @@ class FastCounterView @JvmOverloads constructor(
         invalidate()
     }
 
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val desiredWidth = if (charCount > 0) textPaint.measureText(digitChars, 0, charCount).toInt() else 0
+        val desiredHeight = (textPaint.descent() - textPaint.ascent()).toInt()
+        
+        val width = resolveSize(desiredWidth, widthMeasureSpec)
+        val height = resolveSize(desiredHeight, heightMeasureSpec)
+        setMeasuredDimension(width, height)
+    }
+
     override fun drawableStateChanged() {
         super.drawableStateChanged()
         updateTextColor()
@@ -89,6 +104,13 @@ class FastCounterView @JvmOverloads constructor(
         }
     }
 
+    var textAlignment: Paint.Align = Paint.Align.CENTER
+        set(value) {
+            field = value
+            textPaint.textAlign = value
+            invalidate()
+        }
+
     override fun onDraw(canvas: Canvas) {
         if (charCount == 0) return
 
@@ -101,10 +123,16 @@ class FastCounterView @JvmOverloads constructor(
 
         canvas.save()
 
-        // 2. Dịch trục vẽ ra giữa View để số đếm luôn nằm giữa 100%
-        canvas.translate(viewWidth / 2f, viewHeight / 2f - (textPaint.descent() + textPaint.ascent()) / 2f)
+        // 2. Dịch trục vẽ ra đúng lề
+        val y = viewHeight / 2f - (textPaint.descent() + textPaint.ascent()) / 2f
+        val x = when (textAlignment) {
+            Paint.Align.LEFT -> viewWidth * 0.05f
+            Paint.Align.RIGHT -> viewWidth * 0.95f
+            else -> viewWidth / 2f
+        }
+        canvas.translate(x, y)
 
-        // 3. AUTO-FIT: Nếu 5, 6 số làm chữ dài hơn ô vuông, tự động bóp tỉ lệ lại!
+        // 3. AUTO-FIT: Nếu chữ dài hơn ô vuông, tự động bóp tỉ lệ lại!
         if (textWidth > maxWidth && textWidth > 0) {
             val scale = maxWidth / textWidth
             canvas.scale(scale, scale) // Bóp đều cả ngang và dọc để chữ không bị méo
