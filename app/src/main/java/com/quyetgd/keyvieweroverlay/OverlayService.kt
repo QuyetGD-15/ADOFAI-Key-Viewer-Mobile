@@ -265,7 +265,9 @@ class OverlayService : Service() {
     private val mainHandler = Handler(Looper.getMainLooper())
 
     private var eventReaderThread: Thread? = null
+    private var touchInitThread: Thread? = null
     @Volatile private var isReadingEvents = false
+    private val touchReaderLock = Any()
     private var shizukuProcess: Process? = null
 
     private val resetTotalReceiver = object : BroadcastReceiver() {
@@ -543,12 +545,22 @@ class OverlayService : Service() {
     private var cachedHardwareRotation = Surface.ROTATION_0
 
     private fun initHardwareAndStartReading() {
-        Thread {
-            AppLogger.d(this, "TouchReader", "Bắt đầu tìm thiết bị /dev/input...")
-            val device = calibrateHardwareAndFindDevice() ?: "/dev/input/event2"
-            AppLogger.i(this, "TouchReader", "Chốt thiết bị đọc cảm ứng: $device (MaxX=$maxRawX, MaxY=$maxRawY)")
-            startReadingTouchEvents(device)
-        }.start()
+        synchronized(touchReaderLock) {
+            if (isReadingEvents || touchInitThread?.isAlive == true || eventReaderThread?.isAlive == true) return
+
+            touchInitThread = Thread {
+                try {
+                    AppLogger.d(this, "TouchReader", "Bắt đầu tìm thiết bị /dev/input...")
+                    val device = calibrateHardwareAndFindDevice() ?: "/dev/input/event2"
+                    AppLogger.i(this, "TouchReader", "Chốt thiết bị đọc cảm ứng: $device (MaxX=$maxRawX, MaxY=$maxRawY)")
+                    if (currentInputSource == "touch" && !Thread.currentThread().isInterrupted) {
+                        startReadingTouchEvents(device)
+                    }
+                } finally {
+                    synchronized(touchReaderLock) { touchInitThread = null }
+                }
+            }.apply { start() }
+        }
     }
 
     private fun calibrateHardwareAndFindDevice(): String? {
@@ -697,7 +709,7 @@ class OverlayService : Service() {
                                     0x0003 -> {
                                         when (code) {
                                             0x002f -> currentSlot = value.coerceIn(0, 31)
-                                            0x0039 -> slots[currentSlot].trackingId = value
+                                            0x0039 -> slots[currentSlot].trackingId = if (value == 0xffffffff.toInt()) -1 else value
                                             0x0035 -> slots[currentSlot].x = value.toFloat()
                                             0x0036 -> slots[currentSlot].y = value.toFloat()
                                         }
@@ -883,11 +895,15 @@ class OverlayService : Service() {
 
     private fun stopReadingTouchEvents() {
         AppLogger.i(this, "TouchReader", "Nhận lệnh dừng chủ động luồng đọc chạm")
-        isReadingEvents = false
-        eventReaderThread?.interrupt()
-        shizukuProcess?.destroy()
-        shizukuProcess = null
-        eventReaderThread = null
+        synchronized(touchReaderLock) {
+            isReadingEvents = false
+            touchInitThread?.interrupt()
+            touchInitThread = null
+            eventReaderThread?.interrupt()
+            shizukuProcess?.destroy()
+            shizukuProcess = null
+            eventReaderThread = null
+        }
     }
 
     private fun setupViewerView() {
@@ -1509,9 +1525,27 @@ class OverlayService : Service() {
         instance = null
         sharedPrefs.edit().putInt("TOTAL_CLICKS", totalClicks).apply()
         mainHandler.removeCallbacks(autoShowRunnable)
+        mainHandler.removeCallbacks(kpsUpdateRunnable)
+        mainHandler.removeCallbacks(kpsUiUpdateRunnable)
         stopReadingTouchEvents()
         try { unregisterReceiver(editReceiver); unregisterReceiver(resetTotalReceiver) } catch (e: Exception) {}
         hideOverlay()
+    }
+
+    private val kpsUpdateRunnable = object : Runnable {
+        override fun run() {
+            val currentTime = SystemClock.uptimeMillis()
+            while (kpsTail != kpsHead && currentTime - kpsTimestamps[kpsTail] > 1000) {
+                kpsTail = (kpsTail + 1) and 255
+            }
+            val currentKps = if (kpsHead >= kpsTail) {
+                kpsHead - kpsTail
+            } else {
+                kpsHead + 256 - kpsTail
+            }
+            updateKpsTotalUI(currentKps, totalClicks)
+            mainHandler.postDelayed(this, 100)
+        }
     }
 
     private val kpsUiUpdateRunnable = Runnable {
