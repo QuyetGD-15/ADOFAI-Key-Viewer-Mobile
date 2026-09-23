@@ -51,7 +51,7 @@
     <string name="notif_content_title">Key Viewer Overlay</string>
     <string name="notif_content_text">아래 버튼을 사용하여 제어하세요.</string>
     <string name="kps_label">KPS</string>
-    <string name="total_label">전체</string>
+    <string name="total_label">Total</string>
     <string name="notif_channel_name">오버레이 서비스 알림</string>
 
     <!-- HitboxConfigActivity -->

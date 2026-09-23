@@ -51,7 +51,7 @@
     <string name="notif_content_title">Key Viewer Overlay</string>
     <string name="notif_content_text">Kontrol etmek için aşağıdaki düğmeleri kullanın.</string>
     <string name="kps_label">KPS</string>
-    <string name="total_label">Toplam</string>
+    <string name="total_label">Total</string>
     <string name="notif_channel_name">Kaplama hizmeti kanalı</string>
 
     <!-- HitboxConfigActivity -->

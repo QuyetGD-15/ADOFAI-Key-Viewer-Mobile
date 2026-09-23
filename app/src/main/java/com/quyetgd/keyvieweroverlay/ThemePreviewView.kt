@@ -1,6 +1,6 @@
 package com.quyetgd.keyvieweroverlay
 
-import android.R
+import com.quyetgd.keyvieweroverlay.R
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
@@ -120,7 +120,7 @@ class ThemePreviewView @JvmOverloads constructor(
             italic -> Typeface.ITALIC
             else -> Typeface.NORMAL
         }
-        val base = try { ResourcesCompat.getFont(context, com.quyetgd.keyvieweroverlay.R.font.adofai_font) ?: Typeface.DEFAULT }
+        val base = try { ResourcesCompat.getFont(context, R.font.adofai_font) ?: Typeface.DEFAULT }
         catch (_: Exception) { Typeface.DEFAULT }
         textTypeface = Typeface.create(base, style)
         underline = underlined
@@ -254,8 +254,8 @@ class ThemePreviewView @JvmOverloads constructor(
             }
             return Triple(box, label, count)
         }
-        counter("KPS", 12, false).also { (box, label, value) -> kpsContainer = box; kpsLabel = label; kpsValue = value; workspace.addView(box) }
-        counter("Total", 128, true).also { (box, label, value) -> totalContainer = box; totalLabel = label; totalValue = value; workspace.addView(box) }
+        counter(context.getString(R.string.kps_label), 12, false).also { (box, label, value) -> kpsContainer = box; kpsLabel = label; kpsValue = value; workspace.addView(box) }
+        counter(context.getString(R.string.total_label), 128, true).also { (box, label, value) -> totalContainer = box; totalLabel = label; totalValue = value; workspace.addView(box) }
     }
 
     private fun configureTrail(limit: Int) {
@@ -306,7 +306,7 @@ class ThemePreviewView @JvmOverloads constructor(
             setTextSize(sp(counterSizeSp))
             setTypeface(textTypeface)
             setUnderline(underline)
-            textAlignment = if (this == totalValue || keyMode == 4 || keyMode == 6 || keyMode == 8 || keyMode == 16) Paint.Align.RIGHT else Paint.Align.CENTER
+            textAlignment = if (keyMode == 10 || keyMode == 12) Paint.Align.CENTER else Paint.Align.RIGHT
         }
     }
 
@@ -382,10 +382,10 @@ class ThemePreviewView @JvmOverloads constructor(
     }
 
     private fun selector(c: ThemeColorSet): StateListDrawable = StateListDrawable().apply {
-        addState(intArrayOf(R.attr.state_pressed), box(parse(c.bgPressed), parse(c.borderPressed)))
+        addState(intArrayOf(android.R.attr.state_pressed), box(parse(c.bgPressed), parse(c.borderPressed)))
         addState(intArrayOf(), box(parse(c.bgNormal), parse(c.borderNormal)))
     }
-    private fun textSelector(c: ThemeColorSet) = ColorStateList(arrayOf(intArrayOf(R.attr.state_pressed), intArrayOf()), intArrayOf(parse(c.textPressed), parse(c.textNormal)))
+    private fun textSelector(c: ThemeColorSet) = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_pressed), intArrayOf()), intArrayOf(parse(c.textPressed), parse(c.textNormal)))
     private fun box(bg: Int, border: Int) = GradientDrawable().apply { shape = GradientDrawable.RECTANGLE; setColor(bg); setStroke(dp(borderWidthDp), border); cornerRadius = dp(cornerRadiusDp.toInt()).toFloat() }
     private fun abbreviated(value: String?): String = value?.takeIf { it.isNotBlank() }?.take(4) ?: "?"
     private fun parse(value: String): Int = try { Color.parseColor(value) } catch (_: Exception) { Color.WHITE }

@@ -52,7 +52,7 @@
     <string name="notif_content_title">Key Viewer Overlay</string>
     <string name="notif_content_text">下のボタンで操作します。</string>
     <string name="kps_label">KPS</string>
-    <string name="total_label">合計</string>
+    <string name="total_label">Total</string>
     <string name="notif_channel_name">オーバーレイサービスチャンネル</string>
     <string name="toast_config_saved">設定を保存しました</string>
     <string name="toast_hitbox_reset">標準の初期値に戻しました</string>

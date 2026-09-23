@@ -1017,7 +1017,8 @@ class OverlayService : Service() {
         }
         val newTvKpsValue = FastCounterView(this).apply {
             formatWithComma = false
-            textAlignment = if (isHorizontal) android.graphics.Paint.Align.RIGHT else android.graphics.Paint.Align.CENTER
+            textAlignment = if (keyMode == 10 || keyMode == 12) Paint.Align.CENTER
+            else if (isHorizontal) Paint.Align.RIGHT else Paint.Align.CENTER
             setCount(0)
         }
         newKpsContainer.addView(newTvKpsLabel, labelParams)
@@ -1048,7 +1049,7 @@ class OverlayService : Service() {
 
         val newTvTotalValue = FastCounterView(this).apply {
             formatWithComma = true
-            textAlignment = Paint.Align.RIGHT
+            textAlignment = if (keyMode == 10 || keyMode == 12) Paint.Align.CENTER else Paint.Align.RIGHT
             setCount(0)
         }
         newTotalContainer.addView(newTvTotalLabel, labelParams)
@@ -1197,8 +1198,9 @@ class OverlayService : Service() {
                 val countSizePx = kpsTextSizeSp * resources.displayMetrics.scaledDensity
                 tvKpsValue?.setTextSize(countSizePx)
                 tvTotalValue?.setTextSize(countSizePx)
-                tvKpsValue?.textAlignment = Paint.Align.RIGHT
-                tvTotalValue?.textAlignment = Paint.Align.RIGHT
+                val counterAlignment = if (keyMode == 10 || keyMode == 12) Paint.Align.CENTER else Paint.Align.RIGHT
+                tvKpsValue?.textAlignment = counterAlignment
+                tvTotalValue?.textAlignment = counterAlignment
 
             } else {
                 // Áp dụng khoảng cách (Margin) cũ cho các mode khác
@@ -1215,14 +1217,14 @@ class OverlayService : Service() {
             tvKpsLabel?.setTextColor(Color.parseColor(kpsColors.textNormal))
             tvKpsValue?.setTypeface(themeTypeface)
             tvKpsValue?.setUnderline(themeIsUnderline)
-            tvKpsValue?.textAlignment = Paint.Align.RIGHT
+            tvKpsValue?.textAlignment = if (keyMode == 10 || keyMode == 12) Paint.Align.CENTER else Paint.Align.RIGHT
             tvKpsValue?.setTextColor(createTextColorStateList(Color.parseColor(kpsColors.textNormal), Color.parseColor(kpsColors.textPressed)))
 
             applyThemeToTextView(tvTotalLabel)
             tvTotalLabel?.setTextColor(Color.parseColor(totalColors.textNormal))
             tvTotalValue?.setTypeface(themeTypeface)
             tvTotalValue?.setUnderline(themeIsUnderline)
-            tvTotalValue?.textAlignment = Paint.Align.RIGHT
+            tvTotalValue?.textAlignment = if (keyMode == 10 || keyMode == 12) Paint.Align.CENTER else Paint.Align.RIGHT
             tvTotalValue?.setTextColor(createTextColorStateList(Color.parseColor(totalColors.textNormal), Color.parseColor(totalColors.textPressed)))
             updateKpsTotalUI(lastRenderedKps, lastRenderedTotal, force = true)
 

@@ -51,7 +51,7 @@
     <string name="notif_content_title">Key Viewer Overlay</string>
     <string name="notif_content_text">使用下方按钮进行控制。</string>
     <string name="kps_label">KPS</string>
-    <string name="total_label">总计</string>
+    <string name="total_label">Total</string>
     <string name="notif_channel_name">悬浮层服务通知</string>
 
     <!-- HitboxConfigActivity -->
