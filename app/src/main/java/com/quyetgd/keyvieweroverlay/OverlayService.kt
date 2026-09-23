@@ -14,6 +14,7 @@ import android.content.SharedPreferences
 import android.content.pm.ServiceInfo
 import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.graphics.RectF
 import android.graphics.Typeface
@@ -1047,6 +1048,7 @@ class OverlayService : Service() {
 
         val newTvTotalValue = FastCounterView(this).apply {
             formatWithComma = true
+            textAlignment = Paint.Align.RIGHT
             setCount(0)
         }
         newTotalContainer.addView(newTvTotalLabel, labelParams)
@@ -1102,10 +1104,18 @@ class OverlayService : Service() {
         val borderPx = (borderWidthDp * resources.displayMetrics.density).toInt()
         val radiusPx = cornerRadiusDp * resources.displayMetrics.density
 
-        val bgNormal = try { Color.parseColor(pref.getString("theme_bg_normal", "#000000")) } catch (e: Exception) { Color.BLACK }
-        val borderNormal = try { Color.parseColor(pref.getString("theme_border_normal", "#FFFFFF")) } catch (e: Exception) { Color.WHITE }
-        val bgPressed = try { Color.parseColor(pref.getString("theme_bg_pressed", "#FFFFFF")) } catch (e: Exception) { Color.WHITE }
-        val borderPressed = try { Color.parseColor(pref.getString("theme_border_pressed", "#FFFFFF")) } catch (e: Exception) { Color.WHITE }
+        val basicColors = ThemeColorStore.basic(pref)
+        val activeMode = ThemeColorStore.mode(pref, keyMode)
+        val advancedColors = if (activeMode == ThemeColorStore.ADVANCED) Array(keyMode) { i ->
+            ThemeColorStore.advanced(pref, keyMode, "key_$i", basicColors)
+        } else null
+        val kpsColors = if (activeMode == ThemeColorStore.ADVANCED) ThemeColorStore.advanced(pref, keyMode, "kps", basicColors) else basicColors
+        val totalColors = if (activeMode == ThemeColorStore.ADVANCED) ThemeColorStore.advanced(pref, keyMode, "total", basicColors) else basicColors
+
+        val bgNormal = try { Color.parseColor(kpsColors.bgNormal) } catch (e: Exception) { Color.BLACK }
+        val borderNormal = try { Color.parseColor(kpsColors.borderNormal) } catch (e: Exception) { Color.WHITE }
+        val bgPressed = try { Color.parseColor(kpsColors.bgPressed) } catch (e: Exception) { Color.WHITE }
+        val borderPressed = try { Color.parseColor(kpsColors.borderPressed) } catch (e: Exception) { Color.WHITE }
         val rainColor = try { Color.parseColor(pref.getString("theme_rain_color", "#FFFFFF")) } catch (e: Exception) { Color.WHITE }
         val shadowColor = try { Color.parseColor(pref.getString("theme_rain_shadow", "#00FFFF")) } catch (e: Exception) { Color.CYAN }
         // THÊM 2 DÒNG NÀY: Khai báo màu hàng 2 (Mặc định là Tím nếu chưa có trong bộ nhớ)
@@ -1142,19 +1152,21 @@ class OverlayService : Service() {
                 else tvLabel?.text = (i + 1).toString()
 
                 applyThemeToTextView(tvLabel)
-                tvLabel?.setTextColor(createTextColorStateList(themeTextColor, themeTextColorPressed))
+                val keyColors = if (activeMode == ThemeColorStore.ADVANCED) ThemeColorStore.advanced(pref, keyMode, "key_$i", basicColors) else basicColors
+                tvLabel?.setTextColor(createTextColorStateList(Color.parseColor(keyColors.textNormal), Color.parseColor(keyColors.textPressed)))
 
                 if (tvCount != null) {
                     tvCount.setTypeface(themeTypeface)
                     tvCount.setUnderline(themeIsUnderline)
-                    tvCount.setTextColor(createTextColorStateList(themeTextColor, themeTextColorPressed))
+                    val keyColors = if (activeMode == ThemeColorStore.ADVANCED) ThemeColorStore.advanced(pref, keyMode, "key_$i", basicColors) else basicColors
+                    tvCount.setTextColor(createTextColorStateList(Color.parseColor(keyColors.textNormal), Color.parseColor(keyColors.textPressed)))
 
                     val countSizePx = (themeTextSizeSp * 0.65f) * resources.displayMetrics.scaledDensity
                     tvCount.setTextSize(countSizePx)
 
                     tvCount.visibility = if (showCounters) View.VISIBLE else View.GONE
                 }
-                container.background = createAlphaSelector(bgNormal, borderNormal, bgPressed, borderPressed, borderPx, radiusPx)
+                container.background = createAlphaSelector(Color.parseColor(keyColors.bgNormal), Color.parseColor(keyColors.borderNormal), Color.parseColor(keyColors.bgPressed), Color.parseColor(keyColors.borderPressed), borderPx, radiusPx)
             }
 
             // KÍCH HOẠT LAYOUT ENGINE CHO CÁC MODE ĐA HÀNG
@@ -1170,20 +1182,23 @@ class OverlayService : Service() {
                 } else if (keyMode == 16) {
                     LayoutEngine.apply16KLayout(frameWorkspace, keyContainers, dpToPxInt(keyWidth), dpToPxInt(keyHeight), dpToPxInt(keySpacing), kpsContainer, totalContainer)
                 }
-                // ================= ĐỒNG BỘ ĐỘ LỚN FONT CHỮ KPS/TOTAL =================
-                // 10K và 12K không gian hẹp -> Ép nhỏ 70% (0.7f)
-                // 16K không gian rộng -> Dùng 100% cỡ chữ cài đặt gốc
-                val kpsTextSizeSp = if (keyMode == 10 || keyMode == 12) (themeTextSizeSp * 0.7f) else themeTextSizeSp
+                // Đồng bộ font với các phím: cả nhãn và giá trị dùng cùng typeface/style.
+                applyThemeToTextView(tvKpsLabel)
+                applyThemeToTextView(tvTotalLabel)
+                tvKpsValue?.setTypeface(themeTypeface)
+                tvKpsValue?.setUnderline(themeIsUnderline)
+                tvTotalValue?.setTypeface(themeTypeface)
+                tvTotalValue?.setUnderline(themeIsUnderline)
 
-                // 1. Áp dụng cỡ chữ cho CHỮ (Label)
+                // Cỡ chữ counter hẹp hơn ở 10K/12K, giống quy tắc hiển thị hiện tại.
+                val kpsTextSizeSp = if (keyMode == 10 || keyMode == 12) themeTextSizeSp * 0.7f else themeTextSizeSp
                 tvKpsLabel?.setTextSize(TypedValue.COMPLEX_UNIT_SP, kpsTextSizeSp)
                 tvTotalLabel?.setTextSize(TypedValue.COMPLEX_UNIT_SP, kpsTextSizeSp)
-
-                // 2. Áp dụng cỡ chữ gốc cho SỐ (Value)
                 val countSizePx = kpsTextSizeSp * resources.displayMetrics.scaledDensity
                 tvKpsValue?.setTextSize(countSizePx)
                 tvTotalValue?.setTextSize(countSizePx)
-                // ===================================================================
+                tvKpsValue?.textAlignment = Paint.Align.RIGHT
+                tvTotalValue?.textAlignment = Paint.Align.RIGHT
 
             } else {
                 // Áp dụng khoảng cách (Margin) cũ cho các mode khác
@@ -1191,26 +1206,31 @@ class OverlayService : Service() {
                 viewerContainer.findViewById<View>(R.id.bottomCountersContainer)?.let { (it.layoutParams as ViewGroup.MarginLayoutParams).topMargin = dpToPxInt(keySpacing) }
             }
 
-            kpsContainer?.background = createAlphaSelector(bgNormal, borderNormal, bgPressed, borderPressed, borderPx, radiusPx)
-            totalContainer?.background = createAlphaSelector(bgNormal, borderNormal, bgPressed, borderPressed, borderPx, radiusPx)
+            kpsContainer?.background = createAlphaSelector(Color.parseColor(kpsColors.bgNormal), Color.parseColor(kpsColors.borderNormal), Color.parseColor(kpsColors.bgPressed), Color.parseColor(kpsColors.borderPressed), borderPx, radiusPx)
+            totalContainer?.background = createAlphaSelector(Color.parseColor(totalColors.bgNormal), Color.parseColor(totalColors.borderNormal), Color.parseColor(totalColors.bgPressed), Color.parseColor(totalColors.borderPressed), borderPx, radiusPx)
             kpsContainer?.let { (it.layoutParams as ViewGroup.MarginLayoutParams).rightMargin = dpToPxInt(keySpacing) }
             viewerContainer.findViewById<View>(R.id.bottomCountersContainer)?.let { (it.layoutParams as ViewGroup.MarginLayoutParams).topMargin = dpToPxInt(keySpacing) }
 
             applyThemeToTextView(tvKpsLabel)
+            tvKpsLabel?.setTextColor(Color.parseColor(kpsColors.textNormal))
             tvKpsValue?.setTypeface(themeTypeface)
             tvKpsValue?.setUnderline(themeIsUnderline)
-            tvKpsValue?.setTextColor(createTextColorStateList(themeTextColor, themeTextColorPressed))
+            tvKpsValue?.textAlignment = Paint.Align.RIGHT
+            tvKpsValue?.setTextColor(createTextColorStateList(Color.parseColor(kpsColors.textNormal), Color.parseColor(kpsColors.textPressed)))
 
             applyThemeToTextView(tvTotalLabel)
+            tvTotalLabel?.setTextColor(Color.parseColor(totalColors.textNormal))
             tvTotalValue?.setTypeface(themeTypeface)
             tvTotalValue?.setUnderline(themeIsUnderline)
-            tvTotalValue?.setTextColor(createTextColorStateList(themeTextColor, themeTextColorPressed))
+            tvTotalValue?.textAlignment = Paint.Align.RIGHT
+            tvTotalValue?.setTextColor(createTextColorStateList(Color.parseColor(totalColors.textNormal), Color.parseColor(totalColors.textPressed)))
             updateKpsTotalUI(lastRenderedKps, lastRenderedTotal, force = true)
 
             keyTrailView.visibility = if (isKeyRainEnabled) View.VISIBLE else View.GONE
             keyTrailView.layoutParams.height = dpToPxInt(limitPx)
             keyTrailView.setParameters(speed, limitPx.toFloat())
-            keyTrailView.setThemeColors(rainColor, shadowColor)
+            keyTrailView.setThemeColors(Color.parseColor(basicColors.trail), Color.parseColor(basicColors.shadow))
+            keyTrailView.setAdvancedColors(advancedColors)
             // THÊM 1 DÒNG NÀY: Truyền màu và kích hoạt bóng cho hàng 2!
             keyTrailView.setRow2ThemeColors(rainColor2, shadowColor2)
             keyTrailView.setShadowConfig(isShadowEnabled, isPerformanceShadow)

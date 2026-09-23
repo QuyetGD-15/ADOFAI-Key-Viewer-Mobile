@@ -54,6 +54,11 @@
             android:configChanges="orientation|screenSize|screenLayout" />
 
         <activity
+            android:name=".ThemeEditorActivity"
+            android:screenOrientation="landscape"
+            android:configChanges="orientation|screenSize|screenLayout" />
+
+        <activity
             android:name=".KeyViewerConfigActivity"
             android:screenOrientation="userLandscape"
             android:configChanges="orientation|screenSize|screenLayout" />

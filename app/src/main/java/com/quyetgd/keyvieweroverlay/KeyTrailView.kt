@@ -36,6 +36,9 @@ class KeyTrailView @JvmOverloads constructor(
 
     private val MAX_TRAILS = 150
     private val trailPool = Array(MAX_TRAILS) { Trail() }
+    private var advancedColors: Array<ThemeColorSet>? = null
+    private var advancedTrailColors: IntArray? = null
+    private var advancedShadowColors: IntArray? = null
 
     // ================= TỐI ƯU CỌ VẼ (HỖ TRỢ CẢ 3 CHẾ ĐỘ ĐỔ BÓNG) =================
     private val trailPaintRow1 = Paint().apply { style = Paint.Style.FILL; isAntiAlias = true }
@@ -91,9 +94,26 @@ class KeyTrailView @JvmOverloads constructor(
     }
 
     override fun onDetachedFromWindow() {
+        stopRendering()
         super.onDetachedFromWindow()
-        isRendering = false
+    }
+
+    /** Stops frame callbacks and drops preview-only lane colors when a view is no longer used. */
+    fun releaseResources() {
+        stopRendering()
+        advancedColors = null
+        advancedTrailColors = null
+        advancedShadowColors = null
+    }
+
+    private fun stopRendering() {
         Choreographer.getInstance().removeFrameCallback(frameCallback)
+        isRendering = false
+        activeTrailCount = 0
+        for (trail in trailPool) {
+            trail.isActive = false
+            trail.timeReleased = 0L
+        }
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -103,13 +123,21 @@ class KeyTrailView @JvmOverloads constructor(
         val currentTimeMs = SystemClock.uptimeMillis()
         val actualSpeedPerMs = baseSpeedPerMs * trailSpeed
         val screenHeight = height.toFloat()
+        val perLaneTrail = advancedTrailColors
+        val perLaneShadow = advancedShadowColors
 
         // PASS 1: Vẽ Hàng 1
         for (i in 0 until MAX_TRAILS) {
             val trail = trailPool[i]
             if (!trail.isActive || trail.laneIndex >= 8) continue
-            // Chỉ truyền shadowPaint vào nếu bật "Đổ bóng nhẹ"
             val shadowPaint = if (isGlobalShadowEnabled && isPerformanceShadow && isShadowEnabled1) shadowPaintRow1 else null
+            val laneTrail = perLaneTrail?.getOrNull(trail.laneIndex)
+            if (laneTrail != null) trailPaintRow1.color = laneTrail
+            val laneShadow = perLaneShadow?.getOrNull(trail.laneIndex) ?: rainShadowColor1
+            if (isGlobalShadowEnabled && isPerformanceShadow && isShadowEnabled1) {
+                shadowPaintRow1.color = Color.argb(100, Color.red(laneShadow), Color.green(laneShadow), Color.blue(laneShadow))
+            }
+            configureLanePaint(trailPaintRow1, laneShadow, isShadowEnabled1)
             drawSingleTrail(canvas, trail, trailPaintRow1, shadowPaint, currentTimeMs, actualSpeedPerMs, screenHeight)
         }
 
@@ -118,10 +146,28 @@ class KeyTrailView @JvmOverloads constructor(
             val trail = trailPool[i]
             if (!trail.isActive || trail.laneIndex < 8) continue
             val shadowPaint = if (isGlobalShadowEnabled && isPerformanceShadow && isShadowEnabled2) shadowPaintRow2 else null
+            val laneTrail = perLaneTrail?.getOrNull(trail.laneIndex)
+            if (laneTrail != null) trailPaintRow2.color = laneTrail
+            val laneShadow = perLaneShadow?.getOrNull(trail.laneIndex) ?: rainShadowColor2
+            if (isGlobalShadowEnabled && isPerformanceShadow && isShadowEnabled2) {
+                shadowPaintRow2.color = Color.argb(100, Color.red(laneShadow), Color.green(laneShadow), Color.blue(laneShadow))
+            }
+            configureLanePaint(trailPaintRow2, laneShadow, isShadowEnabled2)
             drawSingleTrail(canvas, trail, trailPaintRow2, shadowPaint, currentTimeMs, actualSpeedPerMs, screenHeight)
         }
 
         canvas.restore()
+    }
+
+    private fun configureLanePaint(paint: Paint, shadowColor: Int, rowShadowEnabled: Boolean) {
+        if (isGlobalShadowEnabled && !isPerformanceShadow && rowShadowEnabled && Color.alpha(shadowColor) > 0) {
+            paint.setShadowLayer(20f, 0f, 0f, Color.argb(
+                (Color.alpha(shadowColor) * .7f).toInt(),
+                Color.red(shadowColor), Color.green(shadowColor), Color.blue(shadowColor)
+            ))
+        } else {
+            paint.clearShadowLayer()
+        }
     }
 
     private fun drawSingleTrail(
@@ -176,6 +222,13 @@ class KeyTrailView @JvmOverloads constructor(
         this.rainShadowColor1 = shadowColor
         this.isShadowEnabled1 = Color.alpha(shadowColor) > 0
         updatePaintsRow1()
+        invalidate()
+    }
+
+    fun setAdvancedColors(colors: Array<ThemeColorSet>?) {
+        advancedColors = colors
+        advancedTrailColors = colors?.map { Color.parseColor(it.trail) }?.toIntArray()
+        advancedShadowColors = colors?.map { Color.parseColor(it.shadow) }?.toIntArray()
         invalidate()
     }
 

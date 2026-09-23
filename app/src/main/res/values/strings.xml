@@ -74,6 +74,11 @@
     <string name="corner_radius_label">Độ bo góc: %d dp</string>
     <string name="section_key_rain">2. KEY RAIN</string>
     <string name="theme_keyrain_enabled">Bật vệt sáng (KeyRain)</string>
+    <string name="theme_mode_basic">Cơ bản</string>
+    <string name="theme_mode_advanced">Nâng cao</string>
+    <string name="theme_edit_target">Đang chỉnh màu cho</string>
+    <string name="theme_target_key">Phím %d</string>
+    <string name="theme_advanced_hint">Mỗi phím, KPS và Total có bộ màu riêng. Chọn một đối tượng rồi chỉnh các màu bên dưới.</string>
     <string name="section_theme">3. CHỦ ĐỀ</string>
     <string name="theme_text_group">1. CHỮ</string>
     <string name="theme_colors_group">2. MÀU SẮC</string>
@@ -222,6 +227,35 @@
     <string name="setup_step4_extended_disabled">Chế độ Mở rộng (Chỉ hỗ trợ Bàn phím)</string>
     <string name="toast_force_10k_touch">Cảm ứng không hỗ trợ %d phím, đã ép về 10 phím</string>
     <!-- Tùy chỉnh đổ bóng -->
-    <string name="pref_enable_shadow">Bóng KeyRain</string>
+ffffffffdaad    <string name="pref_enable_shadow">Bóng Rain</string>
     <string name="pref_performance_shadow">Đổ bóng tối ưu</string>
+
+    <!-- Theme editor -->
+    <string name="theme_editor_basic_desc">Áp dụng một bảng màu chung cho toàn bộ phím, KPS và Total.</string>
+    <string name="theme_editor_colors">Màu sắc</string>
+    <string name="theme_editor_text">Chữ</string>
+    <string name="theme_editor_background">Nền</string>
+    <string name="theme_editor_border">Viền</string>
+    <string name="theme_editor_rain">Rain</string>
+    <string name="theme_editor_rain_row1">Rain hàng 1</string>
+    <string name="theme_editor_rain_color_row1">Màu Rain hàng 1</string>
+    <string name="theme_editor_rain_shadow_row1">Bóng Rain hàng 1</string>
+    <string name="theme_editor_rain_row2">Rain hàng 2</string>
+    <string name="theme_editor_pressed">Trạng thái khi nhấn</string>
+    <string name="theme_editor_text_pressed">Chữ khi nhấn</string>
+    <string name="theme_editor_background_pressed">Nền khi nhấn</string>
+    <string name="theme_editor_border_pressed">Viền khi nhấn</string>
+    <string name="theme_editor_target_hint">Chọn đối tượng trong danh sách bên dưới. Bản xem trước bên trái chỉ để xem, không thể chạm chọn.</string>
+    <string name="theme_editor_editing_target">Đối tượng đang chỉnh: %s</string>
+    <string name="theme_editor_custom_preset">Tùy chỉnh %d</string>
+    <string name="theme_editor_preset_mode">Preset %dK</string>
+    <string name="theme_editor_save_preset">Lưu preset</string>
+    <string name="theme_editor_preset_saved">Đã lưu %s</string>
+    <string name="theme_editor_invalid_hex">Mã HEX không hợp lệ</string>
+    <string name="main_copy_log_error">Không thể sao chép vào bộ nhớ tạm!</string>
+    <string name="main_crash_log_truncated">…\n\n(Đã cắt bớt để hiển thị)</string>
+    <string name="language_vietnamese">Tiếng Việt</string>
+    <string name="language_english">English</string>
+    <string name="counter_zero">0</string>
+    <string name="key_mode_format">%d KEY</string>
 </resources>

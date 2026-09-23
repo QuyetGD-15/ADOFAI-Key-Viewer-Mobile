@@ -379,7 +379,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
         // Cập nhật text cho nút Config tùy theo nguồn đầu vào
         val currentInputSource = pref.getString("input_source", "touch")
-        btnConfigHitbox.text = if (currentInputSource == "keyboard") "Gán phím" else getString(R.string.config_hitbox)
+        btnConfigHitbox.text = if (currentInputSource == "keyboard") getString(R.string.main_btn_mapping) else getString(R.string.config_hitbox)
 
         btnConfigHitbox.setOnClickListener {
             val inputSource = pref.getString("input_source", "touch")
@@ -450,7 +450,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         val crashLog = crashPref.getString("CRASH_LOG", null)
 
         if (!crashLog.isNullOrEmpty()) {
-            val displayLog = if (crashLog.length > 500) crashLog.substring(0, 500) + "...\n\n(Đã cắt bớt để hiển thị, khi Copy sẽ lấy toàn bộ)" else crashLog
+            val displayLog = if (crashLog.length > 500) crashLog.substring(0, 500) + getString(R.string.main_crash_log_truncated) else crashLog
 
             MaterialAlertDialogBuilder(this)
                 .setTitle(getString(R.string.crash_dialog_title))
@@ -465,7 +465,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                         Toast.makeText(this, getString(R.string.toast_copied), Toast.LENGTH_SHORT).show()
                     } catch (e: Exception) {
                         e.printStackTrace()
-                        Toast.makeText(this, "Lỗi khi chép vào bộ nhớ đệm!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, R.string.main_copy_log_error, Toast.LENGTH_SHORT).show()
                     } finally {
                         // 2. QUAN TRỌNG: Xóa log khỏi bộ nhớ để lần mở App sau không bị kẹt bảng thông báo
                         crashPref.edit().remove("CRASH_LOG").apply()
@@ -562,7 +562,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         val currentMode = pref.getInt("current_key_mode", 6)
 
         dropdownKeyMode.post {
-            dropdownKeyMode.setText("${currentMode} KEY", false)
+            dropdownKeyMode.setText(getString(R.string.key_mode_format, currentMode), false)
         }
 
         dropdownKeyMode.setOnItemClickListener { _, _, position, _ ->

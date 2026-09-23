@@ -46,7 +46,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginBottom="16dp"
-                android:text="Tiếng Việt"
+                android:text="@string/language_vietnamese"
                 app:cornerRadius="16dp" />
 
             <com.google.android.material.button.MaterialButton
@@ -54,7 +54,7 @@
                 style="@style/Widget.Material3.Button.TonalButton"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:text="English"
+                android:text="@string/language_english"
                 app:cornerRadius="16dp" />
         </LinearLayout>
 

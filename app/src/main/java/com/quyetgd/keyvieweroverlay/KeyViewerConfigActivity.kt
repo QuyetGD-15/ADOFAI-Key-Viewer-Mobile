@@ -27,10 +27,12 @@ import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.slider.Slider
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.card.MaterialCardView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
@@ -136,6 +138,16 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         )
     }
     private var isUserInteractingWithSpinner = false
+    private var colorMode = ThemeColorStore.BASIC
+    private var selectedColorTarget = "key_0"
+    private var suppressColorEditorEvents = false
+    private val themeEditorLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) ThemeDraftBridge.draft?.let { applyThemeDraft(it) }
+    }
+    private val advancedDraft = LinkedHashMap<String, ThemeColorSet>()
+    private lateinit var colorModeGroup: MaterialButtonToggleGroup
+    private lateinit var advancedTargetDropdown: android.widget.AutoCompleteTextView
+    private lateinit var advancedTargetLayout: TextInputLayout
 
     override fun onUserInteraction() {
         super.onUserInteraction()
@@ -383,9 +395,134 @@ class KeyViewerConfigActivity : AppCompatActivity() {
 
         setupCollapsibleSection(tvSection1Header, tvSection1Header, section1ContentLayout, defaultExpanded = false)
         setupCollapsibleSection(tvSection2Header, tvSection2Header, section2ContentLayout, defaultExpanded = false)
-        setupCollapsibleSection(tvThemeHeader, tvThemeHeader, layoutThemeContent, defaultExpanded = false)
-
+        tvThemeHeader.setOnClickListener {
+            val pref = getSharedPreferences("KeyViewerPrefs", MODE_PRIVATE)
+            val fallback = readEditorColors()
+            val advanced = LinkedHashMap<String, ThemeColorSet>()
+            for (target in allColorTargets()) {
+                advanced[target] = if (target == selectedColorTarget && colorMode == ThemeColorStore.ADVANCED) readEditorColors()
+                else advancedDraft[target] ?: ThemeColorStore.advanced(pref, currentKeyMode(), target, fallback)
+            }
+            ThemeDraftBridge.draft = ThemeDraft(
+                colorMode, fallback,
+                etRainColor2Hex.text.toString(),
+                etRainShadow2Hex.text.toString(),
+                advanced,
+                cbBold.isChecked, cbItalic.isChecked, cbUnderline.isChecked,
+                swShowKeyCounters.isChecked, swPerformanceShadow.isChecked,
+                seekKeySpacing.value.toInt(), seekBorderWidth.value.toInt(), seekCornerRadius.value.toInt(),
+                swEnableKeyRain.isChecked, currentSpeed, currentLimit, swEnableShadow.isChecked
+            )
+            themeEditorLauncher.launch(Intent(this, ThemeEditorActivity::class.java))
+        }
+        layoutThemeContent.visibility = View.GONE
         setupPresetUI()
+    }
+
+    private fun currentKeyMode(): Int = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE).getInt("current_key_mode", 6)
+
+    private fun allColorTargets(): List<String> = buildList {
+        repeat(currentKeyMode()) { add("key_$it") }
+        add("kps")
+        add("total")
+    }
+
+    private fun targetLabel(target: String): String = when (target) {
+        "kps" -> "KPS"
+        "total" -> "Total"
+        else -> getString(R.string.theme_target_key, target.substringAfter('_').toIntOrNull()?.plus(1) ?: 1)
+    }
+
+    private fun readEditorColors() = ThemeColorSet(
+        etTextColorHex.text.toString(), etTextColorPressedHex.text.toString(),
+        etBgNormalHex.text.toString(), etBgPressedHex.text.toString(),
+        etBorderNormalHex.text.toString(), etBorderPressedHex.text.toString(),
+        etRainColorHex.text.toString(), etRainShadowHex.text.toString()
+    ).normalized()
+
+    private fun writeEditorColors(colors: ThemeColorSet) {
+        suppressColorEditorEvents = true
+        etTextColorHex.setText(colors.textNormal); etTextColorPressedHex.setText(colors.textPressed)
+        etBgNormalHex.setText(colors.bgNormal); etBgPressedHex.setText(colors.bgPressed)
+        etBorderNormalHex.setText(colors.borderNormal); etBorderPressedHex.setText(colors.borderPressed)
+        etRainColorHex.setText(colors.trail); etRainShadowHex.setText(colors.shadow)
+        suppressColorEditorEvents = false
+        updateLivePreview()
+    }
+
+    private fun ensureAdvancedDraft() {
+        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+        val fallback = ThemeColorStore.basic(pref)
+        for (target in allColorTargets()) advancedDraft.putIfAbsent(
+            target, ThemeColorStore.advanced(pref, currentKeyMode(), target, fallback)
+        )
+    }
+
+    private fun setupColorModeUI() {
+        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+        colorMode = ThemeColorStore.mode(pref, currentKeyMode())
+        ensureAdvancedDraft()
+
+        val host = layoutThemeContent
+        colorModeGroup = MaterialButtonToggleGroup(this).apply {
+            isSingleSelection = true
+            isSelectionRequired = true
+        }
+        val basicButton = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            id = View.generateViewId(); text = getString(R.string.theme_mode_basic); isCheckable = true
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        val advancedButton = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            id = View.generateViewId(); text = getString(R.string.theme_mode_advanced); isCheckable = true
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        colorModeGroup.addView(basicButton); colorModeGroup.addView(advancedButton)
+        host.addView(colorModeGroup, 0)
+
+        advancedTargetDropdown = android.widget.AutoCompleteTextView(this).apply {
+            inputType = android.text.InputType.TYPE_NULL
+            setTextColor(Color.WHITE)
+        }
+        advancedTargetLayout = TextInputLayout(this).apply {
+            hint = getString(R.string.theme_edit_target)
+            setBoxBackgroundMode(TextInputLayout.BOX_BACKGROUND_OUTLINE)
+            addView(
+                advancedTargetDropdown,
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            )
+        }
+        host.addView(advancedTargetLayout, 1)
+        val targetPairs = allColorTargets().map { it to targetLabel(it) }
+        advancedTargetDropdown.setAdapter(ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, targetPairs.map { it.second }))
+        advancedTargetDropdown.setText(targetPairs.first().second, false)
+        advancedTargetDropdown.setOnItemClickListener { _, _, position, _ ->
+            advancedDraft[selectedColorTarget] = readEditorColors()
+            selectedColorTarget = targetPairs[position].first
+            writeEditorColors(advancedDraft.getValue(selectedColorTarget))
+        }
+
+        colorModeGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            if (colorMode == ThemeColorStore.ADVANCED) advancedDraft[selectedColorTarget] = readEditorColors()
+            colorMode = if (checkedId == advancedButton.id) ThemeColorStore.ADVANCED else ThemeColorStore.BASIC
+            val modeEditor = pref.edit()
+            ThemeColorStore.setMode(modeEditor, currentKeyMode(), colorMode)
+            modeEditor.apply()
+            advancedTargetLayout.visibility = if (colorMode == ThemeColorStore.ADVANCED) View.VISIBLE else View.GONE
+            if (colorMode == ThemeColorStore.ADVANCED) writeEditorColors(advancedDraft.getValue(selectedColorTarget))
+            else writeEditorColors(ThemeColorStore.basic(pref))
+            findViewById<View>(R.id.etRainColor2Hex)?.parent?.let { (it as? View)?.visibility = if (colorMode == ThemeColorStore.BASIC) View.VISIBLE else View.GONE }
+        }
+        colorModeGroup.check(if (colorMode == ThemeColorStore.ADVANCED) advancedButton.id else basicButton.id)
+    }
+
+    private fun saveAdvancedColors(editor: android.content.SharedPreferences.Editor) {
+        advancedDraft[selectedColorTarget] = readEditorColors()
+        for ((target, colors) in advancedDraft) ThemeColorStore.writeAdvanced(editor, currentKeyMode(), target, colors)
+        ThemeColorStore.setMode(editor, currentKeyMode(), colorMode)
     }
 
     private fun setupPresetUI() {
@@ -396,7 +533,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         presetDropdown.setAdapter(adapter)
 
         val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
-        val savedPresetIndex = pref.getInt("saved_preset_index", 0)
+        val savedPresetIndex = pref.getInt("saved_preset_index_${currentKeyMode()}_$colorMode", 0)
 
         if (savedPresetIndex < presetNames.size) {
             presetDropdown.setText(adapter.getItem(savedPresetIndex), false)
@@ -444,8 +581,15 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                     isItalic = false,
                     isUnderline = false
                 )
+            } else if (colorMode == ThemeColorStore.ADVANCED) {
+                advancedDraft[selectedColorTarget] = readEditorColors()
+                for (target in allColorTargets()) {
+                    val fallback = advancedDraft[target] ?: ThemeColorStore.basic(pref)
+                    advancedDraft[target] = ThemeColorStore.advancedPreset(pref, currentKeyMode(), position, target, fallback)
+                }
+                writeEditorColors(advancedDraft.getValue(selectedColorTarget))
             } else {
-                val suffix = "_preset_$position"
+                val suffix = "_preset_${currentKeyMode()}_${colorMode}_$position"
                 val textColorNormal = pref.getString("theme_text_color$suffix", "#FFFFFF") ?: "#FFFFFF"
                 val textColorPressed = pref.getString("theme_text_color_pressed$suffix", "#FF000000") ?: "#FF000000"
                 val bgNormal = pref.getString("theme_bg_normal$suffix", "#000000") ?: "#000000"
@@ -519,7 +663,13 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             editor.putBoolean("theme_text_italic", isItalic)
             editor.putBoolean("theme_text_underline", isUnderline)
 
-            val suffix = "_preset_$selectedPosition"
+            val suffix = "_preset_${currentKeyMode()}_${colorMode}_$selectedPosition"
+            if (colorMode == ThemeColorStore.ADVANCED) {
+                advancedDraft[selectedColorTarget] = readEditorColors()
+                for ((target, colors) in advancedDraft) {
+                    ThemeColorStore.writeAdvancedPreset(editor, currentKeyMode(), selectedPosition, target, colors)
+                }
+            }
             editor.putFloat("theme_text_size$suffix", textSize)
             editor.putString("theme_text_color$suffix", textColor)
             editor.putString("theme_text_color_pressed$suffix", textColorPressed)
@@ -535,7 +685,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             editor.putBoolean("theme_text_italic$suffix", isItalic)
             editor.putBoolean("theme_text_underline$suffix", isUnderline)
 
-            editor.putInt("saved_preset_index", selectedPosition)
+            editor.putInt("saved_preset_index_${currentKeyMode()}_$colorMode", selectedPosition)
             editor.apply()
 
             triggerOverlayRefresh()
@@ -593,6 +743,18 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         cbItalic.isChecked = isItalic
         cbUnderline.isChecked = isUnderline
 
+        updateLivePreview()
+    }
+
+    private fun applyThemeDraft(draft: ThemeDraft) {
+        colorMode = draft.mode
+        advancedDraft.clear(); advancedDraft.putAll(draft.advanced)
+        suppressColorEditorEvents = true
+        writeEditorColors(if (colorMode == ThemeColorStore.ADVANCED) advancedDraft[selectedColorTarget] ?: draft.basic else draft.basic)
+        etRainColor2Hex.setText(draft.trail2); etRainShadow2Hex.setText(draft.shadow2)
+        cbBold.isChecked = draft.bold; cbItalic.isChecked = draft.italic; cbUnderline.isChecked = draft.underline
+        swShowKeyCounters.isChecked = draft.showCounters; swPerformanceShadow.isChecked = draft.performanceShadow
+        suppressColorEditorEvents = false
         updateLivePreview()
     }
 
@@ -729,6 +891,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
+                if (suppressColorEditorEvents) return
+                if (colorMode == ThemeColorStore.ADVANCED && ::advancedTargetDropdown.isInitialized) advancedDraft[selectedColorTarget] = readEditorColors()
                 syncColorPreview(etTextColorHex, viewTextColorPreview)
                 syncColorPreview(etTextColorPressedHex, viewTextColorPressedPreview)
                 syncColorPreview(etBgNormalHex, viewBgNormalPreview)
@@ -951,10 +1115,16 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
         val keyMode = pref.getInt("current_key_mode", 6)
         val showCounters = swShowKeyCounters.isChecked
+        if (colorMode == ThemeColorStore.ADVANCED) advancedDraft[selectedColorTarget] = readEditorColors()
+        val basicSet = readEditorColors()
+        fun colorsFor(target: String) = if (colorMode == ThemeColorStore.ADVANCED) advancedDraft[target] ?: basicSet else basicSet
+        val kpsSet = colorsFor("kps")
+        val totalSet = colorsFor("total")
 
-        kpsContainer?.background = constantState?.newDrawable()?.mutate() ?: alphaSelector
-        totalContainer?.background = constantState?.newDrawable()?.mutate() ?: alphaSelector
+        kpsContainer?.background = createAlphaSelector(Color.parseColor(kpsSet.bgNormal), Color.parseColor(kpsSet.borderNormal), Color.parseColor(kpsSet.bgPressed), Color.parseColor(kpsSet.borderPressed), borderPx, radiusPx)
+        totalContainer?.background = createAlphaSelector(Color.parseColor(totalSet.bgNormal), Color.parseColor(totalSet.borderNormal), Color.parseColor(totalSet.bgPressed), Color.parseColor(totalSet.borderPressed), borderPx, radiusPx)
 
+        /* legacy selector fallback */
         val applyToTextView = { tv: TextView? ->
             tv?.apply {
                 setTextColor(textColor)
@@ -977,15 +1147,16 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                 val container = frameWorkspace.getChildAt(i) as? LinearLayout ?: continue
                 keyContainersArr[i] = container
 
-                container.background = constantState?.newDrawable()?.mutate() ?: alphaSelector
+                val keySet = colorsFor("key_$i")
+                container.background = createAlphaSelector(Color.parseColor(keySet.bgNormal), Color.parseColor(keySet.borderNormal), Color.parseColor(keySet.bgPressed), Color.parseColor(keySet.borderPressed), borderPx, radiusPx)
                 (container.getChildAt(0) as? TextView)?.apply {
                     setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize.toFloat())
-                    setTextColor(textColor)
+                    setTextColor(Color.parseColor(keySet.textNormal))
                     this.typeface = typeface
                     paintFlags = if (isUnderline) paintFlags or Paint.UNDERLINE_TEXT_FLAG else paintFlags and Paint.UNDERLINE_TEXT_FLAG.inv()
                 }
                 (container.getChildAt(1) as? TextView)?.apply {
-                    setTextColor(textColor)
+                    setTextColor(Color.parseColor(keySet.textNormal))
                     this.typeface = typeface
                     visibility = if (showCounters) View.VISIBLE else View.GONE
                 }
@@ -1031,6 +1202,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         keyTrailView.layoutParams.height = limitPx
         keyTrailView.setParameters(currentSpeed, currentLimit.toFloat())
         keyTrailView.setThemeColors(rainColor, rainShadow)
+        keyTrailView.setAdvancedColors(if (colorMode == ThemeColorStore.ADVANCED) Array(keyMode) { colorsFor("key_$it") } else null)
         keyTrailView.setRow2ThemeColors(rainColor2, rainShadow2)
         // Gửi trạng thái bật/tắt bóng xuống cho KeyTrailView
         keyTrailView.setShadowConfig(swEnableShadow.isChecked, swPerformanceShadow.isChecked)
@@ -1159,7 +1331,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
 
     private fun saveAndExit() {
         val sharedPref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
-
+        val themeDraft = ThemeDraftBridge.draft
         sharedPref.edit().apply {
             putFloat("viewer_x", currentX)
             putFloat("viewer_y", currentY)
@@ -1189,12 +1361,26 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             putString("theme_rain_shadow", etRainShadowHex.text.toString())
             putString("theme_rain_color_2", etRainColor2Hex.text.toString())
             putString("theme_rain_shadow_2", etRainShadow2Hex.text.toString())
-
+            val effectiveColors = themeDraft
+            effectiveColors?.let {
+                putString("theme_rain_color_2", it.trail2)
+                putString("theme_rain_shadow_2", it.shadow2)
+                putBoolean("theme_performance_shadow", it.performanceShadow)
+                putBoolean("theme_text_bold", it.bold)
+                putBoolean("theme_text_italic", it.italic)
+                putBoolean("theme_text_underline", it.underline)
+                putBoolean("show_key_counters", it.showCounters)
+                ThemeColorStore.setMode(this, currentKeyMode(), it.mode)
+                if (it.mode == ThemeColorStore.BASIC) ThemeColorStore.writeBasic(this, it.basic, it.trail2, it.shadow2)
+                it.advanced.forEach { (target, colors) -> ThemeColorStore.writeAdvanced(this, currentKeyMode(), target, colors) }
+            }
             putBoolean("is_keyviewer_configured", true)
             apply()
         }
 
         triggerOverlayRefresh()
+        ThemeDraftBridge.draft = null
+        advancedDraft.clear()
         Toast.makeText(this, getString(R.string.toast_config_saved), Toast.LENGTH_SHORT).show()
         finish()
     }
@@ -1256,7 +1442,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         if (!pref.contains("is_first_theme_setup")) {
             val editor = pref.edit()
             editor.putBoolean("is_first_theme_setup", true)
-            editor.putInt("saved_preset_index", 0)
+            editor.putInt("saved_preset_index_${currentKeyMode()}_$colorMode", 0)
 
             editor.putString("theme_text_color", "#FFFFFF")
             editor.putString("theme_text_color_pressed", "#FF000000")
@@ -1277,6 +1463,14 @@ class KeyViewerConfigActivity : AppCompatActivity() {
 
             editor.apply()
         }
+    }
+
+    override fun onDestroy() {
+        if (isFinishing) {
+            ThemeDraftBridge.draft = null
+            advancedDraft.clear()
+        }
+        super.onDestroy()
     }
 
     override fun onResume() {
