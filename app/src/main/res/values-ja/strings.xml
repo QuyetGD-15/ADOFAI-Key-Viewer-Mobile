@@ -1,0 +1,108 @@
+<resources>
+    <string name="app_name">Key Viewer Overlay</string>
+    <string name="accessibility_desc">Key Viewer Overlayのタッチ検出サービス</string>
+    <string name="control_panel">コントロールパネル</string>
+    <string name="check_shizuku">Shizukuを確認</string>
+    <string name="shizuku_status_checking">状態: 確認中...</string>
+    <string name="toggle_overlay">オーバーレイの切り替え</string>
+    <string name="config_hitbox">ヒットボックス設定</string>
+    <string name="config_key_viewer">Key Viewer設定</string>
+    <string name="shizuku_permission_granted">Shizukuの権限が許可されました！</string>
+    <string name="shizuku_permission_denied">Shizukuの権限が拒否されました。</string>
+    <string name="shizuku_disconnected">Shizukuが切断されました！</string>
+    <string name="overlay_use_notification">通知バーを使用</string>
+    <string name="overlay_start_hint">ここをタップして開始</string>
+    <string name="shizuku_running">状態: Shizukuは実行中</string>
+    <string name="shizuku_not_connected_or_no_permission">状態: Shizuku未接続または権限なし</string>
+    <string name="shizuku_not_running">状態: Shizukuは実行されていません</string>
+    <string name="shizuku_error">状態: Shizuku接続エラー</string>
+    <string name="shizuku_not_found">Shizukuが見つかりません</string>
+    <string name="shizuku_ready">Shizukuの準備ができました！</string>
+    <string name="shizuku_requesting_permission">権限をリクエスト中...</string>
+    <string name="shizuku_paused">Shizuku: 一時停止</string>
+    <string name="main_mode_label">モード</string>
+    <string name="main_source_touch">タッチ (Shizuku)</string>
+    <string name="main_source_keyboard">キーボード (ユーザー補助)</string>
+    <string name="main_card_shizuku_title">Shizuku権限 (タッチ)</string>
+    <string name="main_card_acc_title">ユーザー補助権限 (キーボード)</string>
+    <string name="main_acc_status_granted">状態: 権限許可済み</string>
+    <string name="main_acc_status_pending">状態: 権限を待機中...</string>
+    <string name="main_acc_btn">ユーザー補助権限を許可</string>
+    <string name="main_btn_mapping">キー割り当て</string>
+    <string name="main_toast_restarted">%sで再起動しました</string>
+    <string name="main_toast_saved_mode">%sモードを保存しました</string>
+    <string name="accessibility_requirement_title">ユーザー補助権限が必要です</string>
+    <string name="accessibility_requirement_desc">Key Viewerにこの権限が必要な理由
+
+システム（特にGame Turbo）は、ゲーム上に全画面オーバーレイを検出すると、タッチスルーを自動的にブロックすることがあります。
+
+滑らかなリアルタイムの「タッチポイント」を描画し、遅延なくタッチスルーできるようにするため、アプリはユーザー補助の表示権限を使用します。
+
+🔒 プライバシーへの取り組み:
+アプリは画面の内容を読み取らず、個人データも収集しません。この権限はタッチポイントのグラフィック描画のみに使用されます。</string>
+    <string name="grant_permission_now">今すぐ権限を許可</string>
+    <string name="go_back">戻る</string>
+    <string name="toast_enter_game">ゲームに入ってからkeyviewerを開いてください</string>
+    <string name="toast_landscape_only">Keyviewerオーバーレイは横画面でのみ動作します</string>
+    <string name="notif_toggle_on">キーをオフ</string>
+    <string name="notif_toggle_off">キーをオン</string>
+    <string name="notif_show_touches">タッチを表示</string>
+    <string name="notif_hide_touches">タッチを非表示</string>
+    <string name="notif_open_app">アプリ</string>
+    <string name="notif_content_title">Key Viewer Overlay</string>
+    <string name="notif_content_text">下のボタンで操作します。</string>
+    <string name="kps_label">KPS</string>
+    <string name="total_label">合計</string>
+    <string name="notif_channel_name">オーバーレイサービスチャンネル</string>
+    <string name="toast_config_saved">設定を保存しました</string>
+    <string name="toast_hitbox_reset">標準の初期値に戻しました</string>
+    <string name="hitbox_config_hint">中央をドラッグして移動し、4隅をドラッグしてサイズを変更</string>
+    <string name="reset_default">初期値に戻す</string>
+    <string name="save">保存</string>
+    <string name="key_viewer_config_title">KEY VIEWER設定</string>
+    <string name="section_key">1. KEY</string>
+    <string name="pos_x_label">X位置: %d</string>
+    <string name="pos_y_label">Y位置: %d</string>
+    <string name="scale_label">拡大率: %.1f</string>
+    <string name="key_width_label">キー幅: %d</string>
+    <string name="key_height_label">キー高さ: %d</string>
+    <string name="spacing_label">間隔: %d</string>
+    <string name="border_width_label">境界線の幅: %d dp</string>
+    <string name="corner_radius_label">角の丸み: %d dp</string>
+    <string name="section_key_rain">2. KEY RAIN</string>
+    <string name="theme_keyrain_enabled">Key Rainエフェクトを有効化</string>
+    <string name="theme_mode_basic">基本</string>
+    <string name="theme_mode_advanced">詳細</string>
+    <string name="theme_edit_target">色を編集中:</string>
+    <string name="theme_target_key">キー %d</string>
+    <string name="theme_advanced_hint">各キー、KPS、合計には固有の配色があります。対象を選び、下の色を編集してください。</string>
+    <string name="section_theme">3. テーマ</string>
+    <string name="theme_text_group">1. 文字</string>
+    <string name="theme_colors_group">2. 色</string>
+    <string name="theme_bold">太字</string>
+    <string name="theme_italic">斜体</string>
+    <string name="theme_underline">下線</string>
+    <string name="theme_text_size">文字サイズ: %d sp</string>
+    <string name="theme_text_color">文字色 (通常)</string>
+    <string name="theme_text_color_pressed">文字色 (押下時)</string>
+    <string name="theme_bg_normal">背景色 (通常)</string>
+    <string name="theme_bg_pressed">背景色 (押下時)</string>
+    <string name="theme_border_normal">境界線の色 (通常)</string>
+    <string name="theme_border_pressed">境界線の色 (押下時)</string>
+    <string name="theme_rain_color">Rainの色</string>
+    <string name="theme_rain_shadow">Rainの影の色</string>
+    <string name="theme_hex_hint">HEXを入力（例: #FFFFFF）</string>
+    <string name="color_picker_title">色を選択</string>
+    <string name="color_r">R</string><string name="color_g">G</string><string name="color_b">B</string><string name="color_a">A</string>
+    <string name="color_ok">OK</string><string name="color_cancel">キャンセル</string>
+    <string name="speed_label">速度: %.1f</string><string name="limit_label">飛行上限: %d</string><string name="reset">リセット</string><string name="save_preset">保存</string>
+    <string name="preset_default">初期設定</string><string name="preset_jipper">Jipper</string><string name="preset_custom_1">カスタム 1</string><string name="preset_custom_2">カスタム 2</string><string name="preset_custom_3">カスタム 3</string>
+    <string name="theme_color_text_normal">文字色 (通常)</string><string name="theme_color_text_pressed">文字色 (押下時)</string><string name="theme_color_bg_normal">背景色 (通常)</string><string name="theme_color_bg_pressed">背景色 (押下時)</string><string name="theme_color_border_normal">境界線の色 (通常)</string><string name="theme_color_border_pressed">境界線の色 (押下時)</string><string name="theme_color_rain">Key Rainの色</string><string name="theme_color_rain_shadow">Rainの影の色</string>
+    <string name="toast_cannot_overwrite_system">システムプリセットは上書きできません！</string><string name="toast_preset_saved">%sに保存しました！</string><string name="log_save_success">ログファイルを保存しました！</string><string name="log_save_error">ファイル保存エラー: %s</string><string name="log_msg_export">ユーザーがログを.txtファイルにエクスポートしました</string><string name="crash_dialog_title">前回のセッションでアプリがクラッシュしました 😢</string><string name="crash_copy_code">エラーコードをコピー</string><string name="crash_ignore">無視</string><string name="toast_copied">コピーしました</string><string name="reset_total">合計をリセット</string><string name="theme_show_counters">各キーのカウンターを表示</string><string name="toast_total_reset">合計クリック数を0にリセットしました</string><string name="toast_reset_default">標準の初期値に戻しました</string>
+    <string name="current_language">言語: 日本語</string><string name="switch_language">English</string><string name="select_apps">自動オンするゲームを選択</string><string name="usage_stats_required">KeyViewerの自動切り替えには使用状況へのアクセス権限が必要です</string><string name="dialog_select_apps_title">アプリを選択</string><string name="header_recommended">おすすめ</string><string name="header_others">その他のアプリ</string><string name="cancel">キャンセル</string>
+    <string name="xiaomi_warning_title">⚠️ Xiaomi/POCO端末のお知らせ</string><string name="xiaomi_warning_msg">MIUI/HyperOSで自動表示を正しく動作させるには、このアプリのバッテリー最適化を無効にする必要があります。\n\n「設定へ移動」→「電源」または「バッテリー」→「制限なし」を選択してください。</string><string name="xiaomi_warning_settings">設定へ移動</string><string name="xiaomi_warning_cancel">キャンセル</string><string name="xiaomi_warning_continue">無効にしました、続行</string><string name="btn_export_log">ログをエクスポート (.txt)</string><string name="toast_overlay_permission_required">他のアプリの上に表示する権限を許可してください！</string>
+    <string name="setup_title">操作方法を選択</string><string name="setup_touch_title">タッチスクリーン</string><string name="setup_touch_desc">画面上でヒットボックスを使用\n（Shizukuが必要）</string><string name="setup_keyboard_title">物理キーボード</string><string name="setup_keyboard_desc">OTG/Bluetooth用\n（ユーザー補助が必要）</string><string name="setup_step1_title">言語を選択 / Select Language</string><string name="setup_step1_desc">セットアップを開始するには表示言語を選択してください。</string><string name="setup_step2_title">操作方法</string><string name="setup_step2_desc">ゲームの操作方法を選択してください。ハードウェアリソースを最適化し、ラグを防ぎます。</string><string name="setup_step2_touch">タッチ (Shizuku)</string><string name="setup_step2_keyboard">物理キーボード (ユーザー補助)</string><string name="setup_step3_title">システム権限</string><string name="setup_step3_shizuku_title">Shizuku権限</string><string name="setup_step3_shizuku_desc">画面上のタッチ操作をシミュレートするにはShizuku権限が必要です。</string><string name="setup_step3_accessibility_title">ユーザー補助権限</string><string name="setup_step3_accessibility_desc">遅延なく物理キー信号を受け取るにはユーザー補助権限が必要です。</string><string name="setup_step3_status_ready">状態: 準備完了</string><string name="setup_step3_status_shizuku_denied">状態: Shizuku権限未許可</string><string name="setup_step3_status_acc_pending">状態: 権限を待機中...</string><string name="setup_step3_btn_shizuku">Shizukuを設定</string><string name="setup_step3_btn_acc">ユーザー補助設定を開く</string><string name="setup_step3_overlay_status">他のアプリの上に表示する権限: %s</string><string name="setup_step3_overlay_btn">表示権限を許可</string><string name="setup_step3_status_granted">許可済み</string><string name="setup_step3_status_denied">未許可</string><string name="setup_step4_title">キー数</string><string name="setup_step4_desc">最もよく使うキー数（例: 6 KEY）を選択してください。いつでも変更できます。</string><string name="setup_step5_title">詳細設定</string><string name="setup_step5_desc">画面上のタッチポイント位置を設定するか、対応する物理キーを割り当てて開始できます。</string><string name="setup_step5_btn_hitbox">ヒットボックスをカスタマイズ</string><string name="setup_step5_btn_mapping">キー割り当て</string><string name="setup_step6_title">UIのカスタマイズ</string><string name="setup_step6_desc">画面に表示するキーの色、サイズ、不透明度を好みに合わせて設定します。</string><string name="setup_step6_btn">KeyViewer設定</string><string name="setup_step7_title">セットアップ完了</string><string name="setup_step7_desc">プレイするゲームを選択してください。KeyViewerはそのゲームに合わせて自動的に起動・終了します。</string><string name="setup_btn_back">戻る</string><string name="setup_btn_next">続行</string><string name="setup_btn_finish">完了</string><string name="setup_btn_grant_now">今すぐ権限を許可</string><string name="setup_skip">この手順をスキップ</string><string name="setup_toast_select_lang">言語を選択してください</string><string name="setup_toast_select_source">入力ソースを選択してください</string><string name="setup_toast_grant_both">続行するには両方の権限を許可してください</string><string name="setup_toast_grant_shizuku">続行するにはShizuku権限を許可してください</string><string name="setup_toast_grant_acc">続行するにはユーザー補助権限を許可してください</string><string name="setup_toast_grant_overlay">他のアプリの上に表示する権限を許可してください</string>
+    <string name="mapping_dialog_title">キー割り当て</string><string name="mapping_row_key">キー %d</string><string name="mapping_status_none">未割り当て</string><string name="mapping_status_waiting">[ 入力を待機中... ]</string><string name="mapping_btn_done">完了</string><string name="xiaomi_dialog_title">XIAOMI端末の警告</string><string name="xiaomi_dialog_msg">MIUI/HyperOSはバックグラウンドアプリを終了させることがあります。KeyViewer設定 → バッテリーセーバー → 「制限なし」を選択し、安定動作のため「ポップアップウィンドウを表示」権限を許可してください！</string><string name="xiaomi_dialog_btn">了解、続行</string>
+    <string name="update_available_title">新しいバージョンがあります！ (%s)</string><string name="update_available_msg">新しい変更:\n\n%1$s\n\n今すぐダウンロードしてインストールしますか？</string><string name="update_btn_now">今すぐ更新</string><string name="update_btn_later">後で</string><string name="update_toast_downloading">更新をダウンロード中...</string><string name="update_notif_title">ADOFAI Key Viewer 更新</string><string name="update_notif_desc">バージョン %s をダウンロード中...</string><string name="update_error_install">インストーラーを開けません！</string><string name="update_check_manual">更新を確認中...</string><string name="update_content_desc">更新を確認</string><string name="theme_rain_color_row2">Rainの色 (2行目)</string><string name="theme_rain_shadow_row2">Rainの影 (2行目)</string><string name="setup_step4_extended_enabled">拡張モード</string><string name="setup_step4_extended_disabled">拡張モード (キーボードのみ)</string><string name="toast_force_10k_touch">タッチモードは%dキーに対応していないため、10キーに変更しました</string><string name="pref_enable_shadow">KeyRainの影</string><string name="pref_performance_shadow">軽量な影</string>
+    <string name="theme_editor_basic_desc">すべてのキー、KPS、合計に1つの配色を使用します。</string><string name="theme_editor_colors">色</string><string name="theme_editor_text">文字</string><string name="theme_editor_background">背景</string><string name="theme_editor_border">境界線</string><string name="theme_editor_rain">Rain</string><string name="theme_editor_rain_row1">Rain 1行目</string><string name="theme_editor_rain_color_row1">Rainの色 1行目</string><string name="theme_editor_rain_shadow_row1">Rainの影 1行目</string><string name="theme_editor_rain_row2">Rain 2行目</string><string name="theme_editor_pressed">押下状態</string><string name="theme_editor_text_pressed">押下時の文字</string><string name="theme_editor_background_pressed">押下時の背景</string><string name="theme_editor_border_pressed">押下時の境界線</string><string name="theme_editor_target_hint">下のリストから対象を選択してください。左のプレビューは表示専用で、タッチして対象を選択することはできません。</string><string name="theme_editor_editing_target">編集中の対象: %s</string><string name="theme_editor_custom_preset">カスタム %d</string><string name="theme_editor_preset_mode">プリセット %dK</string><string name="theme_editor_save_preset">プリセットを保存</string><string name="theme_editor_preset_saved">%sを保存しました</string><string name="theme_editor_invalid_hex">無効なHEXコード</string><string name="main_copy_log_error">クリップボードにコピーできませんでした！</string><string name="main_crash_log_truncated">…\n\n（表示用に省略）</string><string name="language_vietnamese">ベトナム語</string><string name="language_english">英語</string><string name="counter_zero">0</string><string name="key_mode_format">%d KEY</string><string name="select_language">言語を選択</string>
+</resources>

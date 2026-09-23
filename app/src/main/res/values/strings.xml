@@ -258,4 +258,5 @@ ffffffffdaad    <string name="pref_enable_shadow">Bóng Rain</string>
     <string name="language_english">English</string>
     <string name="counter_zero">0</string>
     <string name="key_mode_format">%d KEY</string>
+    <string name="select_language">Chọn ngôn ngữ</string>
 </resources>

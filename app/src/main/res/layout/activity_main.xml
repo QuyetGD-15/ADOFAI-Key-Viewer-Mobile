@@ -49,12 +49,12 @@
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:contentDescription="@string/select_language"
+                app:icon="@drawable/ic_language_globe"
+                app:iconTint="@color/md3_primary"
                 android:minWidth="0dp"
                 android:minHeight="0dp"
-                android:padding="8dp"
-                android:text="@string/switch_language"
-                android:textColor="@color/md3_primary"
-                android:textSize="12sp" />
+                android:padding="8dp" />
         </LinearLayout>
 
         <com.google.android.material.button.MaterialButton

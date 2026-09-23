@@ -95,16 +95,23 @@ class SetupActivity : AppCompatActivity() {
     }
 
     private fun setupStepListeners() {
-        // Step 1: Language
-        findViewById<Button>(R.id.btnLangVi).setOnClickListener {
-            selectedLanguage = "vi"
-            updateLanguage("vi")
-            moveToNextStep()
-        }
-        findViewById<Button>(R.id.btnLangEn).setOnClickListener {
-            selectedLanguage = "en"
-            updateLanguage("en")
-            moveToNextStep()
+        // Step 1: Language — shared order and flags with the main screen.
+        val languageOptions = findViewById<LinearLayout>(R.id.languageOptions)
+        SupportedLanguages.all.forEach { language ->
+            val button = MaterialButton(this).apply {
+                text = language.label
+                isAllCaps = false
+                textAlignment = View.TEXT_ALIGNMENT_VIEW_START
+                minHeight = (56 * resources.displayMetrics.density).toInt()
+                setOnClickListener {
+                    selectedLanguage = language.tag
+                    updateLanguage(language.tag)
+                    moveToNextStep()
+                }
+            }
+            languageOptions.addView(button, LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, (56 * resources.displayMetrics.density).toInt()
+            ).apply { bottomMargin = (8 * resources.displayMetrics.density).toInt() })
         }
 
         // Step 2: Input Source
@@ -327,9 +334,7 @@ class SetupActivity : AppCompatActivity() {
     }
 
     private fun updateLanguage(lang: String) {
-        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
-        pref.edit().putString("app_language", lang).apply()
-        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(lang))
+        SupportedLanguages.apply(this, lang)
     }
 
     private fun finishSetup() {

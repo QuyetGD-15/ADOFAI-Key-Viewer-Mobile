@@ -40,22 +40,17 @@
                 android:textColor="#88FFFFFF"
                 android:textSize="14sp" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnLangVi"
-                style="@style/Widget.Material3.Button.TonalButton"
+            <ScrollView
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="16dp"
-                android:text="@string/language_vietnamese"
-                app:cornerRadius="16dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnLangEn"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:text="@string/language_english"
-                app:cornerRadius="16dp" />
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:fillViewport="false">
+                <LinearLayout
+                    android:id="@+id/languageOptions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </ScrollView>
         </LinearLayout>
 
         <!-- Step 2: Input Source -->

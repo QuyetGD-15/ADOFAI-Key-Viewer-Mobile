@@ -434,13 +434,16 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         updateLanguageUI()
         setupKeyModeDropdown()
         btnToggleLanguage.setOnClickListener {
-            showLoading()
-            val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
-            val currentLang = pref.getString("app_language", "en")
-            val newLocale = if (currentLang == "en") "vi" else "en"
-            
-            pref.edit().putString("app_language", newLocale).apply()
-            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(newLocale))
+            val options = SupportedLanguages.all.map { it.label }.toTypedArray()
+            val selected = SupportedLanguages.all.indexOfFirst { it.tag == SupportedLanguages.currentTag(this) }.coerceAtLeast(0)
+            MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.select_language)
+                .setSingleChoiceItems(options, selected) { dialog, which ->
+                    SupportedLanguages.apply(this, SupportedLanguages.all[which].tag)
+                    dialog.dismiss()
+                }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
         }
 
         handleIncomingIntent(intent)
@@ -1128,18 +1131,18 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
     private fun initDefaultLanguage() {
         val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
-        
+
         // Kiểm tra xem đã có key ngôn ngữ trong bộ nhớ chưa (chưa có nghĩa là lần mở app đầu tiên)
         if (!pref.contains("app_language")) {
             // Lấy mã ngôn ngữ hiện tại của hệ điều hành
             val systemLang = java.util.Locale.getDefault().language
-            
+
             // Nếu là tiếng Việt thì dùng "vi", tất cả ngôn ngữ khác đều fallback về tiếng Anh "en"
             val defaultAppLang = if (systemLang == "vi") "vi" else "en"
-            
+
             // Lưu lựa chọn này vào bộ nhớ để các lần mở app sau không bị ghi đè
             pref.edit().putString("app_language", defaultAppLang).apply()
-            
+
             // Áp dụng ngôn ngữ cho ứng dụng ngay lần đầu
             AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(defaultAppLang))
         }
