@@ -85,8 +85,8 @@ object ThemeColorStore {
                 systemKey(0, 2).copy(textNormal = "#FFFFFFFF", borderNormal = "#7A497F", bgNormal = "#3E7A497F", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#7A497F", shadow = "#7A497F"),
                 systemKey(0, 3).copy(textNormal = "#FFFFFFFF", borderNormal = "#505DA0", bgNormal = "#3E505DA0", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#505DA0", shadow = "#505DA0")
             ),
-            kps = kps(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000"),
-            total = total(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000")
+            kps = kps(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#CF203E", bgNormal = "#3FCF203E"),
+            total = total(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#505DA0", bgNormal = "#3F505DA0")
         ),
         6 to SystemThemePreset(
             name = SYSTEM_NAMES[0],
@@ -98,8 +98,8 @@ object ThemeColorStore {
                 systemKey(0, 4).copy(textNormal = "#FFFFFFFF", borderNormal = "#69518C", bgNormal = "#3F69518C", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#69518C", shadow = "#69518C"),
                 systemKey(0, 5).copy(textNormal = "#FFFFFFFF", borderNormal = "#505DA0", bgNormal = "#3F505DA0", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#505DA0", shadow = "#505DA0")
             ),
-            kps = kps(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000"),
-            total = total(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000")
+            kps = kps(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#CF203E", bgNormal = "#3FCF203E"),
+            total = total(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#505DA0", bgNormal = "#3F505DA0")
         ),
         8 to SystemThemePreset(
             name = SYSTEM_NAMES[0],
@@ -113,8 +113,8 @@ object ThemeColorStore {
                 systemKey(0, 6).copy(textNormal = "#FFFFFFFF", borderNormal = "#625492", bgNormal = "#3F625492", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#625492", shadow = "#625492"),
                 systemKey(0, 7).copy(textNormal = "#FFFFFFFF", borderNormal = "#505DA0", bgNormal = "#3F505DA0", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#505DA0", shadow = "#505DA0")
             ),
-            kps = kps(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000"),
-            total = total(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000")
+            kps = kps(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#CF203E", bgNormal = "#3FCF203E"),
+            total = total(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#505DA0", bgNormal = "#3F505DA0")
         ),
         10 to SystemThemePreset(
             name = SYSTEM_NAMES[0],
@@ -130,8 +130,8 @@ object ThemeColorStore {
                 systemKey(0, 8).copy(textNormal = "#FFFFFFFF", borderNormal = "#993A68", bgNormal = "#3F993A68", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898"),
                 systemKey(0, 9).copy(textNormal = "#FFFFFFFF", borderNormal = "#864376", bgNormal = "#3F864376", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898")
             ),
-            kps = kps(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000"),
-            total = total(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000")
+            kps = kps(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#CF203E", bgNormal = "#3FCF203E"),
+            total = total(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#505DA0", bgNormal = "#3F505DA0")
         ),
         12 to SystemThemePreset(
             name = SYSTEM_NAMES[0],
@@ -149,8 +149,8 @@ object ThemeColorStore {
                 systemKey(0, 10).copy(textNormal = "#FFFFFFFF", borderNormal = "#864376", bgNormal = "#3F864376", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898"),
                 systemKey(0, 11).copy(textNormal = "#FFFFFFFF", borderNormal = "#744C84", bgNormal = "#3F744C84", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898")
             ),
-            kps = kps(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000"),
-            total = total(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000")
+            kps = kps(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#CF203E", bgNormal = "#3FCF203E"),
+            total = total(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#505DA0", bgNormal = "#3F505DA0")
         ),
         16 to SystemThemePreset(
             name = SYSTEM_NAMES[0],
@@ -172,14 +172,15 @@ object ThemeColorStore {
                 systemKey(0, 14).copy(textNormal = "#FFFFFFFF", borderNormal = "#625492", bgNormal = "#3F625492", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898"),
                 systemKey(0, 15).copy(textNormal = "#FFFFFFFF", borderNormal = "#505DA0", bgNormal = "#3F505DA0", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898")
             ),
-            kps = kps(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000"),
-            total = total(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000")
+            kps = kps(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#CF203E", bgNormal = "#3FCF203E"),
+            total = total(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#505DA0", bgNormal = "#3F505DA0")
         )
     )
 
+
     // ==============================================================
-// 2. SLOT 1: PRESET UNDNAME 2
-// ==============================================================
+    // 2. SLOT 1: PRESET UNDNAME 2
+    // ==============================================================
     private val PRESET_UNDNAME2: Map<Int, SystemThemePreset> = mapOf(
         4 to SystemThemePreset(
             name = SYSTEM_NAMES[1],
@@ -189,8 +190,8 @@ object ThemeColorStore {
                 systemKey(1, 2).copy(textNormal = "#FFFFFFFF", borderNormal = "#B88DAF", bgNormal = "#3FB88DAF", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#B88DAF", shadow = "#B88DAF"),
                 systemKey(1, 3).copy(textNormal = "#FFFFFFFF", borderNormal = "#E85C90", bgNormal = "#3FE85C90", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#E85C90", shadow = "#E85C90")
             ),
-            kps = kps(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000"),
-            total = total(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000")
+            kps = kps(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC"),
+            total = total(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#E85C90", bgNormal = "#3FE85C90")
         ),
         6 to SystemThemePreset(
             name = SYSTEM_NAMES[1],
@@ -202,8 +203,8 @@ object ThemeColorStore {
                 systemKey(1, 4).copy(textNormal = "#FFFFFFFF", borderNormal = "#CB79A2", bgNormal = "#3FCB79A2", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#CB79A2", shadow = "#CB79A2"),
                 systemKey(1, 5).copy(textNormal = "#FFFFFFFF", borderNormal = "#E85C90", bgNormal = "#3FE85C90", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#E85C90", shadow = "#E85C90")
             ),
-            kps = kps(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000"),
-            total = total(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000")
+            kps = kps(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC"),
+            total = total(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#E85C90", bgNormal = "#3FE85C90")
         ),
         8 to SystemThemePreset(
             name = SYSTEM_NAMES[1],
@@ -217,8 +218,8 @@ object ThemeColorStore {
                 systemKey(1, 6).copy(textNormal = "#FFFFFFFF", borderNormal = "#D3719D", bgNormal = "#3FD3719D", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#D3719D", shadow = "#D3719D"),
                 systemKey(1, 7).copy(textNormal = "#FFFFFFFF", borderNormal = "#E85C90", bgNormal = "#3FE85C90", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#E85C90", shadow = "#E85C90")
             ),
-            kps = kps(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000"),
-            total = total(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000")
+            kps = kps(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC"),
+            total = total(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#E85C90", bgNormal = "#3FE85C90")
         ),
         10 to SystemThemePreset(
             name = SYSTEM_NAMES[1],
@@ -234,8 +235,8 @@ object ThemeColorStore {
                 systemKey(1, 8).copy(textNormal = "#FFFFFFFF", borderNormal = "#96B0C5", bgNormal = "#3F96B0C5", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898"),
                 systemKey(1, 9).copy(textNormal = "#FFFFFFFF", borderNormal = "#AA9BB7", bgNormal = "#3FAA9BB7", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898")
             ),
-            kps = kps(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000"),
-            total = total(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000")
+            kps = kps(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC"),
+            total = total(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#E85C90", bgNormal = "#3FE85C90")
         ),
         12 to SystemThemePreset(
             name = SYSTEM_NAMES[1],
@@ -253,8 +254,8 @@ object ThemeColorStore {
                 systemKey(1, 10).copy(textNormal = "#FFFFFFFF", borderNormal = "#AA9BB7", bgNormal = "#3FAA9BB7", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898"),
                 systemKey(1, 11).copy(textNormal = "#FFFFFFFF", borderNormal = "#BF86AA", bgNormal = "#3FBF86AA", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898")
             ),
-            kps = kps(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000"),
-            total = total(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000")
+            kps = kps(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC"),
+            total = total(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#E85C90", bgNormal = "#3FE85C90")
         ),
         16 to SystemThemePreset(
             name = SYSTEM_NAMES[1],
@@ -276,14 +277,15 @@ object ThemeColorStore {
                 systemKey(1, 14).copy(textNormal = "#FFFFFFFF", borderNormal = "#D3719D", bgNormal = "#3FD3719D", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898"),
                 systemKey(1, 15).copy(textNormal = "#FFFFFFFF", borderNormal = "#E85C90", bgNormal = "#3FE85C90", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898")
             ),
-            kps = kps(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000"),
-            total = total(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000")
+            kps = kps(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC"),
+            total = total(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#E85C90", bgNormal = "#3FE85C90")
         )
     )
 
+
     // ==============================================================
-// 3. SLOT 2: PRESET UNDNAME 3
-// ==============================================================
+    // 3. SLOT 2: PRESET UNDNAME 3
+    // ==============================================================
     private val PRESET_UNDNAME3: Map<Int, SystemThemePreset> = mapOf(
         4 to SystemThemePreset(
             name = SYSTEM_NAMES[2],
@@ -293,8 +295,8 @@ object ThemeColorStore {
                 systemKey(2, 2).copy(textNormal = "#FFFFFFFF", borderNormal = "#63BF8D", bgNormal = "#3F63BF8D", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#63BF8D", shadow = "#63BF8D"),
                 systemKey(2, 3).copy(textNormal = "#FFFFFFFF", borderNormal = "#4FFF54", bgNormal = "#3F4FFF54", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#4FFF54", shadow = "#4FFF54")
             ),
-            kps = kps(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000"),
-            total = total(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000")
+            kps = kps(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF"),
+            total = total(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#4FFF54", bgNormal = "#3F4FFF54")
         ),
         6 to SystemThemePreset(
             name = SYSTEM_NAMES[2],
@@ -306,8 +308,8 @@ object ThemeColorStore {
                 systemKey(2, 4).copy(textNormal = "#FFFFFFFF", borderNormal = "#5BD876", bgNormal = "#3F5BD876", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#5BD876", shadow = "#5BD876"),
                 systemKey(2, 5).copy(textNormal = "#FFFFFFFF", borderNormal = "#4FFF54", bgNormal = "#3F4FFF54", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#4FFF54", shadow = "#4FFF54")
             ),
-            kps = kps(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000"),
-            total = total(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000")
+            kps = kps(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF"),
+            total = total(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#4FFF54", bgNormal = "#3F4FFF54")
         ),
         8 to SystemThemePreset(
             name = SYSTEM_NAMES[2],
@@ -321,8 +323,8 @@ object ThemeColorStore {
                 systemKey(2, 6).copy(textNormal = "#FFFFFFFF", borderNormal = "#58E36C", bgNormal = "#3F58E36C", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#58E36C", shadow = "#58E36C"),
                 systemKey(2, 7).copy(textNormal = "#FFFFFFFF", borderNormal = "#4FFF54", bgNormal = "#3F4FFF54", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#4FFF54", shadow = "#4FFF54")
             ),
-            kps = kps(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000"),
-            total = total(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000")
+            kps = kps(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF"),
+            total = total(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#4FFF54", bgNormal = "#3F4FFF54")
         ),
         10 to SystemThemePreset(
             name = SYSTEM_NAMES[2],
@@ -338,8 +340,8 @@ object ThemeColorStore {
                 systemKey(2, 8).copy(textNormal = "#FFFFFFFF", borderNormal = "#7291B6", bgNormal = "#3F7291B6", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898"),
                 systemKey(2, 9).copy(textNormal = "#FFFFFFFF", borderNormal = "#69AC9D", bgNormal = "#3F69AC9D", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898")
             ),
-            kps = kps(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000"),
-            total = total(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000")
+            kps = kps(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF"),
+            total = total(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#4FFF54", bgNormal = "#3F4FFF54")
         ),
         12 to SystemThemePreset(
             name = SYSTEM_NAMES[2],
@@ -357,8 +359,8 @@ object ThemeColorStore {
                 systemKey(2, 10).copy(textNormal = "#FFFFFFFF", borderNormal = "#69AC9D", bgNormal = "#3F69AC9D", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898"),
                 systemKey(2, 11).copy(textNormal = "#FFFFFFFF", borderNormal = "#60C885", bgNormal = "#3F60C885", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898")
             ),
-            kps = kps(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000"),
-            total = total(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000")
+            kps = kps(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF"),
+            total = total(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#4FFF54", bgNormal = "#3F4FFF54")
         ),
         16 to SystemThemePreset(
             name = SYSTEM_NAMES[2],
@@ -380,8 +382,8 @@ object ThemeColorStore {
                 systemKey(2, 14).copy(textNormal = "#FFFFFFFF", borderNormal = "#58E36C", bgNormal = "#3F58E36C", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898"),
                 systemKey(2, 15).copy(textNormal = "#FFFFFFFF", borderNormal = "#4FFF54", bgNormal = "#3F4FFF54", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898")
             ),
-            kps = kps(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000"),
-            total = total(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#FFFFFFFF", bgNormal = "#3F000000")
+            kps = kps(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF"),
+            total = total(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#4FFF54", bgNormal = "#3F4FFF54")
         )
     )
 
