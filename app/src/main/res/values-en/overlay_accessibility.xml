@@ -1,0 +1,8 @@
+<resources>
+<string name="overlay_accessibility_title">Accessibility · Overlay</string>
+<string name="overlay_accessibility_required">Off · Enable manually in Settings</string>
+<string name="overlay_accessibility_connected">Connected · Overlay ready</string>
+<string name="overlay_accessibility_connecting">Enabled · Waiting for connection</string>
+<string name="overlay_accessibility_desc">Manually enable Key Viewer Overlay in Accessibility settings, then return and wait for connection. The service shows the overlay in both modes and receives physical keys without reading screen content. Touch mode also needs Shizuku to read touch input.</string>
+<string name="overlay_touch_permission_desc">Touch mode has two separate requirements: Shizuku to read touches, and the manually enabled, connected Accessibility service to show the overlay.</string>
+</resources>

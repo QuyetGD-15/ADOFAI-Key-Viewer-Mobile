@@ -1,0 +1,17 @@
+<resources>
+<string name="permission_shizuku_title">Shizuku · Entrada táctil</string>
+<string name="permission_shizuku_purpose">Lee las posiciones de los toques para las zonas de pulsación en modo táctil.</string>
+<string name="permission_accessibility_purpose">Muestra la superposición en ambos modos y recibe las pulsaciones del teclado físico.</string>
+<string name="permission_shizuku_steps">1. Instala e inicia Shizuku siguiendo sus instrucciones.\n2. Vuelve aquí, pulsa Permitir Shizuku y confirma.\n3. Activa Accesibilidad por separado en Ajustes para mostrar la superposición.</string>
+<string name="permission_accessibility_steps">1. Abre Ajustes → Accesibilidad → Aplicaciones instaladas.\n2. Selecciona Key Viewer Overlay y activa manualmente su servicio (TouchRendererService).\n3. Vuelve y espera a que indique Conectado. Si sigue conectándose, revisa el servicio en Ajustes.\n¿No lo encuentras? Busca «Accesibilidad» en los ajustes del sistema.</string>
+<string name="permission_shizuku_scope">Este permiso permite leer eventos táctiles mediante getevent. No simula toques ni activa Accesibilidad. El modo teclado no necesita Shizuku.</string>
+<string name="permission_accessibility_scope">El servicio dibuja una superposición que deja pasar los toques y recibe las teclas asignadas. No lee el contenido de la pantalla. Puedes desactivarlo en Ajustes cuando quieras.</string>
+<string name="permission_shizuku_unavailable">Sin conexión · Inicia Shizuku</string>
+<string name="permission_shizuku_ready">Permitido · Entrada táctil lista</string>
+<string name="permission_shizuku_required">Se necesita permiso para leer los toques</string>
+<string name="permission_shizuku_allow">Permitir Shizuku</string>
+<string name="permission_open_shizuku">Abrir Shizuku</string>
+<string name="permission_open_settings">Abrir ajustes de Accesibilidad</string>
+<string name="permission_manage">Gestionar en Ajustes</string>
+<string name="permission_close">Cerrar</string>
+</resources>

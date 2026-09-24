@@ -1,0 +1,17 @@
+<resources>
+<string name="permission_shizuku_title">Shizuku · Dokunma girişi</string>
+<string name="permission_shizuku_purpose">Dokunma modunda algılama alanları için dokunma konumlarını okur.</string>
+<string name="permission_accessibility_purpose">Her iki modda da üst katmanı gösterir ve fiziksel klavye girişini alır.</string>
+<string name="permission_shizuku_steps">1. Shizuku uygulamasını yükleyin ve uygulama içindeki yönergelerle başlatın.\n2. Buraya dönün, Shizuku izni ver düğmesine dokunun ve onaylayın.\n3. Üst katmanı göstermek için Ayarlar üzerinden Erişilebilirlik hizmetini ayrıca açın.</string>
+<string name="permission_accessibility_steps">1. Ayarlar → Erişilebilirlik → Yüklü uygulamalar yolunu açın.\n2. Key Viewer Overlay uygulamasını seçip hizmetini (TouchRendererService) elle etkinleştirin.\n3. Buraya dönüp Bağlandı durumunu bekleyin. Bağlantı tamamlanmazsa hizmeti Ayarlar üzerinden kontrol edin.\nBulamıyor musunuz? Sistem ayarlarında “Erişilebilirlik” arayın.</string>
+<string name="permission_shizuku_scope">Bu izin, getevent ile dokunma olaylarını okur. Dokunmaları taklit etmez veya Erişilebilirlik hizmetini açmaz. Klavye modu Shizuku gerektirmez.</string>
+<string name="permission_accessibility_scope">Hizmet, dokunmaları engellemeyen bir üst katman çizer ve atanmış tuşları alır. Ekran içeriğini okumaz. Ayarlar üzerinden istediğiniz zaman kapatabilirsiniz.</string>
+<string name="permission_shizuku_unavailable">Bağlı değil · Shizuku uygulamasını başlatın</string>
+<string name="permission_shizuku_ready">İzin verildi · Dokunma girişi hazır</string>
+<string name="permission_shizuku_required">Dokunma girişini okuma izni gerekiyor</string>
+<string name="permission_shizuku_allow">Shizuku izni ver</string>
+<string name="permission_open_shizuku">Shizuku uygulamasını aç</string>
+<string name="permission_open_settings">Erişilebilirlik ayarlarını aç</string>
+<string name="permission_manage">Ayarlarda yönet</string>
+<string name="permission_close">Kapat</string>
+</resources>

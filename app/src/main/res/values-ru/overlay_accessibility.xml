@@ -1,0 +1,8 @@
+<resources>
+<string name="overlay_accessibility_title">Специальные возможности · Оверлей</string>
+<string name="overlay_accessibility_required">Выключено · Включите вручную в настройках</string>
+<string name="overlay_accessibility_connected">Подключено · Оверлей готов</string>
+<string name="overlay_accessibility_connecting">Включено · Ожидание подключения</string>
+<string name="overlay_accessibility_desc">Вручную включите Key Viewer Overlay в настройках специальных возможностей, вернитесь и дождитесь подключения. Служба показывает оверлей в обоих режимах и получает физические клавиши, не читая содержимое экрана. В сенсорном режиме также нужен Shizuku для чтения касаний.</string>
+<string name="overlay_touch_permission_desc">Для сенсорного режима нужны два независимых компонента: Shizuku для чтения касаний и вручную включённая, подключённая служба специальных возможностей для показа оверлея.</string>
+</resources>

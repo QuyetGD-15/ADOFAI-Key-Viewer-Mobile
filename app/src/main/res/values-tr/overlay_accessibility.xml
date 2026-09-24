@@ -1,0 +1,8 @@
+<resources>
+<string name="overlay_accessibility_title">Erişilebilirlik · Üst katman</string>
+<string name="overlay_accessibility_required">Kapalı · Ayarlarda elle etkinleştirin</string>
+<string name="overlay_accessibility_connected">Bağlandı · Üst katman hazır</string>
+<string name="overlay_accessibility_connecting">Etkin · Bağlantı bekleniyor</string>
+<string name="overlay_accessibility_desc">Erişilebilirlik ayarlarında Key Viewer Overlay hizmetini elle etkinleştirin, ardından buraya dönüp bağlantıyı bekleyin. Hizmet her iki modda üst katmanı gösterir ve ekran içeriğini okumadan fiziksel tuşları alır. Dokunma modunda dokunmaları okumak için ayrıca Shizuku gerekir.</string>
+<string name="overlay_touch_permission_desc">Dokunma modu için iki ayrı gereksinim vardır: dokunmaları okumak için Shizuku ve üst katmanı göstermek için elle etkinleştirilmiş, bağlı Erişilebilirlik hizmeti.</string>
+</resources>

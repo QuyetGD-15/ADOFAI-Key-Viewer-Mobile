@@ -1,0 +1,8 @@
+<resources>
+<string name="overlay_accessibility_title">ユーザー補助 · オーバーレイ</string>
+<string name="overlay_accessibility_required">無効 · 設定で手動で有効にしてください</string>
+<string name="overlay_accessibility_connected">接続済み · オーバーレイの準備完了</string>
+<string name="overlay_accessibility_connecting">有効 · 接続待ち</string>
+<string name="overlay_accessibility_desc">ユーザー補助設定で Key Viewer Overlay を手動で有効にし、ここに戻って接続を待ってください。このサービスは両方のモードでオーバーレイを表示し、画面の内容を読み取らずに物理キーの入力を受け取ります。タッチモードでは、タッチ入力を読むために Shizuku も必要です。</string>
+<string name="overlay_touch_permission_desc">タッチモードには、タッチを読み取る Shizuku と、手動で有効にして接続したオーバーレイ表示用のユーザー補助サービスがそれぞれ必要です。</string>
+</resources>

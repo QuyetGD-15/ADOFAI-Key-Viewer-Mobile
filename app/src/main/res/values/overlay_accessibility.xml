@@ -1,0 +1,8 @@
+<resources>
+<string name="overlay_accessibility_title">Trợ năng · Lớp phủ</string>
+<string name="overlay_accessibility_required">Chưa bật · Bật thủ công trong Cài đặt</string>
+<string name="overlay_accessibility_connected">Đã kết nối · Lớp phủ sẵn sàng</string>
+<string name="overlay_accessibility_connecting">Đã bật · Đang chờ kết nối</string>
+<string name="overlay_accessibility_desc">Tự bật dịch vụ Key Viewer Overlay trong Cài đặt Trợ năng rồi quay lại và chờ kết nối. Dịch vụ hiển thị lớp phủ ở cả hai chế độ và nhận phím vật lý, không đọc nội dung màn hình. Chế độ cảm ứng cần thêm Shizuku để đọc cảm ứng.</string>
+<string name="overlay_touch_permission_desc">Cảm ứng cần hai điều kiện riêng: Shizuku để đọc cảm ứng và dịch vụ Trợ năng được bật thủ công, đã kết nối để hiển thị lớp phủ.</string>
+</resources>

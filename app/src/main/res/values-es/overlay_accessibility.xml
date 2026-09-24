@@ -1,0 +1,8 @@
+<resources>
+<string name="overlay_accessibility_title">Accesibilidad · Superposición</string>
+<string name="overlay_accessibility_required">Desactivado · Actívalo manualmente en Ajustes</string>
+<string name="overlay_accessibility_connected">Conectado · Superposición lista</string>
+<string name="overlay_accessibility_connecting">Activado · Esperando conexión</string>
+<string name="overlay_accessibility_desc">Activa manualmente Key Viewer Overlay en los ajustes de Accesibilidad, vuelve y espera la conexión. El servicio muestra la superposición en ambos modos y recibe las teclas físicas sin leer el contenido de la pantalla. El modo táctil también necesita Shizuku para leer los toques.</string>
+<string name="overlay_touch_permission_desc">El modo táctil tiene dos requisitos independientes: Shizuku para leer los toques y el servicio de Accesibilidad activado manualmente y conectado para mostrar la superposición.</string>
+</resources>

@@ -203,7 +203,7 @@ class KeyTrailView @JvmOverloads constructor(
             )
         }
 
-        paint.alpha = 255
+        // Preserve the alpha supplied by the theme's rain color.
         canvas.drawRect(trail.x, topY, trail.x + trail.width, bottomY, paint)
     }
 

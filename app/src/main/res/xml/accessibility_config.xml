@@ -4,4 +4,4 @@
     android:accessibilityFlags="flagDefault|flagRequestFilterKeyEvents"
     android:canRequestFilterKeyEvents="true"
     android:canRetrieveWindowContent="false"
-    android:description="@string/accessibility_desc" />
+    android:description="@string/overlay_accessibility_desc" />

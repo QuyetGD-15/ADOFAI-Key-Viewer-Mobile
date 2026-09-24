@@ -1,0 +1,17 @@
+<resources>
+<string name="permission_shizuku_title">Shizuku · Сенсорный ввод</string>
+<string name="permission_shizuku_purpose">Считывает координаты касаний для областей нажатия в сенсорном режиме.</string>
+<string name="permission_accessibility_purpose">Показывает оверлей в обоих режимах и получает нажатия физической клавиатуры.</string>
+<string name="permission_shizuku_steps">1. Установите и запустите Shizuku по инструкциям в его приложении.\n2. Вернитесь сюда, нажмите «Разрешить Shizuku» и подтвердите.\n3. Для показа оверлея отдельно включите службу специальных возможностей в настройках.</string>
+<string name="permission_accessibility_steps">1. Откройте Настройки → Специальные возможности → Установленные приложения.\n2. Выберите Key Viewer Overlay и вручную включите службу (TouchRendererService).\n3. Вернитесь сюда и дождитесь состояния «Подключено». Если подключение не завершается, проверьте службу в настройках.\nНе нашли? Введите «Специальные возможности» в поиске системных настроек.</string>
+<string name="permission_shizuku_scope">Разрешение позволяет читать события касания через getevent. Оно не имитирует касания и не включает специальные возможности. Для режима клавиатуры Shizuku не нужен.</string>
+<string name="permission_accessibility_scope">Служба рисует оверлей, пропускающий касания, и получает назначенные клавиши. Она не читает содержимое экрана. Её можно отключить в настройках в любое время.</string>
+<string name="permission_shizuku_unavailable">Нет подключения · Запустите Shizuku</string>
+<string name="permission_shizuku_ready">Разрешено · Сенсорный ввод готов</string>
+<string name="permission_shizuku_required">Нужно разрешение на чтение касаний</string>
+<string name="permission_shizuku_allow">Разрешить Shizuku</string>
+<string name="permission_open_shizuku">Открыть Shizuku</string>
+<string name="permission_open_settings">Открыть специальные возможности</string>
+<string name="permission_manage">Управление в настройках</string>
+<string name="permission_close">Закрыть</string>
+</resources>

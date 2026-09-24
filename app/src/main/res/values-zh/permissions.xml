@@ -1,0 +1,17 @@
+<resources>
+<string name="permission_shizuku_title">Shizuku · 触摸输入</string>
+<string name="permission_shizuku_purpose">在触摸模式下读取触摸位置，用于判定触控区域。</string>
+<string name="permission_accessibility_purpose">在两种模式下显示悬浮层，并接收实体键盘输入。</string>
+<string name="permission_shizuku_steps">1. 安装 Shizuku，并按照其应用内说明启动服务。\n2. 返回此处，点击“允许 Shizuku”并确认。\n3. 要显示悬浮层，还需在设置中单独启用无障碍服务。</string>
+<string name="permission_accessibility_steps">1. 打开设置 → 无障碍 → 已安装的应用。\n2. 选择 Key Viewer Overlay，手动启用其服务（TouchRendererService）。\n3. 返回此处，等待状态变为“已连接”。如果一直显示正在连接，请在设置中检查服务。\n找不到？请在系统设置中搜索“无障碍”。</string>
+<string name="permission_shizuku_scope">此权限通过 getevent 读取触摸事件，不会模拟触摸或启用无障碍服务。键盘模式不需要 Shizuku。</string>
+<string name="permission_accessibility_scope">服务绘制可穿透触摸的悬浮层，并接收已映射的按键，不会读取屏幕内容。你可以随时在设置中关闭服务。</string>
+<string name="permission_shizuku_unavailable">未连接 · 请启动 Shizuku</string>
+<string name="permission_shizuku_ready">已允许 · 触摸输入已就绪</string>
+<string name="permission_shizuku_required">需要触摸输入读取权限</string>
+<string name="permission_shizuku_allow">允许 Shizuku</string>
+<string name="permission_open_shizuku">打开 Shizuku</string>
+<string name="permission_open_settings">打开无障碍设置</string>
+<string name="permission_manage">在设置中管理</string>
+<string name="permission_close">关闭</string>
+</resources>

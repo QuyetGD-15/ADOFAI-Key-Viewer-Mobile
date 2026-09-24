@@ -1,0 +1,8 @@
+<resources>
+<string name="overlay_accessibility_title">无障碍 · 悬浮层</string>
+<string name="overlay_accessibility_required">未启用 · 请在设置中手动启用</string>
+<string name="overlay_accessibility_connected">已连接 · 悬浮层已就绪</string>
+<string name="overlay_accessibility_connecting">已启用 · 等待连接</string>
+<string name="overlay_accessibility_desc">请在无障碍设置中手动启用 Key Viewer Overlay，然后返回并等待连接。服务在两种模式下显示悬浮层并接收实体按键，不读取屏幕内容。触摸模式还需要 Shizuku 来读取触摸输入。</string>
+<string name="overlay_touch_permission_desc">触摸模式有两个独立条件：用于读取触摸的 Shizuku，以及已手动启用并连接的无障碍服务，后者用于显示悬浮层。</string>
+</resources>

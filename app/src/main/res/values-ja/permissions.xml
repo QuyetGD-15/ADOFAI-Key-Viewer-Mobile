@@ -1,0 +1,17 @@
+<resources>
+<string name="permission_shizuku_title">Shizuku · タッチ入力</string>
+<string name="permission_shizuku_purpose">タッチモードで、判定領域に対するタッチ位置を読み取ります。</string>
+<string name="permission_accessibility_purpose">両方のモードでオーバーレイを表示し、物理キーボードの入力を受け取ります。</string>
+<string name="permission_shizuku_steps">1. Shizuku をインストールし、アプリ内の手順に従って起動します。\n2. ここに戻り、「Shizuku を許可」を押して確認します。\n3. オーバーレイを表示するには、別途設定でユーザー補助を有効にしてください。</string>
+<string name="permission_accessibility_steps">1. 設定 → ユーザー補助 → インストール済みアプリを開きます。\n2. Key Viewer Overlay を選び、サービス（TouchRendererService）を手動で有効にします。\n3. ここに戻り、「接続済み」になるまで待ちます。接続待ちのままの場合は、設定でサービスを確認してください。\n見つからない場合は、システム設定で「ユーザー補助」を検索してください。</string>
+<string name="permission_shizuku_scope">この権限では getevent を使ってタッチイベントを読み取ります。タッチ操作の実行やユーザー補助の有効化は行いません。キーボードモードに Shizuku は不要です。</string>
+<string name="permission_accessibility_scope">サービスはタッチを通過させるオーバーレイを描画し、割り当てたキーの入力を受け取ります。画面の内容は読み取りません。設定でいつでも無効にできます。</string>
+<string name="permission_shizuku_unavailable">未接続 · Shizuku を起動してください</string>
+<string name="permission_shizuku_ready">許可済み · タッチ入力の準備完了</string>
+<string name="permission_shizuku_required">タッチ入力の読み取り許可が必要です</string>
+<string name="permission_shizuku_allow">Shizuku を許可</string>
+<string name="permission_open_shizuku">Shizuku を開く</string>
+<string name="permission_open_settings">ユーザー補助設定を開く</string>
+<string name="permission_manage">設定で管理</string>
+<string name="permission_close">閉じる</string>
+</resources>

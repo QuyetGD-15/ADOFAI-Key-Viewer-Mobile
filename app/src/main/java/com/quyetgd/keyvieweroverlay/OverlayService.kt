@@ -229,11 +229,13 @@ class OverlayService : Service() {
                         if (shouldShow && !isKeyViewerOn) {
                             AppLogger.i(this@OverlayService, "AutoShow", "Kích hoạt tự động hiện Overlay cho Game")
                             isKeyViewerOn = true
-                            mainHandler.post { tryShowOverlay(); updateNotification() }
+                            tryShowOverlay()
+                            updateNotification()
                         } else if (!shouldShow && isKeyViewerOn) {
                             AppLogger.i(this@OverlayService, "AutoShow", "Tự động ẩn Overlay do thoát Game")
                             isKeyViewerOn = false
-                            mainHandler.post { hideOverlay(); updateNotification() }
+                            hideOverlay()
+                            updateNotification()
                         }
                     }
                 }
@@ -323,7 +325,7 @@ class OverlayService : Service() {
                             reinitializeArrays()
                             setupViewerView()
                             if (isOverlayShowing && wrapper.parent != null) {
-                                try { windowManager.updateViewLayout(wrapper, viewerParams) } catch (e: Exception) {}
+                                try { updateAccessibilityOverlayLayout() } catch (e: Exception) {}
                             }
                         }
                         loadKeyViewerSettings()
@@ -1063,7 +1065,7 @@ class OverlayService : Service() {
 
         viewerParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                     WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED, PixelFormat.TRANSPARENT
@@ -1432,54 +1434,88 @@ class OverlayService : Service() {
         }
     }
 
-    private fun tryShowOverlay(): Boolean {
-        if (!Settings.canDrawOverlays(this)) {
-            AppLogger.w(this, "Overlay", "Từ chối hiện Overlay do chưa cấp quyền SYSTEM_ALERT_WINDOW")
-            mainHandler.post { Toast.makeText(this, getString(R.string.toast_overlay_permission_required), Toast.LENGTH_LONG).show() }
-            return false
-        }
-        if (AppState.isAppVisible) {
-            mainHandler.post { Toast.makeText(this, getString(R.string.toast_enter_game), Toast.LENGTH_SHORT).show() }
-            return false
-        }
-        if (resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE) {
-            AppLogger.w(this, "Overlay", "Từ chối hiện Overlay do màn hình đang nằm dọc (Portrait)")
-            return false
-        }
-        if (!isOverlayShowing) {
-            mainHandler.post {
-                try {
-                    if (wrapper.parent == null) {
-                        windowManager.addView(wrapper, viewerParams)
-                        isOverlayShowing = true
-                        AppLogger.i(this, "Overlay", "Hiển thị khung KeyViewer thành công")
-                        wrapper.post { updateDisplayMetricsCache() }
-                    }
-                } catch (e: Exception) {
-                    AppLogger.e(this, "Overlay", "Lỗi addView khung KeyViewer", e)
-                }
+    // A requested overlay can wait for Android to connect Accessibility. Only this
+    // service retains that intent; the host never queues views from a dead owner.
+    private val retryOverlayRunnable = Runnable {
+        if (isRunning && isKeyViewerOn && !isOverlayShowing) tryShowOverlay()
+    }
+
+    fun onAccessibilityHostConnected() {
+        if (!isRunning || !::wrapper.isInitialized) return
+        // Re-evaluate auto-show after reconnect even if the foreground app has not changed.
+        if (!isManualOverride) lastForegroundApp = ""
+        if (isKeyViewerOn) tryShowOverlay()
+        updateNotification()
+    }
+
+    fun onAccessibilityHostDisconnected() {
+        isOverlayShowing = false
+        isShowTouchesOn = false
+        if (currentInputSource == "keyboard") {
+            for (i in 0 until keyMode) {
+                laneOccupants[i] = 0
+                keyUpRunnables[i].run()
             }
+        }
+        if (isKeyViewerOn) {
+            mainHandler.removeCallbacks(retryOverlayRunnable)
+            mainHandler.postDelayed(retryOverlayRunnable, 500)
+        }
+        updateNotification()
+    }
+
+    private fun updateAccessibilityOverlayLayout() {
+        isOverlayShowing = TouchRendererService.connectedInstance
+            ?.showKeyViewer(wrapper, viewerParams) == true
+        if (!isOverlayShowing && isKeyViewerOn) {
+            mainHandler.removeCallbacks(retryOverlayRunnable)
+            mainHandler.postDelayed(retryOverlayRunnable, 500)
+        }
+    }
+
+    private fun tryShowOverlay(): Boolean {
+        mainHandler.removeCallbacks(retryOverlayRunnable)
+        if (!isRunning) return false
+        if (!TouchRendererService.isEnabled(this)) {
+            isKeyViewerOn = false
+            hideOverlay()
+            Toast.makeText(this, getString(R.string.overlay_accessibility_required), Toast.LENGTH_LONG).show()
+            updateNotification()
+            return false
+        }
+        if (AppState.isAppVisible || resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE) {
+            isKeyViewerOn = false
+            hideOverlay()
+            updateNotification()
+            return false
+        }
+        val host = TouchRendererService.connectedInstance
+        if (host == null) {
+            // Enabled is not connected. Wait without creating an application overlay.
+            mainHandler.postDelayed(retryOverlayRunnable, 500)
+            return true
+        }
+        isOverlayShowing = host.showKeyViewer(wrapper, viewerParams)
+        if (isOverlayShowing) {
+            wrapper.post { if (isRunning && isOverlayShowing) updateDisplayMetricsCache() }
+        } else {
+            mainHandler.postDelayed(retryOverlayRunnable, 500)
         }
         return true
     }
-    private fun hideOverlay() {
-        if (isOverlayShowing) {
-            AppLogger.i(this, "Overlay", "Lệnh ẩn khung KeyViewer được gọi")
 
+    private fun hideOverlay() {
+        mainHandler.removeCallbacks(retryOverlayRunnable)
+        if (isOverlayShowing) {
             val editor = sharedPrefs.edit()
             editor.putInt("TOTAL_CLICKS", totalClicks)
             for (i in 0 until keyMode) editor.putInt("KEY_COUNT_${keyMode}_$i", keyCounters[i])
             editor.apply()
-
-            mainHandler.post {
-                try {
-                    if (wrapper.parent != null) windowManager.removeView(wrapper)
-                    isOverlayShowing = false
-                } catch (e: Exception) {
-                    AppLogger.e(this, "Overlay", "Lỗi removeView khung KeyViewer", e)
-                }
-            }
         }
+        if (::wrapper.isInitialized) {
+            TouchRendererService.connectedInstance?.removeKeyViewer(wrapper)
+        }
+        isOverlayShowing = false
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -1500,7 +1536,7 @@ class OverlayService : Service() {
                 cachedHardwareRotation = newRotation
                 updateDisplayMetricsCache()
                 loadKeyViewerSettings()
-                if (isOverlayShowing && wrapper.parent != null) windowManager.updateViewLayout(wrapper, viewerParams)
+                if (isOverlayShowing && wrapper.parent != null) updateAccessibilityOverlayLayout()
             }
         } catch (e: Exception) { }
     }
@@ -1542,10 +1578,9 @@ class OverlayService : Service() {
         stopReadingTouchEvents()
         try { unregisterReceiver(editReceiver); unregisterReceiver(resetTotalReceiver) } catch (e: Exception) {}
         if (::keyTrailView.isInitialized) keyTrailView.releaseResources()
-        if (::wrapper.isInitialized && wrapper.parent != null) {
-            try { windowManager.removeViewImmediate(wrapper) } catch (e: Exception) {
-                AppLogger.e(this, "OverlayService", "Lỗi removeView khi dừng service", e)
-            }
+        isKeyViewerOn = false
+        if (::wrapper.isInitialized) {
+            TouchRendererService.connectedInstance?.removeKeyViewer(wrapper)
         }
         isOverlayShowing = false
     }

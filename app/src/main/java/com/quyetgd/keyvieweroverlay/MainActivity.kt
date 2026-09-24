@@ -137,6 +137,12 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         private fun dpToPx(dp: Int): Int = (dp * resources.displayMetrics.density).toInt()
     }
 
+    private val touchSetup by lazy {
+        TouchAccessibilitySetup(this,
+            { getSharedPreferences("KeyViewerPrefs", MODE_PRIVATE).getString("input_source", "touch") == "touch" },
+            { if (::tvAccessibilityStatus.isInitialized) updateAccessibilityStatusUI() })
+    }
+
     private lateinit var tvStatus: TextView
     private lateinit var tvShizukuStatus: TextView
     private lateinit var btnCheck: Button
@@ -173,6 +179,9 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
     private var isShizukuPollingActive = false
     private val mainHandler = Handler(Looper.getMainLooper())
     private val startOverlayAfterModeChange = Runnable {
+        if (!TouchRendererService.isReady(this)) return@Runnable
+        val source = getSharedPreferences("KeyViewerPrefs", MODE_PRIVATE).getString("input_source", "touch")
+        if (source == "touch" && !TouchAccessibilitySetup.hasPermission()) return@Runnable
         val intentStart = Intent(this, OverlayService::class.java).apply {
             action = "com.quyetgd.keyvieweroverlay.ACTION_START_FOREGROUND"
         }
@@ -211,15 +220,12 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
     private fun stopShizukuPolling() {
         isShizukuPollingActive = false
-        // Reset UI Shizuku về trạng thái không hoạt động
-        tvShizukuStatus.text = getString(R.string.shizuku_paused)
-        tvShizukuStatus.setTextColor(Color.GRAY)
     }
 
     private val shizukuReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == SHIZUKU_ACTION) {
-                checkShizukuPermission()
+                if (::tvShizukuStatus.isInitialized) updateShizukuStatusUI()
             }
         }
     }
@@ -320,7 +326,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         } else {
             toggleInputSource.check(R.id.btnSourceTouch)
             cardShizuku.visibility = View.VISIBLE
-            cardAccessibility.visibility = View.GONE
+            cardAccessibility.visibility = View.VISIBLE
         }
 
         toggleInputSource.addOnButtonCheckedListener { _, checkedId, isChecked ->
@@ -338,6 +344,8 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                 }
                 // ================= KẾT THÚC LOGIC FALLBACK =================
 
+                touchSetup.cancel()
+                mainHandler.removeCallbacks(startOverlayAfterModeChange)
                 pref.edit().putString("input_source", newSource).apply()
 
                 // LOAD LẠI MENU DROPDOWN ĐỂ THÊM/BỚT 12K VÀ 16K
@@ -350,19 +358,22 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                     stopShizukuPolling()
                 } else {
                     cardShizuku.visibility = View.VISIBLE
-                    cardAccessibility.visibility = View.GONE
+                    cardAccessibility.visibility = View.VISIBLE
                     btnConfigHitbox.text = getString(R.string.config_hitbox)
                     startShizukuPolling()
                 }
 
                 switchOverlay.isChecked = false
                 stopService(Intent(this, OverlayService::class.java))
-                updateSwitchEnableState()
+                updateAccessibilityStatusUI()
             }
         }
 
+        findViewById<Button>(R.id.btnTouchInfo).setOnClickListener { touchSetup.showDetails(true) }
+        findViewById<Button>(R.id.btnAccessibilityInfo).setOnClickListener { touchSetup.showDetails(false) }
+
         btnAccessibility.setOnClickListener {
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            TouchAccessibilitySetup.openSettings(this)
         }
 
         findViewById<Button>(R.id.btnExportLog).setOnClickListener {
@@ -379,7 +390,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         }
 
         btnCheck.setOnClickListener {
-            checkShizukuPermission()
+            touchSetup.request()
             updateShizukuStatusUI()
         }
 
@@ -432,7 +443,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         layoutAccessibilityPrompt = findViewById(R.id.layoutAccessibilityPrompt)
 
         findViewById<Button>(R.id.btnAgreeAccessibility)?.setOnClickListener {
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            TouchAccessibilitySetup.openSettings(this)
             layoutAccessibilityPrompt?.visibility = View.GONE
         }
 
@@ -521,28 +532,11 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
     }
 
     private fun updateAccessibilityStatusUI() {
-        val isEnabled = isAccessibilityServiceEnabled(this, TouchRendererService::class.java)
-        if (isEnabled) {
-            tvAccessibilityStatus.text = getString(R.string.main_acc_status_granted)
-            tvAccessibilityStatus.setTextColor(Color.GREEN)
-        } else {
-            tvAccessibilityStatus.text = getString(R.string.main_acc_status_pending)
-            tvAccessibilityStatus.setTextColor(Color.RED)
-        }
+        if (!::tvAccessibilityStatus.isInitialized) return
+        touchSetup.updateCards()
+        updateSwitchEnableState()
     }
 
-    private fun isAccessibilityServiceEnabled(context: Context, service: Class<out android.accessibilityservice.AccessibilityService>): Boolean {
-        val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as android.view.accessibility.AccessibilityManager
-        val enabledServices = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: return false
-        val colonSplitter = android.text.TextUtils.SimpleStringSplitter(':')
-        colonSplitter.setString(enabledServices)
-        val componentName = android.content.ComponentName(context, service).flattenToString()
-        while (colonSplitter.hasNext()) {
-            val s = colonSplitter.next()
-            if (s.equals(componentName, ignoreCase = true)) return true
-        }
-        return false
-    }
 
     private fun setupKeyModeDropdown() {
         val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
@@ -852,13 +846,17 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(shizukuReceiver, filter, RECEIVER_EXPORTED)
         } else {
+            @Suppress("DEPRECATION")
             registerReceiver(shizukuReceiver, filter)
         }
-        if (Shizuku.pingBinder()) checkShizukuPermission()
+        // Permissions are requested only by explicit user actions.
+
     }
 
     override fun onResume() {
         super.onResume()
+        if (!::switchOverlay.isInitialized) return
+        touchSetup.resume()
         hideLoading()
         AppState.isAppVisible = true
 
@@ -879,22 +877,17 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
     private fun updateSwitchEnableState() {
         val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
         val inputSource = pref.getString("input_source", "touch")
-        if (inputSource == "touch") {
-            val isConnected = Shizuku.pingBinder()
-            val hasPermission = if (isConnected) {
-                Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
-            } else {
-                false
-            }
-            switchOverlay.isEnabled = isConnected && hasPermission
-        } else {
-            val hasAccessibility = isAccessibilityServiceEnabled(this, TouchRendererService::class.java)
-            switchOverlay.isEnabled = hasAccessibility
-        }
+        val inputReady = inputSource != "touch" ||
+            TouchAccessibilitySetup.hasPermission()
+        // Keep Stop available even if a permission or the accessibility connection is lost.
+        switchOverlay.isEnabled = OverlayService.isRunning ||
+            (inputReady && TouchRendererService.isReady(this))
     }
 
     override fun onPause() {
         super.onPause()
+        touchSetup.pause()
+        mainHandler.removeCallbacks(startOverlayAfterModeChange)
         AppState.isAppVisible = false
         mainHandler.removeCallbacks(updateRunnable) // Dừng vòng lặp khi app không hiển thị
     }
@@ -905,86 +898,34 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
     }
 
     private fun updateShizukuStatusUI() {
-        try {
-            val isConnected = Shizuku.pingBinder()
-            val hasPermission = if (isConnected) {
-                Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
-            } else {
-                false
-            }
-
-            if (isConnected && hasPermission) {
-                tvShizukuStatus.text = getString(R.string.shizuku_running)
-                tvShizukuStatus.setTextColor(Color.GREEN)
-            } else {
-                if (isConnected) {
-                    tvShizukuStatus.text = getString(R.string.shizuku_not_connected_or_no_permission)
-                } else {
-                    tvShizukuStatus.text = getString(R.string.shizuku_not_running)
-                }
-                tvShizukuStatus.setTextColor(Color.RED)
-
-                // Mất kết nối: Tắt công tắc, khóa nhấn
-                if (switchOverlay.isChecked) {
-                    switchOverlay.setOnCheckedChangeListener(null)
-                    switchOverlay.isChecked = false
-                    setupSwitchListener()
-                }
-
-                // Ép dừng Service nếu đang chạy ngầm
-                if (OverlayService.isRunning) {
-                    stopService(Intent(this, OverlayService::class.java))
-                }
-            }
-
-            // Luôn cập nhật lại trạng thái enabled tổng quát
-            updateSwitchEnableState()
-
-            // Cập nhật text của công tắc
-            switchOverlay.text = if (OverlayService.isRunning) getString(R.string.overlay_use_notification) else getString(R.string.overlay_start_hint)
-
-        } catch (e: Exception) {
-            tvShizukuStatus.text = getString(R.string.shizuku_error)
-            tvShizukuStatus.setTextColor(Color.RED)
-
-            // Bắt lỗi cũng khóa cứng công tắc luôn
-            if (switchOverlay.isChecked) {
-                switchOverlay.setOnCheckedChangeListener(null)
-                switchOverlay.isChecked = false
-                setupSwitchListener()
-            }
-            updateSwitchEnableState()
-
-            if (OverlayService.isRunning) {
-                stopService(Intent(this, OverlayService::class.java))
-            }
-            switchOverlay.text = getString(R.string.overlay_start_hint)
+        if (getSharedPreferences("KeyViewerPrefs", MODE_PRIVATE).getString("input_source", "touch") != "touch") return
+        if (!TouchAccessibilitySetup.hasPermission() && OverlayService.isRunning) {
+            stopService(Intent(this, OverlayService::class.java))
         }
+        touchSetup.updateCards()
+        updateSwitchEnableState()
+        switchOverlay.text = getString(if (OverlayService.isRunning) R.string.overlay_use_notification else R.string.overlay_start_hint)
     }
 
-    private fun checkShizukuPermission(): Boolean {
-        if (!Shizuku.pingBinder()) {
-            updateStatus(getString(R.string.shizuku_not_found))
-            return false
-        }
-        val isGranted = Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
-        if (isGranted) {
-            updateStatus(getString(R.string.shizuku_ready))
-            return true
-        }
-        updateStatus(getString(R.string.shizuku_requesting_permission))
-        Shizuku.requestPermission(100)
-        return false
-    }
 
     private fun updateStatus(message: String) {
-        runOnUiThread { tvStatus.text = message }
+        runOnUiThread {
+            if (::tvStatus.isInitialized) {
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+                updateAccessibilityStatusUI()
+            }
+        }
     }
 
     private fun checkOverlayPermission(): Boolean {
-        if (!Settings.canDrawOverlays(this)) {
-            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
-            startActivity(intent)
+        if (!TouchRendererService.isReady(this)) {
+            Toast.makeText(this, getString(R.string.overlay_accessibility_required), Toast.LENGTH_LONG).show()
+            TouchAccessibilitySetup.openSettings(this)
+            return false
+        }
+        val touch = getSharedPreferences("KeyViewerPrefs", MODE_PRIVATE).getString("input_source", "touch") == "touch"
+        if (touch && !TouchAccessibilitySetup.hasPermission()) {
+            touchSetup.request()
             return false
         }
         return true

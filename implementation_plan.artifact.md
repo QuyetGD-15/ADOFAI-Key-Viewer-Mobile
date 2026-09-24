@@ -1,22 +1,20 @@
-# Kế hoạch rà soát và tối ưu RAM
+# Sửa overlay bị giảm opacity toàn cửa sổ
 
-## Mục tiêu
-Giảm mức sử dụng RAM và tránh các nguồn gây rò rỉ/bộ nhớ tăng không cần thiết, nhưng không làm thay đổi hành vi sản phẩm ngoài phạm vi tối ưu hiệu năng.
+## Bằng chứng và nguyên nhân
+- OverlayService.kt:1064–1073 tạo cửa sổ toàn màn hình TYPE_APPLICATION_OVERLAY + FLAG_NOT_TOUCHABLE.
+- dumpsys window trên thiết bị hiện tại xác nhận cửa sổ com.quyetgd.keyvieweroverlay: alpha=0.8; mShownAlpha=0.8 mAlpha=0.8 mLastAlpha=0.8.
+- Đây là giảm opacity ở cấp cửa sổ, không phải màu theme. Android 12+ có hạn chế thao tác xuyên cửa sổ không đáng tin cậy; accessibility overlay thuộc nhóm trusted windows.
 
-## Phạm vi rà soát
-1. Kiểm tra cấu trúc module, cấu hình build và manifest để tìm cấu hình debug/release, tài nguyên dư thừa và tuỳ chọn đóng gói ảnh hưởng RAM.
-2. Rà soát Activity/Fragment/View/ViewModel/adapter/listener/coroutine để phát hiện lifecycle leak, giữ tham chiếu Context/View, cache không giới hạn và cập nhật UI quá thường xuyên.
-3. Rà soát layout và drawable (đặc biệt `activity_main.xml`) để phát hiện view lồng sâu, ảnh kích thước lớn, bitmap không cần thiết và thành phần có thể thay bằng cấu hình nhẹ hơn.
-4. Rà soát dependency và cách tải tài nguyên/dữ liệu; chỉ thay đổi khi có bằng chứng rõ ràng và tương thích.
-5. Áp dụng các cải thiện an toàn, sau đó build/kiểm tra static analysis và xác nhận ứng dụng vẫn chạy.
+## Ràng buộc
+- Không chỉnh ThemeColorStore, mã màu, preset hay SharedPreferences để ép alpha màu lên 100%.
+- Không dùng tăng alpha màu, vẽ chồng để bù opacity, API ẩn hay vô hiệu hóa bảo vệ chạm toàn hệ thống.
+- Giữ alpha riêng của từng thành phần, nền trống và hiệu ứng theme.
 
-## Nguyên tắc
-- Ưu tiên thay đổi nhỏ, đo được và không phá chức năng.
-- Không xoá thành phần chỉ vì “có vẻ dư” nếu chưa xác nhận usage.
-- Không tối ưu mù bằng cách tắt tính năng hoặc giảm chất lượng hiển thị ngoài yêu cầu.
-- Báo cáo rõ những rủi ro còn lại và đề xuất profiling bằng Android Studio/Perfetto nếu cần số liệu runtime.
+## Thực hiện (chờ người dùng duyệt)
+1. Đưa việc attach/update/remove cửa sổ KeyViewer qua WindowManager của TouchRendererService với TYPE_ACCESSIBILITY_OVERLAY. OverlayService tiếp tục quản lý nội dung, theme và input. Quản lý kết nối/ngắt service, xoay màn hình, thay key mode và giải phóng cửa sổ; không chỉ đổi type trên WindowManager của foreground service.
+2. Cập nhật kiểm tra quyền và hướng dẫn setup/UI: cần bật Trợ năng để hiển thị KeyViewer đúng opacity, kể cả input chạm/Shizuku. Khi service chưa kết nối, không âm thầm dùng lại cửa sổ bị giảm opacity; thông báo trạng thái rõ ràng. Không tự bật quyền.
+3. Bỏ phép ghi đè paint.alpha = 255 hiện có tại KeyTrailView.drawSingleTrail để tôn trọng alpha màu rain. Đây là lỗi riêng làm mất alpha thiết kế, không phải nguyên nhân giảm opacity toàn overlay. Giữ nguyên thiết kế glow/shadow.
+4. Build và kiểm thử hồi quy: cửa sổ thuộc accessibility service, thao tác xuyên tới game, màu opaque/semitransparent/transparent, rain, xoay màn hình, bật/tắt overlay và ngắt/kết nối Trợ năng. Xác minh dumpsys không còn hệ số alpha 0.8 trên cửa sổ KeyViewer; báo rõ kiểm tra nào không thực hiện được.
 
-## Xác minh
-- Chạy kiểm tra phân tích file sau khi sửa.
-- Build module ứng dụng bằng Gradle.
-- Nếu thiết bị khả dụng, triển khai và kiểm tra nhanh màn hình chính/lifecycle.
+## Tác động cần duyệt
+Chế độ chạm hiện chỉ cần Shizuku cho input; sau sửa sẽ cần thêm Trợ năng cho cửa sổ hiển thị. Không thay đổi nguồn input thành accessibility và không thay đổi dữ liệu theme.

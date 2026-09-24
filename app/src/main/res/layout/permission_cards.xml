@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:orientation="vertical">
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardShizuku"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        app:cardBackgroundColor="#1E1E1E" app:cardCornerRadius="24dp"
+        app:cardElevation="0dp" app:strokeWidth="0dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="20dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:gravity="center_vertical">
+                <TextView android:id="@+id/tvStatus"
+                    android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                    android:text="@string/permission_shizuku_title" android:textColor="@color/white"
+                    android:textSize="20sp" android:textStyle="bold" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnTouchInfo"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="48dp" android:layout_height="48dp" android:minWidth="0dp"
+                    android:padding="0dp" android:text="@string/touch_setup_info_symbol"
+                    android:contentDescription="@string/permission_shizuku_title" />
+            </LinearLayout>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="@string/permission_shizuku_purpose" android:textColor="#BBFFFFFF"
+                android:textSize="14sp" android:layout_marginTop="4dp" />
+            <TextView android:id="@+id/tvShizukuStatus"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="12dp" android:textColor="@color/md3_primary"
+                android:text="@string/shizuku_status_checking" android:textStyle="bold" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnCheck"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:minHeight="48dp" android:layout_marginTop="12dp" android:textAllCaps="false"
+                android:text="@string/permission_shizuku_allow" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+    <com.google.android.material.card.MaterialCardView android:id="@+id/cardAccessibility"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        app:cardBackgroundColor="#1E1E1E" app:cardCornerRadius="24dp"
+        app:cardElevation="0dp" app:strokeWidth="0dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="20dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:gravity="center_vertical">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                    android:text="@string/overlay_accessibility_title" android:textColor="@color/white"
+                    android:textSize="20sp" android:textStyle="bold" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnAccessibilityInfo"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="48dp" android:layout_height="48dp" android:minWidth="0dp"
+                    android:padding="0dp" android:text="@string/touch_setup_info_symbol"
+                    android:contentDescription="@string/overlay_accessibility_title" />
+            </LinearLayout>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="@string/permission_accessibility_purpose" android:textColor="#BBFFFFFF"
+                android:textSize="14sp" android:layout_marginTop="4dp" />
+            <TextView android:id="@+id/tvAccessibilityStatus"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="12dp" android:textColor="@color/md3_primary"
+                android:text="@string/overlay_accessibility_required" android:textStyle="bold" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnAccessibility"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:minHeight="48dp" android:layout_marginTop="12dp" android:textAllCaps="false"
+                android:text="@string/permission_open_settings" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+</LinearLayout>

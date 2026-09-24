@@ -1,0 +1,17 @@
+<resources>
+<string name="permission_shizuku_title">Shizuku · Touch input</string>
+<string name="permission_shizuku_purpose">Reads touch positions for hitboxes in touch mode.</string>
+<string name="permission_accessibility_purpose">Shows the overlay in both modes and receives physical keyboard input.</string>
+<string name="permission_shizuku_steps">1. Install and start Shizuku using its in-app instructions.\n2. Return here, tap Allow Shizuku and confirm.\n3. Enable Accessibility separately in Settings to show the overlay.</string>
+<string name="permission_accessibility_steps">1. Open Settings → Accessibility → Installed apps.\n2. Select Key Viewer Overlay and manually enable its service (TouchRendererService).\n3. Return here and wait for Connected. If it stays connecting, check the service in Settings.\nCannot find it? Search for “Accessibility” in system Settings.</string>
+<string name="permission_shizuku_scope">This permission reads touch events through getevent. It does not simulate touches or enable Accessibility. Keyboard mode does not need Shizuku.</string>
+<string name="permission_accessibility_scope">The service draws a touch-through overlay and receives mapped keys. It does not read screen content. You can turn it off at any time in Settings.</string>
+<string name="permission_shizuku_unavailable">Not connected · Start Shizuku</string>
+<string name="permission_shizuku_ready">Allowed · Touch input ready</string>
+<string name="permission_shizuku_required">Touch input permission needed</string>
+<string name="permission_shizuku_allow">Allow Shizuku</string>
+<string name="permission_open_shizuku">Open Shizuku</string>
+<string name="permission_open_settings">Open Accessibility settings</string>
+<string name="permission_manage">Manage in Settings</string>
+<string name="permission_close">Close</string>
+</resources>

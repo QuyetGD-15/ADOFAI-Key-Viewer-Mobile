@@ -9,6 +9,8 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.util.TypedValue
 import android.view.Gravity
@@ -35,6 +37,18 @@ import kotlinx.coroutines.withContext
 import rikka.shizuku.Shizuku
 
 class SetupActivity : AppCompatActivity() {
+
+    private val touchSetup by lazy {
+        TouchAccessibilitySetup(this, { selectedInputSource == "touch" && currentStep == 2 }, { updateUIForStep() })
+    }
+
+    private val permissionHandler = Handler(Looper.getMainLooper())
+    private val permissionRefresh = object : Runnable {
+        override fun run() {
+            if (currentStep == 2) updateUIForStep()
+            permissionHandler.postDelayed(this, 500)
+        }
+    }
 
     private lateinit var setupFlipper: ViewFlipper
     private lateinit var btnBack: MaterialButton
@@ -138,21 +152,9 @@ class SetupActivity : AppCompatActivity() {
         }
 
         // Step 3: Permission
-        findViewById<Button>(R.id.btnStepGrantPermission).setOnClickListener {
-            if (selectedInputSource == "touch") {
-                if (!Shizuku.pingBinder()) {
-                    try {
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://shizuku.rikka.app/download/")))
-                    } catch (e: Exception) {
-                        Toast.makeText(this, getString(R.string.shizuku_not_found), Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Shizuku.requestPermission(100)
-                }
-            } else {
-                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-            }
-        }
+        findViewById<Button>(R.id.btnTouchInfo).setOnClickListener { touchSetup.showDetails(true) }
+        findViewById<Button>(R.id.btnAccessibilityInfo).setOnClickListener { touchSetup.showDetails(false) }
+        findViewById<Button>(R.id.btnCheck).setOnClickListener { touchSetup.request() }
 
         // Step 4: Key Mode
         val toggleRow1 = findViewById<MaterialButtonToggleGroup>(R.id.toggleStepKeyModeRow1)
@@ -205,9 +207,8 @@ class SetupActivity : AppCompatActivity() {
             }
         }
 
-        findViewById<Button>(R.id.btnOverlayPermission).setOnClickListener {
-            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
-            startActivity(intent)
+        findViewById<Button>(R.id.btnAccessibility).setOnClickListener {
+            TouchAccessibilitySetup.openSettings(this)
         }
 
         findViewById<TextView>(R.id.tvStepSkipApps).setOnClickListener {
@@ -217,6 +218,7 @@ class SetupActivity : AppCompatActivity() {
         // Bottom Bar
         btnBack.setOnClickListener {
             if (currentStep > 0) {
+                touchSetup.cancel()
                 currentStep--
                 setupFlipper.setInAnimation(this, android.R.anim.slide_in_left)
                 setupFlipper.setOutAnimation(this, android.R.anim.slide_out_right)
@@ -243,19 +245,18 @@ class SetupActivity : AppCompatActivity() {
                 } else moveToNextStep()
             }
             2 -> { // Permissions
-                val hasOverlay = Settings.canDrawOverlays(this)
+                val hasOverlay = TouchRendererService.isReady(this)
                 val hasInputPerm = if (selectedInputSource == "touch") {
-                    Shizuku.pingBinder() && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
+                    TouchAccessibilitySetup.hasPermission()
                 } else {
-                    isAccessibilityServiceEnabled(this, TouchRendererService::class.java)
+                    TouchRendererService.isReady(this)
                 }
 
                 if (hasOverlay && hasInputPerm) {
                     moveToNextStep()
                 } else {
-                    val msg = if (!hasInputPerm && !hasOverlay) getString(R.string.setup_toast_grant_both)
-                    else if (!hasInputPerm) (if (selectedInputSource == "touch") getString(R.string.setup_toast_grant_shizuku) else getString(R.string.setup_toast_grant_acc))
-                    else getString(R.string.setup_toast_grant_overlay)
+                    val msg = if (!hasOverlay) getString(R.string.overlay_accessibility_required)
+                    else getString(R.string.setup_toast_grant_shizuku)
                     Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
                 }
             }
@@ -272,11 +273,13 @@ class SetupActivity : AppCompatActivity() {
 
     private fun moveToNextStep() {
         if (currentStep < 6) {
+            touchSetup.cancel()
             currentStep++
             setupFlipper.setInAnimation(this, R.anim.in_from_right)
             setupFlipper.setOutAnimation(this, R.anim.out_to_left)
             setupFlipper.displayedChild = currentStep
             updateUIForStep()
+            if (currentStep == 2) touchSetup.enterTouchStep()
         }
     }
 
@@ -284,34 +287,11 @@ class SetupActivity : AppCompatActivity() {
         btnBack.visibility = if (currentStep == 0) View.INVISIBLE else View.VISIBLE
         btnNext.text = if (currentStep == 6) getString(R.string.setup_btn_finish) else getString(R.string.setup_btn_next)
 
+        btnNext.isEnabled = currentStep != 2 ||
+            (TouchRendererService.isReady(this) && (selectedInputSource != "touch" || TouchAccessibilitySetup.hasPermission()))
         when (currentStep) {
-            2 -> { // Step 3: Permissions
-                val tvTitle = findViewById<TextView>(R.id.tvStepPermissionTitle)
-                val tvDesc = findViewById<TextView>(R.id.tvStepPermissionDesc)
-                val tvStatus = findViewById<TextView>(R.id.tvStepPermissionStatus)
-                val btnGrant = findViewById<Button>(R.id.btnStepGrantPermission)
-                
-                val tvOverlayStatus = findViewById<TextView>(R.id.tvOverlayStatus)
-
-                if (selectedInputSource == "touch") {
-                    tvTitle.text = getString(R.string.setup_step3_shizuku_title)
-                    tvDesc.text = getString(R.string.setup_step3_shizuku_desc)
-                    val isGranted = Shizuku.pingBinder() && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
-                    tvStatus.text = if (isGranted) getString(R.string.setup_step3_status_ready) else getString(R.string.setup_step3_status_shizuku_denied)
-                    tvStatus.setTextColor(if (isGranted) Color.GREEN else Color.RED)
-                    btnGrant.text = getString(R.string.setup_step3_btn_shizuku)
-                } else {
-                    tvTitle.text = getString(R.string.setup_step3_accessibility_title)
-                    tvDesc.text = getString(R.string.setup_step3_accessibility_desc)
-                    val isEnabled = isAccessibilityServiceEnabled(this, TouchRendererService::class.java)
-                    tvStatus.text = if (isEnabled) getString(R.string.setup_step3_status_ready) else getString(R.string.setup_step3_status_acc_pending)
-                    tvStatus.setTextColor(if (isEnabled) Color.GREEN else Color.RED)
-                    btnGrant.text = getString(R.string.setup_step3_btn_acc)
-                }
-
-                val hasOverlay = Settings.canDrawOverlays(this)
-                tvOverlayStatus.text = getString(R.string.setup_step3_overlay_status, if (hasOverlay) getString(R.string.setup_step3_status_granted) else getString(R.string.setup_step3_status_denied))
-                tvOverlayStatus.setTextColor(if (hasOverlay) Color.GREEN else Color.RED)
+            2 -> { // Step 3: independent prerequisites
+                touchSetup.updateCards()
             }
             3 -> { // Step 4: Key Mode
                 val toggleRow1 = findViewById<MaterialButtonToggleGroup>(R.id.toggleStepKeyModeRow1)
@@ -380,17 +360,6 @@ class SetupActivity : AppCompatActivity() {
         finish()
     }
 
-    private fun isAccessibilityServiceEnabled(context: Context, service: Class<out android.accessibilityservice.AccessibilityService>): Boolean {
-        val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as android.view.accessibility.AccessibilityManager
-        val enabledServices = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: return false
-        val colonSplitter = android.text.TextUtils.SimpleStringSplitter(':')
-        colonSplitter.setString(enabledServices)
-        val componentName = android.content.ComponentName(context, service).flattenToString()
-        while (colonSplitter.hasNext()) {
-            if (colonSplitter.next().equals(componentName, ignoreCase = true)) return true
-        }
-        return false
-    }
 
     private fun showKeyMappingDialog() {
         val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
@@ -696,6 +665,14 @@ class SetupActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        touchSetup.resume()
         updateUIForStep()
+        permissionHandler.post(permissionRefresh)
+    }
+
+    override fun onPause() {
+        touchSetup.pause()
+        permissionHandler.removeCallbacks(permissionRefresh)
+        super.onPause()
     }
 }

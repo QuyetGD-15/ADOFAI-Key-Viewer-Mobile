@@ -1,0 +1,17 @@
+<resources>
+<string name="permission_shizuku_title">Shizuku · 터치 입력</string>
+<string name="permission_shizuku_purpose">터치 모드에서 히트박스에 대한 터치 위치를 읽습니다.</string>
+<string name="permission_accessibility_purpose">두 모드에서 오버레이를 표시하고 물리 키보드 입력을 받습니다.</string>
+<string name="permission_shizuku_steps">1. Shizuku를 설치하고 앱 내 안내에 따라 실행하세요.\n2. 여기로 돌아와 Shizuku 허용을 누르고 확인하세요.\n3. 오버레이를 표시하려면 설정에서 접근성을 별도로 켜세요.</string>
+<string name="permission_accessibility_steps">1. 설정 → 접근성 → 설치된 앱을 여세요.\n2. Key Viewer Overlay를 선택하고 서비스(TouchRendererService)를 직접 켜세요.\n3. 여기로 돌아와 연결됨 상태가 될 때까지 기다리세요. 계속 연결 중이면 설정에서 서비스를 확인하세요.\n찾을 수 없나요? 시스템 설정에서 ‘접근성’을 검색하세요.</string>
+<string name="permission_shizuku_scope">이 권한은 getevent로 터치 이벤트를 읽습니다. 터치 동작을 실행하거나 접근성을 켜지 않습니다. 키보드 모드에는 Shizuku가 필요하지 않습니다.</string>
+<string name="permission_accessibility_scope">서비스는 터치를 통과시키는 오버레이를 그리고 지정된 키 입력을 받습니다. 화면 내용은 읽지 않습니다. 설정에서 언제든지 끌 수 있습니다.</string>
+<string name="permission_shizuku_unavailable">연결 안 됨 · Shizuku를 실행하세요</string>
+<string name="permission_shizuku_ready">허용됨 · 터치 입력 준비 완료</string>
+<string name="permission_shizuku_required">터치 입력 권한이 필요합니다</string>
+<string name="permission_shizuku_allow">Shizuku 허용</string>
+<string name="permission_open_shizuku">Shizuku 열기</string>
+<string name="permission_open_settings">접근성 설정 열기</string>
+<string name="permission_manage">설정에서 관리</string>
+<string name="permission_close">닫기</string>
+</resources>

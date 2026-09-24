@@ -1,0 +1,8 @@
+<resources>
+<string name="overlay_accessibility_title">접근성 · 오버레이</string>
+<string name="overlay_accessibility_required">꺼짐 · 설정에서 직접 켜세요</string>
+<string name="overlay_accessibility_connected">연결됨 · 오버레이 준비 완료</string>
+<string name="overlay_accessibility_connecting">켜짐 · 연결 대기 중</string>
+<string name="overlay_accessibility_desc">접근성 설정에서 Key Viewer Overlay를 직접 켠 다음 돌아와 연결을 기다리세요. 서비스는 두 모드에서 오버레이를 표시하고 화면 내용을 읽지 않고 물리 키 입력을 받습니다. 터치 모드에는 터치 입력을 읽는 Shizuku도 필요합니다.</string>
+<string name="overlay_touch_permission_desc">터치 모드에는 두 가지가 각각 필요합니다. 터치를 읽는 Shizuku와 오버레이를 표시하도록 직접 켜고 연결한 접근성 서비스입니다.</string>
+</resources>

@@ -1,0 +1,17 @@
+<resources>
+<string name="permission_shizuku_title">Shizuku · Đọc cảm ứng</string>
+<string name="permission_shizuku_purpose">Đọc vị trí chạm cho vùng phím trong chế độ cảm ứng.</string>
+<string name="permission_accessibility_purpose">Hiển thị lớp phủ ở cả hai chế độ và nhận phím từ bàn phím vật lý.</string>
+<string name="permission_shizuku_steps">1. Cài đặt và khởi chạy Shizuku theo hướng dẫn trong ứng dụng Shizuku.\n2. Quay lại đây, nhấn Cho phép Shizuku và xác nhận.\n3. Bật Trợ năng riêng trong Cài đặt để hiển thị lớp phủ.</string>
+<string name="permission_accessibility_steps">1. Mở Cài đặt → Trợ năng → Ứng dụng đã cài đặt.\n2. Chọn Key Viewer Overlay và tự bật dịch vụ (TouchRendererService).\n3. Quay lại đây và chờ trạng thái Đã kết nối. Nếu vẫn đang kết nối, kiểm tra dịch vụ trong Cài đặt.\nKhông tìm thấy? Tìm “Trợ năng” trong Cài đặt hệ thống.</string>
+<string name="permission_shizuku_scope">Quyền này cho phép đọc sự kiện cảm ứng bằng getevent, không mô phỏng thao tác chạm hay bật Trợ năng. Chế độ bàn phím không cần Shizuku.</string>
+<string name="permission_accessibility_scope">Dịch vụ vẽ lớp phủ không chặn thao tác chạm và nhận các phím đã ánh xạ. Dịch vụ không đọc nội dung màn hình. Bạn có thể tắt dịch vụ bất cứ lúc nào trong Cài đặt.</string>
+<string name="permission_shizuku_unavailable">Chưa kết nối · Hãy khởi chạy Shizuku</string>
+<string name="permission_shizuku_ready">Đã cho phép · Sẵn sàng đọc cảm ứng</string>
+<string name="permission_shizuku_required">Chưa cho phép đọc cảm ứng</string>
+<string name="permission_shizuku_allow">Cho phép Shizuku</string>
+<string name="permission_open_shizuku">Mở Shizuku</string>
+<string name="permission_open_settings">Mở Cài đặt Trợ năng</string>
+<string name="permission_manage">Quản lý trong Cài đặt</string>
+<string name="permission_close">Đóng</string>
+</resources>

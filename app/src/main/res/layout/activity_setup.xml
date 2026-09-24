@@ -145,73 +145,22 @@
         </LinearLayout>
 
         <!-- Step 3: Permissions -->
-        <LinearLayout
+        <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:fillViewport="true">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:gravity="center"
             android:orientation="vertical"
             android:padding="24dp">
 
-            <TextView
-                android:id="@+id/tvStepPermissionTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:text="@string/setup_step3_title"
-                android:textColor="@color/white"
-                android:textSize="22sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvStepPermissionDesc"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:gravity="center"
-                android:text="..."
-                android:textColor="#88FFFFFF"
-                android:textSize="14sp" />
-
-            <TextView
-                android:id="@+id/tvStepPermissionStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="32dp"
-                android:text="@string/setup_step3_status_denied"
-                android:textColor="#BBFFFFFF"
-                android:textSize="16sp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnStepGrantPermission"
-                style="@style/CompactNeonButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="56dp"
-                android:paddingHorizontal="32dp"
-                android:text="@string/setup_btn_grant_now" />
-
-            <View
+            <include layout="@layout/permission_cards"
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginVertical="24dp"
-                android:background="#33FFFFFF" />
-
-            <TextView
-                android:id="@+id/tvOverlayStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:text="@string/setup_step3_status_denied"
-                android:textColor="#BBFFFFFF"
-                android:textSize="16sp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnOverlayPermission"
-                style="@style/CompactNeonButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="56dp"
-                android:paddingHorizontal="32dp"
-                android:text="@string/setup_step3_overlay_btn" />
+                android:layout_height="wrap_content" />
         </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
 
         <!-- Step 4: Key Mode -->
         <LinearLayout
