@@ -137,8 +137,14 @@ class ThemePreviewView @JvmOverloads constructor(
     var autoPreview = true
         set(value) {
             field = value
-            if (value) scheduleNext() else releaseCurrent()
+            if (value) scheduleNext() else {
+                removeCallbacks(previewStep)
+                removeCallbacks(releasePreviewTrail)
+                releaseCurrent()
+            }
         }
+
+    private val releasePreviewTrail = Runnable { releaseCurrent() }
 
     private val previewStep = object : Runnable {
         override fun run() {
@@ -146,7 +152,8 @@ class ThemePreviewView @JvmOverloads constructor(
             releaseCurrent()
             activeKey = (activeKey + 1) % keyMode
             press(activeKey)
-            postDelayed({ releaseCurrent() }, 230L)
+            removeCallbacks(releasePreviewTrail)
+            postDelayed(releasePreviewTrail, 230L)
             postDelayed(this, 650L)
         }
     }
@@ -161,6 +168,7 @@ class ThemePreviewView @JvmOverloads constructor(
 
     private fun buildOverlay() {
         removeCallbacks(previewStep)
+        removeCallbacks(releasePreviewTrail)
         releaseCurrent()
         overlayRoot.removeAllViews()
         workspace.removeAllViews()
@@ -350,6 +358,7 @@ class ThemePreviewView @JvmOverloads constructor(
 
     fun releaseResources() {
         removeCallbacks(previewStep)
+        removeCallbacks(releasePreviewTrail)
         releaseCurrent()
         trailView.releaseResources()
         overlayRoot.removeAllViews()

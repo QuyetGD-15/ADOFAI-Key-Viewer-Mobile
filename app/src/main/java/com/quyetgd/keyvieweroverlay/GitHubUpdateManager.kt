@@ -14,6 +14,7 @@ import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
 import org.json.JSONObject
+import java.lang.ref.WeakReference
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.concurrent.thread
@@ -24,15 +25,20 @@ object GitHubUpdateManager {
     private const val API_URL = "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/releases/latest"
 
     fun checkForUpdate(activity: Activity) {
+        val appContext = activity.applicationContext
+        val activityRef = WeakReference(activity)
         thread {
+            var connection: HttpURLConnection? = null
             try {
                 val url = URL(API_URL)
-                val connection = url.openConnection() as HttpURLConnection
+                connection = url.openConnection() as HttpURLConnection
+                connection.connectTimeout = 10_000
+                connection.readTimeout = 10_000
                 connection.requestMethod = "GET"
                 connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
                 
                 if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-                    val response = connection.inputStream.bufferedReader().readText()
+                    val response = connection.inputStream.bufferedReader().use { it.readText() }
                     val jsonObject = JSONObject(response)
                     
                     val latestVersionTag = jsonObject.getString("tag_name")
@@ -41,23 +47,24 @@ object GitHubUpdateManager {
                     
                     if (assets.length() > 0) {
                         val apkUrl = assets.getJSONObject(0).getString("browser_download_url")
-                        
-                        // Lấy version hiện tại của App
-                        val currentVersion = activity.packageManager.getPackageInfo(activity.packageName, 0).versionName ?: "1.0.0"
-                        
-                        // So sánh phiên bản (Bỏ chữ 'v' nếu có)
+                        val currentVersion = appContext.packageManager.getPackageInfo(appContext.packageName, 0).versionName ?: "1.0.0"
                         val latestClean = latestVersionTag.replace("v", "").trim()
                         val currentClean = currentVersion.replace("v", "").trim()
                         
                         if (latestClean != currentClean) {
                             Handler(Looper.getMainLooper()).post {
-                                showUpdateDialog(activity, latestVersionTag, releaseNotes, apkUrl)
+                                val currentActivity = activityRef.get()
+                                if (currentActivity != null && !currentActivity.isFinishing && !currentActivity.isDestroyed) {
+                                    showUpdateDialog(currentActivity, latestVersionTag, releaseNotes, apkUrl)
+                                }
                             }
                         }
                     }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+            } finally {
+                connection?.disconnect()
             }
         }
     }
@@ -102,18 +109,19 @@ object GitHubUpdateManager {
     }
 
     private fun downloadAndInstallUpdate(context: Context, url: String, version: String) {
-        Toast.makeText(context, context.getString(R.string.update_toast_downloading), Toast.LENGTH_SHORT).show()
+        val appContext = context.applicationContext
+        Toast.makeText(appContext, appContext.getString(R.string.update_toast_downloading), Toast.LENGTH_SHORT).show()
         
         val request = DownloadManager.Request(Uri.parse(url)).apply {
-            setTitle(context.getString(R.string.update_notif_title))
-            setDescription(context.getString(R.string.update_notif_desc, version))
+            setTitle(appContext.getString(R.string.update_notif_title))
+            setDescription(appContext.getString(R.string.update_notif_desc, version))
             setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, "ADOFAI_Key_Viewer_$version.apk")
+            setDestinationInExternalFilesDir(appContext, Environment.DIRECTORY_DOWNLOADS, "ADOFAI_Key_Viewer_$version.apk")
             setAllowedOverMetered(true)
             setAllowedOverRoaming(true)
         }
 
-        val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        val downloadManager = appContext.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         val downloadId = downloadManager.enqueue(request)
 
         // Đăng ký Receiver để lắng nghe khi tải xong
@@ -131,10 +139,10 @@ object GitHubUpdateManager {
         }
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(onComplete, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_EXPORTED)
+            appContext.registerReceiver(onComplete, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_EXPORTED)
         } else {
             @Suppress("UnspecifiedRegisterReceiverFlag")
-            context.registerReceiver(onComplete, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+            appContext.registerReceiver(onComplete, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
         }
     }
 

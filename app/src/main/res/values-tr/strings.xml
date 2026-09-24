@@ -6,7 +6,7 @@
     <string name="control_panel">KONTROL PANELİ</string>
     <string name="check_shizuku">Shizuku durumunu kontrol et</string>
     <string name="shizuku_status_checking">Durum: Kontrol ediliyor...</string>
-    <string name="toggle_overlay">Kaplamayı aç/kapat</string>
+    <string name="toggle_overlay">Göstergeyi aç/kapat</string>
     <string name="config_hitbox">Dokunma alanı ayarları</string>
     <string name="config_key_viewer">Key Viewer ayarları</string>
     <string name="shizuku_permission_granted">Shizuku izni verildi!</string>
@@ -15,7 +15,7 @@
     <string name="overlay_use_notification">Bildirim çubuğunu kullan</string>
     <string name="overlay_start_hint">Başlatmak için buraya dokunun</string>
     <string name="shizuku_running">Durum: Shizuku çalışıyor</string>
-    <string name="shizuku_not_connected_or_no_permission">Durum: Shizuku bağlı değil veya izin eksik</string>
+    <string name="shizuku_not_connected_or_no_permission">Durum: Shizuku bağlı değil veya izin verilmedi</string>
     <string name="shizuku_not_running">Durum: Shizuku çalışmıyor</string>
     <string name="shizuku_error">Durum: Shizuku bağlantı hatası</string>
     <string name="shizuku_not_found">Shizuku bulunamadı</string>
@@ -29,34 +29,34 @@
     <string name="main_card_acc_title">Erişilebilirlik izni (Klavye)</string>
     <string name="main_acc_status_granted">Durum: İzin verildi</string>
     <string name="main_acc_status_pending">Durum: İzin bekleniyor...</string>
-    <string name="main_acc_btn">Erişilebilirlik izni ver</string>
+    <string name="main_acc_btn">Erişilebilirlik izni verin</string>
     <string name="main_btn_mapping">Tuş eşleme</string>
     <string name="main_toast_restarted">%s ile yeniden başlatıldı</string>
     <string name="main_toast_saved_mode">%s modu kaydedildi</string>
 
     <!-- Accessibility Prompt -->
     <string name="accessibility_requirement_title">ERİŞİLEBİLİRLİK İZNİ GEREKLİ</string>
-    <string name="accessibility_requirement_desc">Key Viewer neden bu izne ihtiyaç duyuyor?\n\nSistem (özellikle Game Turbo), oyunun üzerinde tam ekran bir kaplama algıladığında kaplamanın arkasına dokunmayı genellikle otomatik olarak engeller.\n\nAkıcı, gerçek zamanlı \'Dokunma noktaları\' çizmek ve gecikme olmadan kaplamanın arkasına dokunabilmenizi sağlamak için uygulamanın Erişilebilirlik hizmetinin görüntüleme ayrıcalıklarını kullanması gerekir.\n\n🔒 GİZLİLİK TAAHHÜDÜ:\nUygulama ekran içeriğini okumaz veya kişisel veri toplamaz. Bu izin yalnızca dokunma noktası grafiklerini çizmek için kullanılır.</string>
+    <string name="accessibility_requirement_desc">Key Viewer neden bu izne ihtiyaç duyuyor?\n\nSistem (özellikle Game Turbo), oyunun üzerinde tam ekran bir gösterge algıladığında göstergeninin arkasına dokunmayı genellikle otomatik olarak engeller.\n\nAkıcı, gerçek zamanlı \'Dokunma noktaları\' belirlemek ve gecikme olmadan göstergenin arkasına dokunabilmenizi sağlamak için uygulamanın Erişilebilirlik hizmetinin görüntüleme ayrıcalıklarını kullanması gerekir.\n\n🔒 GİZLİLİK TAAHHÜDÜ:\nUygulama ekran içeriğini okumaz veya kişisel veri toplamaz. Bu izin yalnızca dokunma noktası grafiklerini belirlemek için kullanılır.</string>
     <string name="grant_permission_now">ŞİMDİ İZİN VER</string>
     <string name="go_back">GERİ DÖN</string>
 
     <!-- OverlayService -->
     <string name="toast_enter_game">Lütfen oyuna girip ardından Key Viewer uygulamasını açın</string>
-    <string name="toast_landscape_only">Key Viewer kaplaması yalnızca yatay modda çalışır</string>
+    <string name="toast_landscape_only">Key Viewer göstergesi yalnızca yatay modda çalışır</string>
     <string name="notif_toggle_on">TUŞLARI KAPAT</string>
     <string name="notif_toggle_off">TUŞLARI AÇ</string>
     <string name="notif_show_touches">DOKUNMALARI GÖSTER</string>
     <string name="notif_hide_touches">DOKUNMALARI GİZLE</string>
     <string name="notif_open_app">UYGULAMA</string>
     <string name="notif_content_title">Key Viewer Overlay</string>
-    <string name="notif_content_text">Kontrol etmek için aşağıdaki düğmeleri kullanın.</string>
+    <string name="notif_content_text">Kontrol etmek için aşağıdaki tuşları kullanın.</string>
     <string name="kps_label">KPS</string>
     <string name="total_label">Total</string>
-    <string name="notif_channel_name">Kaplama hizmeti kanalı</string>
+    <string name="notif_channel_name">Gösterge hizmeti kanalı</string>
 
     <!-- HitboxConfigActivity -->
-    <string name="toast_config_saved">Yapılandırma kaydedildi</string>
-    <string name="toast_hitbox_reset">Standart varsayılana sıfırlandı</string>
+    <string name="toast_config_saved">Tercihler kaydedildi</string>
+    <string name="toast_hitbox_reset">Varsayılana sıfırlandı</string>
     <string name="hitbox_config_hint">Taşımak için ortayı, yeniden boyutlandırmak için 4 köşeyi sürükleyin</string>
     <string name="reset_default">Varsayılana sıfırla</string>
     <string name="save">Kaydet</string>
@@ -100,7 +100,7 @@
     <string name="color_g">G</string>
     <string name="color_b">B</string>
     <string name="color_a">A</string>
-    <string name="color_ok">Tamam</string>
+    <string name="color_ok">Kaydet</string>
     <string name="color_cancel">İptal</string>
     <string name="speed_label">Hız: %.1f</string>
     <string name="limit_label">Uçuş sınırı: %d</string>
@@ -119,11 +119,11 @@
     <string name="theme_color_border_pressed">Kenarlık rengi (Basılı)</string>
     <string name="theme_color_rain">Key Rain rengi</string>
     <string name="theme_color_rain_shadow">Rain gölgesi rengi</string>
-    <string name="toast_cannot_overwrite_system">Sistem hazır ayarlarının üzerine yazılamaz!</string>
+    <string name="toast_cannot_overwrite_system">Hazır sistem ayarlarının üzerine yazılamaz!</string>
     <string name="toast_preset_saved">%s konumuna başarıyla kaydedildi!</string>
-    <string name="log_save_success">Günlük dosyası başarıyla kaydedildi!</string>
+    <string name="log_save_success">Kayıt dosyası başarıyla kaydedildi!</string>
     <string name="log_save_error">Dosya kaydedilirken hata oluştu: %s</string>
-    <string name="log_msg_export">Kullanıcı Günlüğü .txt dosyasına aktar seçeneğine dokundu</string>
+    <string name="log_msg_export">Kullanıcı, kaydı .txt dosyasına aktar seçeneğine dokundu</string>
     <string name="crash_dialog_title">Uygulama önceki oturumda çöktü 😢</string>
     <string name="crash_copy_code">Hata kodunu kopyala</string>
     <string name="crash_ignore">Yok say</string>
@@ -143,11 +143,11 @@
 
     <!-- Xiaomi Warning -->
     <string name="xiaomi_warning_title">⚠️ Xiaomi/POCO cihaz uyarısı</string>
-    <string name="xiaomi_warning_msg">MIUI/HyperOS üzerinde Otomatik Göster özelliğinin düzgün çalışması için bu uygulamanın pil optimizasyonunu devre dışı bırakmalısınız.\n\n\'Ayarlara git\' seçeneğine dokunun -> \'Güç\' veya Pil seçeneğini seçin -> \'Kısıtlama yok\' seçeneğini seçin.</string>
+    <string name="xiaomi_warning_msg">MIUI/HyperOS\'da Otomatik Göster özelliğinin düzgün çalışması için bu uygulamanın pil optimizasyonunu devre dışı bırakmalısınız.\n\n\'Ayarlara git\' seçeneğine dokunun -> \'Güç\' veya Pil seçeneğini seçin -> \'Kısıtlama yok\' seçeneğini seçin.</string>
     <string name="xiaomi_warning_settings">Ayarlara git</string>
     <string name="xiaomi_warning_cancel">İptal</string>
-    <string name="xiaomi_warning_continue">Zaten devre dışı, devam et</string>
-    <string name="btn_export_log">Günlüğü dışa aktar (.txt)</string>
+    <string name="xiaomi_warning_continue">Zaten devre dışı, devam edin</string>
+    <string name="btn_export_log">Kaydı dışa aktar (.txt)</string>
     <string name="toast_overlay_permission_required">Lütfen Diğer Uygulamaların Üzerinde Göster izni verin!</string>
 
     <!-- Onboarding -->

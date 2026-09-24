@@ -196,6 +196,11 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             loadPreferences()
         }
 
+        // Khởi tạo chế độ màu và draft màu riêng từng key sau khi toàn bộ ô màu
+        // đã được nạp từ SharedPreferences. Nếu bỏ qua bước này, colorMode vẫn
+        // mặc định là BASIC và advancedDraft rỗng khi mở activity từ MainActivity.
+        // Khi đó UI hiển thị màu basic thay vì màu đã lưu cho từng key.
+        setupColorModeUI()
         setupListeners()
 
         viewerContainer.pivotX = 0f
@@ -411,7 +416,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                 cbBold.isChecked, cbItalic.isChecked, cbUnderline.isChecked,
                 swShowKeyCounters.isChecked, swPerformanceShadow.isChecked,
                 seekKeySpacing.value.toInt(), seekBorderWidth.value.toInt(), seekCornerRadius.value.toInt(),
-                swEnableKeyRain.isChecked, currentSpeed, currentLimit, swEnableShadow.isChecked
+                swEnableKeyRain.isChecked, currentSpeed, currentLimit, swEnableShadow.isChecked,
+                getSharedPreferences("KeyViewerPrefs", MODE_PRIVATE).getInt("theme_editor_preset_${currentKeyMode()}_$colorMode", 0)
             )
             themeEditorLauncher.launch(Intent(this, ThemeEditorActivity::class.java))
         }
@@ -1371,6 +1377,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                 putBoolean("theme_text_underline", it.underline)
                 putBoolean("show_key_counters", it.showCounters)
                 ThemeColorStore.setMode(this, currentKeyMode(), it.mode)
+                putInt("theme_editor_preset_${currentKeyMode()}_${it.mode}", it.activePreset)
                 if (it.mode == ThemeColorStore.BASIC) ThemeColorStore.writeBasic(this, it.basic, it.trail2, it.shadow2)
                 it.advanced.forEach { (target, colors) -> ThemeColorStore.writeAdvanced(this, currentKeyMode(), target, colors) }
             }

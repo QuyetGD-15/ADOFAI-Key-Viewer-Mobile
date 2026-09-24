@@ -41,6 +41,7 @@ class ThemeEditorActivity : AppCompatActivity() {
     private var draftUnderline = false
     private var draftShowCounters = false
     private var draftPerformanceShadow = false
+    private var draftShadowEnabled = true
     private var draftSubmitted = false
     private val pref by lazy { getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE) }
 
@@ -58,12 +59,15 @@ class ThemeEditorActivity : AppCompatActivity() {
             drafts.putAll(shared.advanced)
             draftBold = shared.bold; draftItalic = shared.italic; draftUnderline = shared.underline
             draftShowCounters = shared.showCounters; draftPerformanceShadow = shared.performanceShadow
+            draftShadowEnabled = shared.shadowEnabled
+            selectedPresets[mode] = shared.activePreset
         } else {
             draftBold = pref.getBoolean("theme_text_bold", false)
             draftItalic = pref.getBoolean("theme_text_italic", false)
             draftUnderline = pref.getBoolean("theme_text_underline", false)
             draftShowCounters = pref.getBoolean("show_key_counters", false)
             draftPerformanceShadow = pref.getBoolean("theme_performance_shadow", false)
+            draftShadowEnabled = pref.getBoolean("theme_shadow_enabled", true)
         }
         host = findViewById(R.id.themeEditorHost)
         editorScroll = findViewById(R.id.themeEditorScroll)
@@ -73,6 +77,8 @@ class ThemeEditorActivity : AppCompatActivity() {
         preview = findViewById(R.id.themePreview)
         preview.keyMode = keyMode
         preview.autoPreview = true
+        // Dữ liệu đang áp dụng đã có trong draft; không đọc lại màu preset từ code khi mở editor.
+        // Chỉ dựng preset từ definition khi người dùng chủ động chọn trong danh sách.
         findViewById<View>(R.id.btnThemeBack).setOnClickListener { cancelEditing() }
         findViewById<View>(R.id.btnThemeSave).setOnClickListener { save(); finish() }
         tabs.setBackground(GradientDrawable().apply { setColor(0xFF1D1D1D.toInt()); cornerRadius = dp(20).toFloat(); setStroke(dp(1), 0xFF414141.toInt()) })
@@ -107,24 +113,36 @@ class ThemeEditorActivity : AppCompatActivity() {
         host.removeAllViews()
         targetListScroll = null
         addPresetBar()
-        if (mode == ThemeColorStore.ADVANCED || systemDraft != null) addTargetList(previousX)
+        if (mode == ThemeColorStore.ADVANCED) addTargetList(previousX)
         else addDescription(getString(R.string.theme_editor_basic_desc))
         addStyleControls()
-        addSectionTitle(getString(R.string.theme_editor_colors))
-        val c = current(selectedTarget)
-        addColor(getString(R.string.theme_editor_text), c.textNormal) { update(c.copy(textNormal = it)) }
-        addColor(getString(R.string.theme_editor_background), c.bgNormal) { update(c.copy(bgNormal = it)) }
-        addColor(getString(R.string.theme_editor_border), c.borderNormal) { update(c.copy(borderNormal = it)) }
         if (mode == ThemeColorStore.BASIC) {
+            if (basicDraft == null) basicDraft = if (systemDraft != null) basic() else current("basic")
+            val currentBasic = basicDraft ?: basic()
+            addColor(getString(R.string.theme_editor_text), currentBasic.textNormal) { updateBasic(currentBasic.copy(textNormal = it)) }
+            addColor(getString(R.string.theme_editor_background), currentBasic.bgNormal) { updateBasic(currentBasic.copy(bgNormal = it)) }
+            addColor(getString(R.string.theme_editor_border), currentBasic.borderNormal) { updateBasic(currentBasic.copy(borderNormal = it)) }
+            addSectionTitle(getString(R.string.theme_editor_pressed))
+            addColor(getString(R.string.theme_editor_text_pressed), currentBasic.textPressed) { updateBasic(currentBasic.copy(textPressed = it)) }
+            addColor(getString(R.string.theme_editor_background_pressed), currentBasic.bgPressed) { updateBasic(currentBasic.copy(bgPressed = it)) }
+            addColor(getString(R.string.theme_editor_border_pressed), currentBasic.borderPressed) { updateBasic(currentBasic.copy(borderPressed = it)) }
             addSectionTitle(getString(R.string.theme_editor_rain_row1))
-            addColor(getString(R.string.theme_editor_rain_color_row1), c.trail) { update(c.copy(trail = it)) }
-            addColor(getString(R.string.theme_editor_rain_shadow_row1), c.shadow) { update(c.copy(shadow = it)) }
+            addColor(getString(R.string.theme_editor_rain_color_row1), currentBasic.trail) { updateBasic(currentBasic.copy(trail = it)) }
+            addColor(getString(R.string.theme_editor_rain_shadow_row1), currentBasic.shadow) { updateBasic(currentBasic.copy(shadow = it)) }
             if (keyMode > 8) {
                 addSectionTitle(getString(R.string.theme_editor_rain_row2))
-                addColor(getString(R.string.theme_rain_color_row2), trail2()) { basicTrail2 = it; refreshPreview() }
-                addColor(getString(R.string.theme_rain_shadow_row2), shadow2()) { basicShadow2 = it; refreshPreview() }
+                addColor(getString(R.string.theme_rain_color_row2), trail2()) { basicTrail2 = it; updateBasic(currentBasic) }
+                addColor(getString(R.string.theme_rain_shadow_row2), shadow2()) { basicShadow2 = it; updateBasic(currentBasic) }
             }
-        } else if (selectedTarget.startsWith("key_")) {
+        } else {
+            addSectionTitle(getString(R.string.theme_editor_colors))
+            val c = current(selectedTarget)
+            addColor(getString(R.string.theme_editor_text), c.textNormal) { update(c.copy(textNormal = it)) }
+            addColor(getString(R.string.theme_editor_background), c.bgNormal) { update(c.copy(bgNormal = it)) }
+            addColor(getString(R.string.theme_editor_border), c.borderNormal) { update(c.copy(borderNormal = it)) }
+        }
+        if (mode != ThemeColorStore.BASIC && selectedTarget.startsWith("key_")) {
+            val c = current(selectedTarget)
             addSectionTitle(getString(R.string.theme_editor_pressed))
             addColor(getString(R.string.theme_editor_text_pressed), c.textPressed) { update(c.copy(textPressed = it)) }
             addColor(getString(R.string.theme_editor_background_pressed), c.bgPressed) { update(c.copy(bgPressed = it)) }
@@ -157,6 +175,15 @@ class ThemeEditorActivity : AppCompatActivity() {
             setOnCheckedChangeListener { _, value -> draftShowCounters = value; refreshPreview() }
         }
         host.addView(counter, LinearLayout.LayoutParams(-1, dp(58)).apply { bottomMargin = dp(8) })
+        val enableShadow = SwitchMaterial(this).apply {
+            text = getString(R.string.pref_enable_shadow)
+            isChecked = draftShadowEnabled
+            setTextColor(Color.WHITE)
+            background = surface.constantState?.newDrawable()?.mutate()
+            setPadding(dp(12), 0, dp(12), 0)
+            setOnCheckedChangeListener { _, enabled -> draftShadowEnabled = enabled; refreshPreview() }
+        }
+        host.addView(enableShadow, LinearLayout.LayoutParams(-1, dp(58)).apply { bottomMargin = dp(8) })
         val shadow = SwitchMaterial(this).apply {
             text = getString(R.string.pref_performance_shadow)
             isChecked = draftPerformanceShadow
@@ -242,29 +269,30 @@ class ThemeEditorActivity : AppCompatActivity() {
         saveButton.setOnClickListener {
             val slot = spinner.selectedItemPosition
             if (slot < 5) Toast.makeText(this, R.string.toast_cannot_overwrite_system, Toast.LENGTH_SHORT).show()
-            else { savePreset(slot); Toast.makeText(this, getString(R.string.theme_editor_preset_saved, names[slot]), Toast.LENGTH_SHORT).show() }
+            else { savePreset(slot); pref.edit().putBoolean("theme_custom_used_${keyMode}_${mode}_$slot", true).apply(); Toast.makeText(this, getString(R.string.theme_editor_preset_saved, names[slot]), Toast.LENGTH_SHORT).show() }
         }
     }
 
     private fun loadPreset(slot: Int) {
         systemDraft = null
-        val default = if (slot == 1) ThemeColorSet("#FFFFFFFF", "#FF000000", "#338E3CFF", "#FFFFFFFF", "#FF8C3EFF", "#FFFFFFFF", "#FF8C3EFF", "#FF000000") else ThemeColorSet()
+        val default = ThemeColorSet()
         when {
-            slot in 2..4 -> {
-                systemDraft = ThemeColorStore.systemPreset(keyMode, slot - 2, basic())
+            slot in 1..4 -> {
+                systemDraft = if (slot == 1) ThemeColorStore.jipperPreset(keyMode)
+                    else ThemeColorStore.systemPreset(keyMode, slot - 2, basic())
                 basicDraft = systemDraft!!.keys.first()
                 drafts.clear()
                 targets().forEach { target -> drafts[target] = current(target) }
             }
             mode == ThemeColorStore.BASIC -> {
-                basicDraft = if (slot < 2) default else ThemeColorStore.advancedPreset(pref, keyMode, slot - 4, "basic", basic())
+                basicDraft = if (slot == 0) default else ThemeColorStore.advancedPreset(pref, keyMode, slot - 4, "basic", basic())
                 if (slot >= 5) {
                     basicTrail2 = pref.getString("theme_basic_preset_${keyMode}_${slot - 4}_trail2", trail2())
                     basicShadow2 = pref.getString("theme_basic_preset_${keyMode}_${slot - 4}_shadow2", shadow2())
                 }
             }
             else -> targets().forEach { target ->
-                drafts[target] = if (slot < 2) default else ThemeColorStore.advancedPreset(pref, keyMode, slot - 1, target, basic())
+                drafts[target] = if (slot == 0) default else ThemeColorStore.advancedPreset(pref, keyMode, slot - 1, target, basic())
             }
         }
     }
@@ -314,7 +342,26 @@ class ThemeEditorActivity : AppCompatActivity() {
         row.addView(swatch, LinearLayout.LayoutParams(dp(50), dp(42)))
         host.addView(row, LinearLayout.LayoutParams(-1, dp(64)).apply { bottomMargin = dp(10) })
     }
+    private fun firstFreeCustomSlot(): Int = (5..7).firstOrNull { slot ->
+        !pref.getBoolean("theme_custom_used_${keyMode}_${mode}_$slot", false)
+    } ?: 5
+
+    private fun ensureEditablePreset() {
+        if (presetSelection() >= 5) return
+        val slot = firstFreeCustomSlot()
+        selectedPresets[mode] = slot
+        // Chỉ chuyển draft đang chỉnh sang custom; ghi xuống disk khi người dùng lưu.
+    }
+
+    private fun updateBasic(value: ThemeColorSet) {
+        ensureEditablePreset()
+        basicDraft = value
+        // Basic áp dụng đồng loạt cho key; riêng row 2 rain sẽ được truyền riêng qua trail2/shadow2.
+        refreshPreview()
+    }
+
     private fun update(value: ThemeColorSet) {
+        ensureEditablePreset()
         val system = systemDraft
         if (system != null) {
             val target = if (mode == ThemeColorStore.BASIC) "key_0" else selectedTarget
@@ -333,19 +380,19 @@ class ThemeEditorActivity : AppCompatActivity() {
         refreshPreview()
     }
     private fun refreshPreview() {
-        val fallback = basic()
+        val basicSet = basic()
         val system = systemDraft
         val sets = Array(keyMode) { i -> when {
             system != null -> system.keys[i]
-            mode == ThemeColorStore.ADVANCED -> drafts["key_$i"] ?: ThemeColorStore.advanced(pref, keyMode, "key_$i", fallback)
-            else -> fallback
+            mode == ThemeColorStore.ADVANCED -> drafts["key_$i"] ?: ThemeColorStore.advanced(pref, keyMode, "key_$i", basicSet)
+            else -> if (keyMode > 8 && i >= 8) basicSet.copy(trail = trail2(), shadow = shadow2()) else basicSet
         } }
         preview.usePerKeyTrails = system != null || mode == ThemeColorStore.ADVANCED
         preview.row2Trail = trail2()
         preview.row2Shadow = shadow2()
         preview.colors = sets
-        preview.kpsColors = system?.kps ?: if (mode == ThemeColorStore.ADVANCED) drafts["kps"] ?: fallback else fallback
-        preview.totalColors = system?.total ?: if (mode == ThemeColorStore.ADVANCED) drafts["total"] ?: fallback else fallback
+        preview.kpsColors = system?.kps ?: if (mode == ThemeColorStore.ADVANCED) drafts["kps"] ?: basicSet else basicSet
+        preview.totalColors = system?.total ?: if (mode == ThemeColorStore.ADVANCED) drafts["total"] ?: basicSet else basicSet
         preview.applyStyle(draftBold, draftItalic, draftUnderline, draftShowCounters)
         val draft = ThemeDraftBridge.draft
         preview.applyPreviewConfig(
@@ -355,7 +402,7 @@ class ThemeEditorActivity : AppCompatActivity() {
             draft?.keyRainEnabled ?: pref.getBoolean("theme_keyrain_enabled", true),
             draft?.trailSpeed ?: pref.getFloat("trail_speed", .8f),
             draft?.trailLimitPx ?: pref.getInt("trail_limit_px", 300),
-            draft?.shadowEnabled ?: pref.getBoolean("theme_shadow_enabled", true),
+            draftShadowEnabled,
             draftPerformanceShadow
         )
     }
@@ -368,6 +415,20 @@ class ThemeEditorActivity : AppCompatActivity() {
             advanced["kps"] = systemDraft!!.kps; advanced["total"] = systemDraft!!.total
         }
         val previous = ThemeDraftBridge.draft
+        val chosenSlot = presetSelection()
+        if (chosenSlot >= 5) {
+            val editor = pref.edit()
+            editor.putBoolean("theme_custom_used_${keyMode}_${mode}_$chosenSlot", true)
+            editor.putInt("theme_editor_preset_${keyMode}_$mode", chosenSlot)
+            if (mode == ThemeColorStore.BASIC) {
+                ThemeColorStore.writeAdvancedPreset(editor, keyMode, chosenSlot - 4, "basic", basic())
+                editor.putString("theme_basic_preset_${keyMode}_${chosenSlot - 4}_trail2", trail2())
+                editor.putString("theme_basic_preset_${keyMode}_${chosenSlot - 4}_shadow2", shadow2())
+            } else {
+                targets().forEach { target -> ThemeColorStore.writeAdvancedPreset(editor, keyMode, chosenSlot - 1, target, advanced[target] ?: basic()) }
+            }
+            editor.apply()
+        }
         ThemeDraftBridge.draft = ThemeDraft(
             effectiveMode, basic(), trail2(), shadow2(), advanced,
             draftBold, draftItalic, draftUnderline, draftShowCounters, draftPerformanceShadow,
@@ -377,7 +438,8 @@ class ThemeEditorActivity : AppCompatActivity() {
             previous?.keyRainEnabled ?: pref.getBoolean("theme_keyrain_enabled", true),
             previous?.trailSpeed ?: pref.getFloat("trail_speed", .8f),
             previous?.trailLimitPx ?: pref.getInt("trail_limit_px", 300),
-            previous?.shadowEnabled ?: pref.getBoolean("theme_shadow_enabled", true),
+            draftShadowEnabled,
+            chosenSlot,
             previous?.presetColors ?: LinkedHashMap(), previous?.presetTrail2 ?: LinkedHashMap()
         )
         setResult(RESULT_OK)

@@ -4,6 +4,7 @@ import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
@@ -91,28 +92,40 @@ class SetupActivity : AppCompatActivity() {
         btnNext = findViewById(R.id.btnSetupNext)
 
         setupStepListeners()
+        if (savedInstanceState != null) {
+            selectedLanguage = savedInstanceState.getString("SAVED_LANG")
+            refreshLanguageSelection()
+        }
         updateUIForStep()
     }
 
     private fun setupStepListeners() {
-        // Step 1: Language — shared order and flags with the main screen.
+        // Step 1: Language — use a compact, consistent selection list with a clear selected state.
         val languageOptions = findViewById<LinearLayout>(R.id.languageOptions)
         SupportedLanguages.all.forEach { language ->
-            val button = MaterialButton(this).apply {
+            val button = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                tag = language.tag
                 text = language.label
                 isAllCaps = false
                 textAlignment = View.TEXT_ALIGNMENT_VIEW_START
-                minHeight = (56 * resources.displayMetrics.density).toInt()
+                gravity = Gravity.CENTER_VERTICAL
+                minHeight = dpToPx(56)
+                maxLines = 1
+                setPadding(dpToPx(20), 0, dpToPx(16), 0)
+                cornerRadius = dpToPx(16)
+                strokeWidth = dpToPx(1)
                 setOnClickListener {
                     selectedLanguage = language.tag
+                    refreshLanguageSelection()
                     updateLanguage(language.tag)
                     moveToNextStep()
                 }
             }
             languageOptions.addView(button, LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, (56 * resources.displayMetrics.density).toInt()
-            ).apply { bottomMargin = (8 * resources.displayMetrics.density).toInt() })
+                ViewGroup.LayoutParams.MATCH_PARENT, dpToPx(56)
+            ).apply { bottomMargin = dpToPx(8) })
         }
+        refreshLanguageSelection()
 
         // Step 2: Input Source
         findViewById<MaterialCardView>(R.id.cardStepTouch).setOnClickListener {
@@ -330,6 +343,26 @@ class SetupActivity : AppCompatActivity() {
                     btnDetails.text = getString(R.string.setup_step5_btn_mapping)
                 }
             }
+        }
+    }
+
+    private fun refreshLanguageSelection() {
+        val selected = selectedLanguage ?: SupportedLanguages.currentTag(this)
+        val options = findViewById<LinearLayout>(R.id.languageOptions)
+        for (i in 0 until options.childCount) {
+            val button = options.getChildAt(i) as MaterialButton
+            val active = button.tag == selected
+            button.backgroundTintList = ColorStateList.valueOf(
+                Color.parseColor(if (active) "#352C47" else "#1E1E1E")
+            )
+            button.strokeColor = ColorStateList.valueOf(
+                Color.parseColor(if (active) "#A78BFA" else "#44FFFFFF")
+            )
+            button.setTextColor(Color.WHITE)
+            button.setIconResource(if (active) R.drawable.ic_language_check else 0)
+            button.iconGravity = MaterialButton.ICON_GRAVITY_END
+            button.iconPadding = dpToPx(8)
+            button.isSelected = active
         }
     }
 

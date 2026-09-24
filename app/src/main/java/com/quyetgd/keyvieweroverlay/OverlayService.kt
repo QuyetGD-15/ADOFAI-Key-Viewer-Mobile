@@ -43,12 +43,14 @@ import rikka.shizuku.Shizuku
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import android.os.SystemClock
+import java.lang.ref.WeakReference
 
 class OverlayService : Service() {
 
     companion object {
         var isRunning = false
-        var instance: OverlayService? = null
+        private var instanceRef: WeakReference<OverlayService>? = null
+        val instance: OverlayService? get() = instanceRef?.get()
         const val ACTION_START_FOREGROUND = "com.quyetgd.keyvieweroverlay.ACTION_START_FOREGROUND"
         const val ACTION_TOGGLE_KEY_VIEWER = "com.quyetgd.keyvieweroverlay.ACTION_TOGGLE_KEY_VIEWER"
         const val ACTION_TOGGLE_TOUCHES = "com.quyetgd.keyvieweroverlay.ACTION_TOGGLE_TOUCHES"
@@ -347,7 +349,7 @@ class OverlayService : Service() {
         super.onCreate()
         AppLogger.i(this, "OverlayService", "=== BẮT ĐẦU KHỞI TẠO SERVICE ===")
         isRunning = true
-        instance = this
+        instanceRef = WeakReference(this)
         createNotificationChannel()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
@@ -384,20 +386,7 @@ class OverlayService : Service() {
             registerReceiver(resetTotalReceiver, resetFilter)
         }
 
-        mainHandler.post(object : Runnable {
-            override fun run() {
-                val currentTime = SystemClock.uptimeMillis()
-                var currentKps = 0
-
-                while (kpsTail != kpsHead && currentTime - kpsTimestamps[kpsTail] > 1000) {
-                    kpsTail = (kpsTail + 1) and 255
-                }
-                currentKps = if (kpsHead >= kpsTail) kpsHead - kpsTail else kpsHead + 256 - kpsTail
-
-                updateKpsTotalUI(currentKps, totalClicks)
-                mainHandler.postDelayed(this, 100)
-            }
-        })
+        mainHandler.post(kpsUpdateRunnable)
 
         if (currentInputSource == "touch" && Shizuku.pingBinder()) {
             AppLogger.i(this, "OverlayService", "Đã cấp Shizuku, tiến hành gắn hook cảm ứng")
@@ -915,7 +904,10 @@ class OverlayService : Service() {
             }
         }
 
-        if (::viewerContainer.isInitialized) wrapper.removeView(viewerContainer)
+        if (::viewerContainer.isInitialized) {
+            keyTrailView.releaseResources()
+            wrapper.removeView(viewerContainer)
+        }
 
         viewerContainer =
             LayoutInflater.from(this).inflate(R.layout.overlay_view, wrapper, false).apply {
@@ -1544,14 +1536,18 @@ class OverlayService : Service() {
         for (i in 0 until keyMode) editor.putInt("KEY_COUNT_${keyMode}_$i", keyCounters[i])
         editor.apply()
         isRunning = false
-        instance = null
+        instanceRef = null
         sharedPrefs.edit().putInt("TOTAL_CLICKS", totalClicks).apply()
-        mainHandler.removeCallbacks(autoShowRunnable)
-        mainHandler.removeCallbacks(kpsUpdateRunnable)
-        mainHandler.removeCallbacks(kpsUiUpdateRunnable)
+        mainHandler.removeCallbacksAndMessages(null)
         stopReadingTouchEvents()
         try { unregisterReceiver(editReceiver); unregisterReceiver(resetTotalReceiver) } catch (e: Exception) {}
-        hideOverlay()
+        if (::keyTrailView.isInitialized) keyTrailView.releaseResources()
+        if (::wrapper.isInitialized && wrapper.parent != null) {
+            try { windowManager.removeViewImmediate(wrapper) } catch (e: Exception) {
+                AppLogger.e(this, "OverlayService", "Lỗi removeView khi dừng service", e)
+            }
+        }
+        isOverlayShowing = false
     }
 
     private val kpsUpdateRunnable = object : Runnable {

@@ -1,20 +1,22 @@
-# Kế hoạch thiết kế lại màn hình chọn màu
+# Kế hoạch rà soát và tối ưu RAM
 
 ## Mục tiêu
-- Cho phép chọn phím trực tiếp bằng cách chạm vào cụm phím preview, có trạng thái chọn rõ ràng.
-- Preview mô phỏng đúng bố cục overlay: cụm phím ở khu vực phía trên, KPS/Total bên dưới và trail chạy phía sau/phía dưới phím.
-- Preview chiếm khoảng 1/3 chiều cao màn hình; khu vực chỉnh màu chiếm phần còn lại, dễ quét và phân biệt các nhóm thuộc tính.
-- Giữ nguyên cơ chế lưu màu cơ bản/nâng cao và tương thích với `ThemeColorStore`.
+Giảm mức sử dụng RAM và tránh các nguồn gây rò rỉ/bộ nhớ tăng không cần thiết, nhưng không làm thay đổi hành vi sản phẩm ngoài phạm vi tối ưu hiệu năng.
 
-## Các bước thực hiện
-1. Cập nhật layout `activity_theme_editor.xml`: chia màn hình theo chiều dọc thành preview khoảng 1/3 và vùng chỉnh sửa cuộn ở phần còn lại; bố trí header/tab/target selector rõ ràng.
-2. Viết lại `ThemePreviewView`: vẽ cụm phím theo tỉ lệ và kiểu overlay, bổ sung trail preview, xử lý chạm để chọn phím, hiển thị phím đang chọn và callback về Activity.
-3. Cập nhật `ThemeEditorActivity`: đồng bộ target nâng cao với phím được chạm, hiển thị target selector trực quan, tránh rebuild làm mất lựa chọn, nhóm các màu theo Normal/Pressed/Trail và refresh preview ngay khi thay đổi.
-4. Cải thiện dialog màu để các thanh RGBA và giá trị dễ hiểu, cập nhật preview màu trong dialog nếu cần.
-5. Build/kiểm tra lỗi phân tích, triển khai và kiểm tra UI trên thiết bị; sửa các lỗi phát sinh.
+## Phạm vi rà soát
+1. Kiểm tra cấu trúc module, cấu hình build và manifest để tìm cấu hình debug/release, tài nguyên dư thừa và tuỳ chọn đóng gói ảnh hưởng RAM.
+2. Rà soát Activity/Fragment/View/ViewModel/adapter/listener/coroutine để phát hiện lifecycle leak, giữ tham chiếu Context/View, cache không giới hạn và cập nhật UI quá thường xuyên.
+3. Rà soát layout và drawable (đặc biệt `activity_main.xml`) để phát hiện view lồng sâu, ảnh kích thước lớn, bitmap không cần thiết và thành phần có thể thay bằng cấu hình nhẹ hơn.
+4. Rà soát dependency và cách tải tài nguyên/dữ liệu; chỉ thay đổi khi có bằng chứng rõ ràng và tương thích.
+5. Áp dụng các cải thiện an toàn, sau đó build/kiểm tra static analysis và xác nhận ứng dụng vẫn chạy.
 
-## Kiểm chứng
-- Build debug thành công.
-- Màn hình preview nhận chạm vào từng phím và đổi target đúng.
-- Chỉnh màu nền/chữ/viền/trail của phím đang chọn được phản ánh ngay.
-- Trail hiển thị khi preview tự chạy hoặc khi chạm phím.
+## Nguyên tắc
+- Ưu tiên thay đổi nhỏ, đo được và không phá chức năng.
+- Không xoá thành phần chỉ vì “có vẻ dư” nếu chưa xác nhận usage.
+- Không tối ưu mù bằng cách tắt tính năng hoặc giảm chất lượng hiển thị ngoài yêu cầu.
+- Báo cáo rõ những rủi ro còn lại và đề xuất profiling bằng Android Studio/Perfetto nếu cần số liệu runtime.
+
+## Xác minh
+- Chạy kiểm tra phân tích file sau khi sửa.
+- Build module ứng dụng bằng Gradle.
+- Nếu thiết bị khả dụng, triển khai và kiểm tra nhanh màn hình chính/lifecycle.

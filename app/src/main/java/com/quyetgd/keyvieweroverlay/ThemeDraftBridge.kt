@@ -19,6 +19,7 @@ data class ThemeDraft(
     var trailSpeed: Float,
     var trailLimitPx: Int,
     var shadowEnabled: Boolean,
+    var activePreset: Int = 0,
     val presetColors: LinkedHashMap<String, ThemeColorSet> = LinkedHashMap(),
     val presetTrail2: LinkedHashMap<String, Pair<String, String>> = LinkedHashMap()
 ) {

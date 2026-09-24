@@ -150,7 +150,6 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
     private lateinit var cardAccessibility: View
     private lateinit var btnAccessibility: Button
     private lateinit var tvAccessibilityStatus: TextView
-    private lateinit var tvCurrentLanguage: TextView
     private lateinit var btnToggleLanguage: Button
     private var layoutAccessibilityPrompt: View? = null
     private var loadingDialog: android.app.Dialog? = null
@@ -173,6 +172,17 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
     private var isShizukuPollingActive = false
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val startOverlayAfterModeChange = Runnable {
+        val intentStart = Intent(this, OverlayService::class.java).apply {
+            action = "com.quyetgd.keyvieweroverlay.ACTION_START_FOREGROUND"
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intentStart)
+        } else {
+            startService(intentStart)
+        }
+    }
+
     private val updateRunnable = object : Runnable {
         override fun run() {
             // 1. Kiểm tra trạng thái Service và đồng bộ Switch
@@ -299,7 +309,6 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         btnAccessibility = findViewById(R.id.btnAccessibility)
         tvAccessibilityStatus = findViewById(R.id.tvAccessibilityStatus)
         
-        tvCurrentLanguage = findViewById(R.id.tvCurrentLanguage)
         btnToggleLanguage = findViewById(R.id.btnToggleLanguage)
 
         // Xử lý nguồn đầu vào (Cảm ứng/Bàn phím)
@@ -440,6 +449,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                 .setTitle(R.string.select_language)
                 .setSingleChoiceItems(options, selected) { dialog, which ->
                     SupportedLanguages.apply(this, SupportedLanguages.all[which].tag)
+                    updateLanguageUI()
                     dialog.dismiss()
                 }
                 .setNegativeButton(R.string.cancel, null)
@@ -505,7 +515,9 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
     }
 
     private fun updateLanguageUI() {
-        tvCurrentLanguage.text = getString(R.string.current_language)
+        val language = SupportedLanguages.all.firstOrNull { it.tag == SupportedLanguages.currentTag(this) }
+        btnToggleLanguage.text = language?.label ?: getString(R.string.select_language)
+        btnToggleLanguage.contentDescription = "${getString(R.string.select_language)}: ${language?.displayName ?: ""}"
     }
 
     private fun updateAccessibilityStatusUI() {
@@ -580,17 +592,9 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
             if (switchOverlay.isChecked) {
                 stopService(Intent(this, OverlayService::class.java))
 
-                Handler(Looper.getMainLooper()).postDelayed({
-                    val intentStart = Intent(this, OverlayService::class.java).apply {
-                        action = "com.quyetgd.keyvieweroverlay.ACTION_START_FOREGROUND"
-                    }
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        startForegroundService(intentStart)
-                    } else {
-                        startService(intentStart)
-                    }
-                    Toast.makeText(this, getString(R.string.main_toast_restarted, selected), Toast.LENGTH_SHORT).show()
-                }, 300)
+                mainHandler.removeCallbacks(startOverlayAfterModeChange)
+                mainHandler.postDelayed(startOverlayAfterModeChange, 300)
+                Toast.makeText(this, getString(R.string.main_toast_restarted, selected), Toast.LENGTH_SHORT).show()
             } else {
                 val intent = Intent("com.quyetgd.keyvieweroverlay.UPDATE_OVERLAY_CONFIG")
                 sendBroadcast(intent)
@@ -1152,6 +1156,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         super.onDestroy()
         Shizuku.removeBinderDeadListener(BINDER_DEAD_LISTENER)
         Shizuku.removeRequestPermissionResultListener(this)
+        mainHandler.removeCallbacks(startOverlayAfterModeChange)
         mainHandler.removeCallbacksAndMessages(null)
     }
 }
