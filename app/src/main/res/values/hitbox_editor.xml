@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hitbox_editor_title">Chỉnh vùng phím</string>
+    <string name="hitbox_editor_status">Đang chỉnh vùng %1$s</string>
+    <string name="hitbox_editor_unsaved">Thay đổi chưa lưu</string>
+    <string name="hitbox_editor_close">Đóng</string>
+    <string name="hitbox_editor_reset_title">Đặt lại vùng phím?</string>
+    <string name="hitbox_editor_reset_message">Các vùng sẽ trở về bố cục mặc định trong bản nháp. Chưa có gì được lưu.</string>
+    <string name="hitbox_editor_discard_title">Bỏ thay đổi?</string>
+    <string name="hitbox_editor_discard_message">Các thay đổi chưa lưu sẽ bị mất.</string>
+    <string name="hitbox_editor_discard">Bỏ thay đổi</string>
+    <string name="hitbox_editor_cancel">Hủy</string>
+</resources>
