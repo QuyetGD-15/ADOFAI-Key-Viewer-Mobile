@@ -23,62 +23,56 @@
 
     <LinearLayout
         android:id="@+id/layoutLanguage"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:layout_marginEnd="12dp"
-        android:gravity="end"
-        android:orientation="vertical"
+        android:layout_marginHorizontal="12dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+        <ImageButton
+            android:id="@+id/btnExportLog"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/btn_export_log"
+            android:padding="12dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_logbook"
+            app:tint="@color/md3_primary" />
 
-            <ImageButton
-                android:id="@+id/btnManualCheckUpdate"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginEnd="6dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/update_content_desc"
-                android:padding="8dp"
-                android:scaleType="fitCenter"
-                android:src="@android:drawable/ic_menu_rotate"
-                app:tint="@color/md3_primary" />
+        <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnToggleLanguage"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:contentDescription="@string/select_language"
-                android:minWidth="0dp"
-                android:minHeight="48dp"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:text="@string/select_language"
-                android:textSize="12sp"
-                app:icon="@drawable/ic_language_globe"
-                app:iconTint="@color/md3_primary"
-                app:strokeColor="@color/md3_primary" />
-        </LinearLayout>
+        <ImageButton
+            android:id="@+id/btnManualCheckUpdate"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/update_content_desc"
+            android:padding="12dp"
+            android:scaleType="fitCenter"
+            android:src="@android:drawable/ic_menu_rotate"
+            app:tint="@color/md3_primary" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnExportLog"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:layout_gravity="end"
-            android:minWidth="0dp"
+            android:id="@+id/btnToggleLanguage"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:contentDescription="@string/select_language"
+            android:minWidth="48dp"
             android:minHeight="48dp"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:text="@string/btn_export_log"
-            android:textSize="12sp" />
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:text="@string/select_language"
+            android:textSize="12sp"
+            app:icon="@drawable/ic_language_globe"
+            app:iconTint="@color/md3_primary"
+            app:strokeColor="@color/md3_primary" />
     </LinearLayout>
 
     <com.google.android.material.card.MaterialCardView

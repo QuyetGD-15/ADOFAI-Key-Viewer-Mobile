@@ -94,7 +94,7 @@ class ThemeEditorActivity : AppCompatActivity() {
     }
 
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
-    private fun presetSelection() = selectedPresets[mode] ?: pref.getInt("theme_editor_preset_${keyMode}_$mode", 0).coerceIn(0, 7)
+    private fun presetSelection() = selectedPresets[mode] ?: pref.getInt("theme_editor_preset_${keyMode}_$mode", 0).coerceIn(0, 8)
     private fun targets(): List<String> = buildList { repeat(keyMode) { add("key_$it") }; add("kps"); add("total") }
     private fun label(target: String) = when (target) { "kps" -> getString(R.string.kps_label); "total" -> getString(R.string.total_label); else -> getString(R.string.theme_target_key, target.substringAfter('_').toInt() + 1) }
     private fun basic() = basicDraft ?: ThemeColorStore.basic(pref)
@@ -236,10 +236,12 @@ class ThemeEditorActivity : AppCompatActivity() {
     }
 
     private fun addPresetBar() {
-        val names = listOf(getString(R.string.preset_default), getString(R.string.preset_jipper)) + (0 until ThemeColorStore.SYSTEM_PRESET_COUNT).map {
+        val systemNames = (0 until ThemeColorStore.SYSTEM_PRESET_COUNT).map {
             ThemeColorStore.systemPreset(keyMode, it, basic()).name
-        } + if (mode == ThemeColorStore.BASIC) (1..3).map { getString(R.string.theme_editor_custom_preset, it) }
-        else (4..6).map { getString(R.string.theme_editor_custom_preset, it) }
+        }
+        val names = listOf(getString(R.string.preset_default), getString(R.string.preset_jipper)) +
+            systemNames +
+            (if (mode == ThemeColorStore.BASIC) (1..3) else (4..6)).map { getString(R.string.theme_editor_custom_preset, it) }
         val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val selectorSurface = GradientDrawable().apply { setColor(0xFF2B2B2B.toInt()); cornerRadius = dp(10).toFloat(); setStroke(dp(1), 0xFF414141.toInt()) }
         val spinner = Spinner(this).apply {
@@ -268,7 +270,7 @@ class ThemeEditorActivity : AppCompatActivity() {
         }
         saveButton.setOnClickListener {
             val slot = spinner.selectedItemPosition
-            if (slot < 5) Toast.makeText(this, R.string.toast_cannot_overwrite_system, Toast.LENGTH_SHORT).show()
+            if (slot < 6) Toast.makeText(this, R.string.toast_cannot_overwrite_system, Toast.LENGTH_SHORT).show()
             else { savePreset(slot); pref.edit().putBoolean("theme_custom_used_${keyMode}_${mode}_$slot", true).apply(); Toast.makeText(this, getString(R.string.theme_editor_preset_saved, names[slot]), Toast.LENGTH_SHORT).show() }
         }
     }
@@ -277,7 +279,7 @@ class ThemeEditorActivity : AppCompatActivity() {
         systemDraft = null
         val default = ThemeColorSet()
         when {
-            slot in 1..4 -> {
+            slot in 1..5 -> {
                 systemDraft = if (slot == 1) ThemeColorStore.jipperPreset(keyMode)
                     else ThemeColorStore.systemPreset(keyMode, slot - 2, basic())
                 basicDraft = systemDraft!!.keys.first()
@@ -285,14 +287,14 @@ class ThemeEditorActivity : AppCompatActivity() {
                 targets().forEach { target -> drafts[target] = current(target) }
             }
             mode == ThemeColorStore.BASIC -> {
-                basicDraft = if (slot == 0) default else ThemeColorStore.advancedPreset(pref, keyMode, slot - 4, "basic", basic())
-                if (slot >= 5) {
-                    basicTrail2 = pref.getString("theme_basic_preset_${keyMode}_${slot - 4}_trail2", trail2())
-                    basicShadow2 = pref.getString("theme_basic_preset_${keyMode}_${slot - 4}_shadow2", shadow2())
+                basicDraft = if (slot == 0) default else ThemeColorStore.advancedPreset(pref, keyMode, slot - 5, "basic", basic())
+                if (slot >= 6) {
+                    basicTrail2 = pref.getString("theme_basic_preset_${keyMode}_${slot - 5}_trail2", trail2())
+                    basicShadow2 = pref.getString("theme_basic_preset_${keyMode}_${slot - 5}_shadow2", shadow2())
                 }
             }
             else -> targets().forEach { target ->
-                drafts[target] = if (slot == 0) default else ThemeColorStore.advancedPreset(pref, keyMode, slot - 1, target, basic())
+                drafts[target] = if (slot == 0) default else ThemeColorStore.advancedPreset(pref, keyMode, slot - 2, target, basic())
             }
         }
     }
@@ -300,10 +302,10 @@ class ThemeEditorActivity : AppCompatActivity() {
     private fun savePreset(slot: Int) {
         val editor = pref.edit()
         if (mode == ThemeColorStore.BASIC) {
-            ThemeColorStore.writeAdvancedPreset(editor, keyMode, slot - 4, "basic", basic())
-            editor.putString("theme_basic_preset_${keyMode}_${slot - 4}_trail2", trail2())
-            editor.putString("theme_basic_preset_${keyMode}_${slot - 4}_shadow2", shadow2())
-        } else targets().forEach { target -> ThemeColorStore.writeAdvancedPreset(editor, keyMode, slot - 1, target, current(target)) }
+            ThemeColorStore.writeAdvancedPreset(editor, keyMode, slot - 5, "basic", basic())
+            editor.putString("theme_basic_preset_${keyMode}_${slot - 5}_trail2", trail2())
+            editor.putString("theme_basic_preset_${keyMode}_${slot - 5}_shadow2", shadow2())
+            } else targets().forEach { target -> ThemeColorStore.writeAdvancedPreset(editor, keyMode, slot - 2, target, current(target)) }
         editor.apply()
     }
 
@@ -342,12 +344,12 @@ class ThemeEditorActivity : AppCompatActivity() {
         row.addView(swatch, LinearLayout.LayoutParams(dp(50), dp(42)))
         host.addView(row, LinearLayout.LayoutParams(-1, dp(64)).apply { bottomMargin = dp(10) })
     }
-    private fun firstFreeCustomSlot(): Int = (5..7).firstOrNull { slot ->
+    private fun firstFreeCustomSlot(): Int = (6..8).firstOrNull { slot ->
         !pref.getBoolean("theme_custom_used_${keyMode}_${mode}_$slot", false)
     } ?: 5
 
     private fun ensureEditablePreset() {
-        if (presetSelection() >= 5) return
+        if (presetSelection() in 6..8) return
         val slot = firstFreeCustomSlot()
         selectedPresets[mode] = slot
         // Chỉ chuyển draft đang chỉnh sang custom; ghi xuống disk khi người dùng lưu.
@@ -416,7 +418,7 @@ class ThemeEditorActivity : AppCompatActivity() {
         }
         val previous = ThemeDraftBridge.draft
         val chosenSlot = presetSelection()
-        if (chosenSlot >= 5) {
+        if (chosenSlot >= 6) {
             val editor = pref.edit()
             editor.putBoolean("theme_custom_used_${keyMode}_${mode}_$chosenSlot", true)
             editor.putInt("theme_editor_preset_${keyMode}_$mode", chosenSlot)

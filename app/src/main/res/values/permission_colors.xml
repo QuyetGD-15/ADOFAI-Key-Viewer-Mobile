@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="permission_ready">#81C784</color>
+    <color name="permission_connecting">#FFD54F</color>
+    <color name="permission_missing">#EF9A9A</color>
+    <color name="permission_inactive">#BDBDBD</color>
+    <color name="permission_info_background">#454052</color>
+    <color name="permission_info_ripple">#66FFFFFF</color>
+</resources>

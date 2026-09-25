@@ -38,14 +38,14 @@ data class SystemThemePreset(
 object ThemeColorStore {
     const val BASIC = "basic"
     const val ADVANCED = "advanced"
-    const val SYSTEM_PRESET_COUNT = 3
+    const val SYSTEM_PRESET_COUNT = 4
     const val BASIC_CUSTOM_FIRST = 1
     const val ADVANCED_CUSTOM_FIRST = 4
     private const val MODE_PREFIX = "theme_color_mode_"
     private const val ADV_PREFIX = "advanced_colors_"
 
     // ===== PRESET BASE COLORS =====
-    private val SYSTEM_NAMES = arrayOf("minhle", "Candy Floss Delight", "Feel good")
+    private val SYSTEM_NAMES = arrayOf("minhle", "Candy Floss Delight", "Feel good", "tiki")
     private val SYSTEM_ACCENTS = arrayOf("#FF60A5FA", "#FFA78BFA", "#FF34D399")
     private val SYSTEM_BACKGROUNDS = arrayOf("#FF101827", "#FF181329", "#FF071F1A")
 
@@ -427,10 +427,115 @@ object ThemeColorStore {
             kps = JIPPER_BASE,
             total = JIPPER_BASE
         )
+    // ==============================================================
+    // 4. SLOT 3: PRESET TIKI
+    // ==============================================================
+    private val PRESET_TIKI: Map<Int, SystemThemePreset> = mapOf(
+        4 to SystemThemePreset(
+            name = SYSTEM_NAMES[3],
+            keys = arrayOf(
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#8C3EFF", shadow = "#8C3EFF"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#7A79F8", bgNormal = "#3F7A79F8", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#7A79F8", shadow = "#7A79F8"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#69B4F2", bgNormal = "#3F69B4F2", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#69B4F2", shadow = "#69B4F2"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#58EFEC", shadow = "#58EFEC")
+            ),
+            kps = ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#8C3EFF", shadow = "#8C3EFF"),
+            total = ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#58EFEC", shadow = "#58EFEC")
+        ),
+        6 to SystemThemePreset(
+            name = SYSTEM_NAMES[3],
+            keys = arrayOf(
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#8C3EFF", shadow = "#8C3EFF"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#8161FB", bgNormal = "#3F8161FB", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#8161FB", shadow = "#8161FB"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#7784F7", bgNormal = "#3F7784F7", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#7784F7", shadow = "#7784F7"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#6CA8F3", bgNormal = "#3F6CA8F3", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#6CA8F3", shadow = "#6CA8F3"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#62CBEF", bgNormal = "#3F62CBEF", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#62CBEF", shadow = "#62CBEF"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#58EFEC", shadow = "#58EFEC")
+            ),
+            kps = ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#8C3EFF", shadow = "#8C3EFF"),
+            total = ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#58EFEC", shadow = "#58EFEC")
+        ),
+        8 to SystemThemePreset(
+            name = SYSTEM_NAMES[3],
+            keys = arrayOf(
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#8C3EFF", shadow = "#8C3EFF"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#8457FC", bgNormal = "#3F8457FC", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#8457FC", shadow = "#8457FC"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#7D70FA", bgNormal = "#3F7D70FA", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#7D70FA", shadow = "#7D70FA"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#758AF8", bgNormal = "#3F758AF8", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#758AF8", shadow = "#758AF8"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#6EA3F5", bgNormal = "#3F6EA3F5", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#6EA3F5", shadow = "#6EA3F5"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#66BCF4", bgNormal = "#3F66BCF4", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#66BCF4", shadow = "#66BCF4"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#5FD6F1", bgNormal = "#3F5FD6F1", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#5FD6F1", shadow = "#5FD6F1"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#58EFEC", shadow = "#58EFEC")
+            ),
+            kps = ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#8C3EFF", shadow = "#8C3EFF"),
+            total = ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#58EFEC", shadow = "#58EFEC")
+        ),
+        10 to SystemThemePreset(
+            name = SYSTEM_NAMES[3],
+            keys = arrayOf(
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#8C3EFF", shadow = "#8C3EFF"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#8457FC", bgNormal = "#3F8457FC", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#8457FC", shadow = "#8457FC"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#7D70FA", bgNormal = "#3F7D70FA", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#7D70FA", shadow = "#7D70FA"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#758AF8", bgNormal = "#3F758AF8", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#758AF8", shadow = "#758AF8"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#6EA3F5", bgNormal = "#3F6EA3F5", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#6EA3F5", shadow = "#6EA3F5"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#66BCF4", bgNormal = "#3F66BCF4", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#66BCF4", shadow = "#66BCF4"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#5FD6F1", bgNormal = "#3F5FD6F1", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#5FD6F1", shadow = "#5FD6F1"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#58EFEC", shadow = "#58EFEC"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#758AF8", bgNormal = "#3F758AF8", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#6EA3F5", bgNormal = "#3F6EA3F5", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898")
+            ),
+            kps = ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#8C3EFF", shadow = "#8C3EFF"),
+            total = ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#58EFEC", shadow = "#58EFEC")
+        ),
+        12 to SystemThemePreset(
+            name = SYSTEM_NAMES[3],
+            keys = arrayOf(
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#8C3EFF", shadow = "#8C3EFF"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#8457FC", bgNormal = "#3F8457FC", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#8457FC", shadow = "#8457FC"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#7D70FA", bgNormal = "#3F7D70FA", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#7D70FA", shadow = "#7D70FA"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#758AF8", bgNormal = "#3F758AF8", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#758AF8", shadow = "#758AF8"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#6EA3F5", bgNormal = "#3F6EA3F5", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#6EA3F5", shadow = "#6EA3F5"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#66BCF4", bgNormal = "#3F66BCF4", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#66BCF4", shadow = "#66BCF4"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#5FD6F1", bgNormal = "#3F5FD6F1", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#5FD6F1", shadow = "#5FD6F1"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#58EFEC", shadow = "#58EFEC"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#7D70FA", bgNormal = "#3F7D70FA", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#758AF8", bgNormal = "#3F758AF8", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#6EA3F5", bgNormal = "#3F6EA3F5", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#66BCF4", bgNormal = "#3F66BCF4", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898")
+            ),
+            kps = ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#8C3EFF", shadow = "#8C3EFF"),
+            total = ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#58EFEC", shadow = "#58EFEC")
+        ),
+        16 to SystemThemePreset(
+            name = SYSTEM_NAMES[3],
+            keys = arrayOf(
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#8C3EFF", shadow = "#8C3EFF"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#8457FC", bgNormal = "#3F8457FC", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#8457FC", shadow = "#8457FC"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#7D70FA", bgNormal = "#3F7D70FA", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#7D70FA", shadow = "#7D70FA"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#758AF8", bgNormal = "#3F758AF8", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#758AF8", shadow = "#758AF8"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#6EA3F5", bgNormal = "#3F6EA3F5", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#6EA3F5", shadow = "#6EA3F5"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#66BCF4", bgNormal = "#3F66BCF4", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#66BCF4", shadow = "#66BCF4"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#5FD6F1", bgNormal = "#3F5FD6F1", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#5FD6F1", shadow = "#5FD6F1"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#58EFEC", shadow = "#58EFEC"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#8457FC", bgNormal = "#3F8457FC", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#7D70FA", bgNormal = "#3F7D70FA", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#758AF8", bgNormal = "#3F758AF8", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#6EA3F5", bgNormal = "#3F6EA3F5", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#66BCF4", bgNormal = "#3F66BCF4", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#5FD6F1", bgNormal = "#3F5FD6F1", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898"),
+                ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#FFFFFFFF", shadow = "#FF989898")
+            ),
+            kps = ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#8C3EFF", shadow = "#8C3EFF"),
+            total = ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#58EFEC", shadow = "#58EFEC")
+        )
+    )
+
     fun systemPreset(keyMode: Int, slot: Int, fallback: ThemeColorSet): SystemThemePreset {
         return when (slot.coerceIn(0, SYSTEM_PRESET_COUNT - 1)) {
             1 -> PRESET_UNDNAME2[keyMode] ?: SystemThemePreset(SYSTEM_NAMES[1], Array(keyMode.coerceIn(4, 16)) { systemKey(1, it) }, kps(1), total(1))
             2 -> PRESET_UNDNAME3[keyMode] ?: SystemThemePreset(SYSTEM_NAMES[2], Array(keyMode.coerceIn(4, 16)) { systemKey(2, it) }, kps(2), total(2))
+            3 -> PRESET_TIKI[keyMode] ?: PRESET_TIKI.getValue(4).copy(keys = Array(keyMode.coerceIn(4, 16)) { index -> PRESET_TIKI.getValue(4).keys[index % 4] })
             else -> PRESET_MINHLE[keyMode] ?: SystemThemePreset(SYSTEM_NAMES[0], Array(keyMode.coerceIn(4, 16)) { systemKey(0, it) }, kps(0), total(0))
         }
     }

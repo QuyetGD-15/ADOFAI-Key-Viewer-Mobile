@@ -376,7 +376,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
             TouchAccessibilitySetup.openSettings(this)
         }
 
-        findViewById<Button>(R.id.btnExportLog).setOnClickListener {
+        findViewById<ImageButton>(R.id.btnExportLog).setOnClickListener {
             AppLogger.log(this, getString(R.string.log_msg_export))
             val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date())
             val fileName = "KeyViewer_Log_$timestamp.txt"
