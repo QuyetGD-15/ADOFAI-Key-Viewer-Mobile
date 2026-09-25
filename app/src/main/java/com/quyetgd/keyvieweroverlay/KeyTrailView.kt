@@ -51,6 +51,13 @@ class KeyTrailView @JvmOverloads constructor(
     private var isPerformanceShadow = false
     private val GLOW_SPREAD = 12f // Độ tràn viền 4 hướng
 
+    // ShadowLayer is expensive to mutate. Keep one small cache per row/paint and only
+    // touch the Paint when the effective shadow configuration changes.
+    private val shadowCacheValid = BooleanArray(2)
+    private val shadowCacheKey = LongArray(2)
+    private var fakeShadowColor1 = Color.TRANSPARENT
+    private var fakeShadowColor2 = Color.TRANSPARENT
+
     // Màu sắc Hàng 1
     private var rainColor1 = Color.WHITE
     private var rainShadowColor1 = Color.CYAN
@@ -60,7 +67,7 @@ class KeyTrailView @JvmOverloads constructor(
     private var rainColor2 = Color.parseColor("#A78BFA")
     private var rainShadowColor2 = Color.parseColor("#7C3AED")
     private var isShadowEnabled2 = true
-    // ==============================================================================
+    // ===============================================================================
 
     private val baseSpeedPerMs = 1.5f
 
@@ -72,11 +79,14 @@ class KeyTrailView @JvmOverloads constructor(
 
     private val frameCallback = object : Choreographer.FrameCallback {
         override fun doFrame(frameTimeNanos: Long) {
-            if (activeTrailCount > 0) {
+            if (activeTrailCount > 0 && isShown) {
                 invalidate()
                 Choreographer.getInstance().postFrameCallback(this)
             } else {
                 isRendering = false
+                if (!isShown) {
+                    clearTrails()
+                }
             }
         }
     }
@@ -93,6 +103,11 @@ class KeyTrailView @JvmOverloads constructor(
         }
     }
 
+
+    // Do not use onVisibilityChanged here: Android may dispatch it from View's
+    // constructor, before this class's fields (including frameCallback) exist.
+    // isShown is checked by both the frame loop and addTrail instead.
+
     override fun onDetachedFromWindow() {
         stopRendering()
         super.onDetachedFromWindow()
@@ -106,14 +121,25 @@ class KeyTrailView @JvmOverloads constructor(
         advancedShadowColors = null
     }
 
+    private fun clearTrails() {
+        activeTrailCount = 0
+        for (i in trailPool.indices) {
+            val trail = trailPool[i]
+            if (trail.isActive) {
+                trail.isActive = false
+                trail.timeReleased = 0L
+                // activeTrails in the caller may still hold this object. Retire it
+                // instead of reviving that reference for a later key press.
+                // Allocation is limited to active slots at lifecycle clear, not frames.
+                trailPool[i] = Trail()
+            }
+        }
+    }
+
     private fun stopRendering() {
         Choreographer.getInstance().removeFrameCallback(frameCallback)
         isRendering = false
-        activeTrailCount = 0
-        for (trail in trailPool) {
-            trail.isActive = false
-            trail.timeReleased = 0L
-        }
+        clearTrails()
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -131,13 +157,21 @@ class KeyTrailView @JvmOverloads constructor(
             val trail = trailPool[i]
             if (!trail.isActive || trail.laneIndex >= 8) continue
             val shadowPaint = if (isGlobalShadowEnabled && isPerformanceShadow && isShadowEnabled1) shadowPaintRow1 else null
-            val laneTrail = perLaneTrail?.getOrNull(trail.laneIndex)
-            if (laneTrail != null) trailPaintRow1.color = laneTrail
-            val laneShadow = perLaneShadow?.getOrNull(trail.laneIndex) ?: rainShadowColor1
-            if (isGlobalShadowEnabled && isPerformanceShadow && isShadowEnabled1) {
-                shadowPaintRow1.color = Color.argb(100, Color.red(laneShadow), Color.green(laneShadow), Color.blue(laneShadow))
+            val lane = trail.laneIndex
+            if (perLaneTrail != null && lane >= 0 && lane < perLaneTrail.size) {
+                trailPaintRow1.color = perLaneTrail[lane]
             }
-            configureLanePaint(trailPaintRow1, laneShadow, isShadowEnabled1)
+            val laneShadow = if (perLaneShadow != null && lane >= 0 && lane < perLaneShadow.size) {
+                perLaneShadow[lane]
+            } else rainShadowColor1
+            if (shadowPaint != null) {
+                val fakeColor = Color.argb(100, Color.red(laneShadow), Color.green(laneShadow), Color.blue(laneShadow))
+                if (fakeShadowColor1 != fakeColor) {
+                    fakeShadowColor1 = fakeColor
+                    shadowPaintRow1.color = fakeColor
+                }
+            }
+            configureLanePaint(trailPaintRow1, laneShadow, isShadowEnabled1, 0)
             drawSingleTrail(canvas, trail, trailPaintRow1, shadowPaint, currentTimeMs, actualSpeedPerMs, screenHeight)
         }
 
@@ -146,21 +180,35 @@ class KeyTrailView @JvmOverloads constructor(
             val trail = trailPool[i]
             if (!trail.isActive || trail.laneIndex < 8) continue
             val shadowPaint = if (isGlobalShadowEnabled && isPerformanceShadow && isShadowEnabled2) shadowPaintRow2 else null
-            val laneTrail = perLaneTrail?.getOrNull(trail.laneIndex)
-            if (laneTrail != null) trailPaintRow2.color = laneTrail
-            val laneShadow = perLaneShadow?.getOrNull(trail.laneIndex) ?: rainShadowColor2
-            if (isGlobalShadowEnabled && isPerformanceShadow && isShadowEnabled2) {
-                shadowPaintRow2.color = Color.argb(100, Color.red(laneShadow), Color.green(laneShadow), Color.blue(laneShadow))
+            val lane = trail.laneIndex
+            if (perLaneTrail != null && lane < perLaneTrail.size) {
+                trailPaintRow2.color = perLaneTrail[lane]
             }
-            configureLanePaint(trailPaintRow2, laneShadow, isShadowEnabled2)
+            val laneShadow = if (perLaneShadow != null && lane < perLaneShadow.size) {
+                perLaneShadow[lane]
+            } else rainShadowColor2
+            if (shadowPaint != null) {
+                val fakeColor = Color.argb(100, Color.red(laneShadow), Color.green(laneShadow), Color.blue(laneShadow))
+                if (fakeShadowColor2 != fakeColor) {
+                    fakeShadowColor2 = fakeColor
+                    shadowPaintRow2.color = fakeColor
+                }
+            }
+            configureLanePaint(trailPaintRow2, laneShadow, isShadowEnabled2, 1)
             drawSingleTrail(canvas, trail, trailPaintRow2, shadowPaint, currentTimeMs, actualSpeedPerMs, screenHeight)
         }
 
         canvas.restore()
     }
 
-    private fun configureLanePaint(paint: Paint, shadowColor: Int, rowShadowEnabled: Boolean) {
-        if (isGlobalShadowEnabled && !isPerformanceShadow && rowShadowEnabled && Color.alpha(shadowColor) > 0) {
+    private fun configureLanePaint(paint: Paint, shadowColor: Int, rowShadowEnabled: Boolean, row: Int) {
+        val useLayer = isGlobalShadowEnabled && !isPerformanceShadow && rowShadowEnabled && Color.alpha(shadowColor) > 0
+        // Include all inputs that affect the Paint's ShadowLayer. This is bounded to
+        // two entries, so advanced per-lane colors cannot cause unbounded allocations.
+        val key = if (useLayer) (shadowColor.toLong() shl 1) or 1L else 0L
+        if (shadowCacheValid[row] && shadowCacheKey[row] == key) return
+
+        if (useLayer) {
             paint.setShadowLayer(20f, 0f, 0f, Color.argb(
                 (Color.alpha(shadowColor) * .7f).toInt(),
                 Color.red(shadowColor), Color.green(shadowColor), Color.blue(shadowColor)
@@ -168,6 +216,8 @@ class KeyTrailView @JvmOverloads constructor(
         } else {
             paint.clearShadowLayer()
         }
+        shadowCacheKey[row] = key
+        shadowCacheValid[row] = true
     }
 
     private fun drawSingleTrail(
@@ -242,49 +292,34 @@ class KeyTrailView @JvmOverloads constructor(
 
     private fun updatePaintsRow1() {
         trailPaintRow1.color = Color.rgb(Color.red(rainColor1), Color.green(rainColor1), Color.blue(rainColor1))
-
-        if (isGlobalShadowEnabled && isShadowEnabled1) {
-            if (isPerformanceShadow) {
-                // Bóng nhẹ (Fake Glow): Tắt ShadowLayer nặng nề, lấy shadowPaint ra dùng
-                trailPaintRow1.clearShadowLayer()
-                shadowPaintRow1.color = Color.argb(100, Color.red(rainShadowColor1), Color.green(rainShadowColor1), Color.blue(rainShadowColor1))
-            } else {
-                // Bóng Max Setting (ShadowLayer cũ): Bật ShadowLayer
-                trailPaintRow1.setShadowLayer(20f, 0f, 0f, Color.argb((255 * 0.7f).toInt(), Color.red(rainShadowColor1), Color.green(rainShadowColor1), Color.blue(rainShadowColor1)))
-            }
-        } else {
-            // Tắt hoàn toàn bóng
-            trailPaintRow1.clearShadowLayer()
-        }
+        fakeShadowColor1 = Color.argb(100, Color.red(rainShadowColor1), Color.green(rainShadowColor1), Color.blue(rainShadowColor1))
+        shadowPaintRow1.color = fakeShadowColor1
     }
 
     private fun updatePaintsRow2() {
         trailPaintRow2.color = Color.rgb(Color.red(rainColor2), Color.green(rainColor2), Color.blue(rainColor2))
-
-        if (isGlobalShadowEnabled && isShadowEnabled2) {
-            if (isPerformanceShadow) {
-                trailPaintRow2.clearShadowLayer()
-                shadowPaintRow2.color = Color.argb(100, Color.red(rainShadowColor2), Color.green(rainShadowColor2), Color.blue(rainShadowColor2))
-            } else {
-                trailPaintRow2.setShadowLayer(20f, 0f, 0f, Color.argb((255 * 0.7f).toInt(), Color.red(rainShadowColor2), Color.green(rainShadowColor2), Color.blue(rainShadowColor2)))
-            }
-        } else {
-            trailPaintRow2.clearShadowLayer()
-        }
+        fakeShadowColor2 = Color.argb(100, Color.red(rainShadowColor2), Color.green(rainShadowColor2), Color.blue(rainShadowColor2))
+        shadowPaintRow2.color = fakeShadowColor2
     }
 
     // --- CÁC HÀM CƠ BẢN CÒN LẠI ---
 
     fun addTrail(laneIndex: Int, x: Float, width: Float, pressTime: Long): Trail? {
+        // Do not allocate/use a pooled Trail while keyrain is disabled. In
+        // particular, this prevents a caller from starting a callback loop for
+        // a view that is detached or hidden.
+        if (!isAttachedToWindow || !isShown) return null
+
         for (i in 0 until MAX_TRAILS) {
-            if (!trailPool[i].isActive) {
-                trailPool[i].reset(laneIndex, x, width, pressTime)
+            val trail = trailPool[i]
+            if (!trail.isActive) {
+                trail.reset(laneIndex, x, width, pressTime)
                 activeTrailCount++
                 if (!isRendering) {
                     isRendering = true
                     Choreographer.getInstance().postFrameCallback(frameCallback)
                 }
-                return trailPool[i]
+                return trail
             }
         }
         return null

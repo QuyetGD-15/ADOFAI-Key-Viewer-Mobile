@@ -3,6 +3,10 @@ package com.quyetgd.keyvieweroverlay
 import android.content.Context
 import android.util.Log
 import java.io.File
+import java.io.OutputStream
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -90,6 +94,58 @@ object AppLogger {
             if (file.exists()) file.readText() else ""
         } catch (e: Exception) {
             ""
+        }
+    }
+
+    /**
+     * Blocking streaming export; the caller must use an IO dispatcher and owns [output].
+     * Stage decoded UTF-8 on disk to preserve getLog's empty-on-read-error behavior
+     * without retaining the entire log in memory. Only the current log is exported.
+     */
+    suspend fun copyLogTo(context: Context, output: OutputStream) {
+        val coroutineContext = currentCoroutineContext()
+        coroutineContext.ensureActive()
+        val file = File(context.filesDir, LOG_FILE_NAME)
+        val reader = try {
+            if (!file.exists()) return
+            file.bufferedReader(Charsets.UTF_8)
+        } catch (e: Exception) {
+            return
+        }
+        var snapshot: File? = null
+        try {
+            val sourceReadSucceeded = reader.use { input ->
+                val stagedFile = File.createTempFile("log_export_", ".tmp", context.cacheDir)
+                snapshot = stagedFile
+                stagedFile.bufferedWriter(Charsets.UTF_8).use { writer ->
+                    val buffer = CharArray(DEFAULT_BUFFER_SIZE)
+                    while (true) {
+                        coroutineContext.ensureActive()
+                        val count = try {
+                            input.read(buffer)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            return@use false
+                        }
+                        if (count < 0) break
+                        writer.write(buffer, 0, count)
+                    }
+                    true
+                }
+            }
+            if (!sourceReadSucceeded) return
+            snapshot!!.inputStream().use { input ->
+                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                while (true) {
+                    coroutineContext.ensureActive()
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    output.write(buffer, 0, count)
+                }
+            }
+        } finally {
+            snapshot?.delete()
         }
     }
 

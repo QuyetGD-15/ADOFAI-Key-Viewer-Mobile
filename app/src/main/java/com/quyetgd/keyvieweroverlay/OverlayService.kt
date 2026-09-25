@@ -118,9 +118,13 @@ class OverlayService : Service() {
     private var themeTextColor = Color.WHITE
     private var themeTextColorPressed = Color.WHITE
 
+    // Protect the buffer, total mutations and scheduling as one atomic state.
+    private val kpsLock = Any()
     private val kpsTimestamps = LongArray(256)
-    @Volatile private var kpsHead = 0
-    @Volatile private var kpsTail = 0
+    private var kpsHead = 0
+    private var kpsTail = 0
+    private var kpsUpdateScheduled = false
+    private var kpsStopped = false
 
     @Volatile
     private var totalClicks = 0
@@ -279,7 +283,9 @@ class OverlayService : Service() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == "ACTION_RESET_TOTAL") {
                 AppLogger.i(context!!, "OverlayService", "Người dùng yêu cầu Reset Total Clicks")
-                totalClicks = 0
+                synchronized(kpsLock) {
+                    totalClicks = 0
+                }
                 keyCounters.fill(0)
                 mainHandler.post {
                     for (i in 0 until keyMode) keyCountersTv[i]?.setCount(0)
@@ -388,7 +394,7 @@ class OverlayService : Service() {
             registerReceiver(resetTotalReceiver, resetFilter)
         }
 
-        mainHandler.post(kpsUpdateRunnable)
+        updateKpsTotalUI(0, totalClicks, force = true)
 
         if (currentInputSource == "touch" && Shizuku.pingBinder()) {
             AppLogger.i(this, "OverlayService", "Đã cấp Shizuku, tiến hành gắn hook cảm ứng")
@@ -813,13 +819,7 @@ class OverlayService : Service() {
                         pendingKeyDownTimes[finalLaneToActivate] = SystemClock.uptimeMillis()
                         onKeyDown(finalLaneToActivate)
 
-                        val currentTime = SystemClock.uptimeMillis()
-
-                        kpsTimestamps[kpsHead] = currentTime
-                        kpsHead = (kpsHead + 1) and 255
-                        if (kpsHead == kpsTail) kpsTail = (kpsTail + 1) and 255
-
-                        totalClicks++
+                        recordClick()
                     }
                 }
             } else {
@@ -870,13 +870,7 @@ class OverlayService : Service() {
         if (isDown) {
             laneOccupants[lane]++
             keyDownRunnables[lane].run()
-            val currentTime = SystemClock.uptimeMillis()
-
-            kpsTimestamps[kpsHead] = currentTime
-            kpsHead = (kpsHead + 1) and 255
-            if (kpsHead == kpsTail) kpsTail = (kpsTail + 1) and 255
-
-            totalClicks++
+            recordClick()
             updateKpsTotalUI(lastRenderedKps, totalClicks)
         } else {
             laneOccupants[lane]--
@@ -1567,13 +1561,18 @@ class OverlayService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         AppLogger.i(this, "OverlayService", "=== DỪNG VÀ HỦY SERVICE ===")
+        val savedTotal = synchronized(kpsLock) {
+            // A reader still finishing a frame must not restart the timer after teardown.
+            kpsStopped = true
+            kpsUpdateScheduled = false
+            totalClicks
+        }
         val editor = sharedPrefs.edit()
-        editor.putInt("TOTAL_CLICKS", totalClicks)
+        editor.putInt("TOTAL_CLICKS", savedTotal)
         for (i in 0 until keyMode) editor.putInt("KEY_COUNT_${keyMode}_$i", keyCounters[i])
         editor.apply()
         isRunning = false
         instanceRef = null
-        sharedPrefs.edit().putInt("TOTAL_CLICKS", totalClicks).apply()
         mainHandler.removeCallbacksAndMessages(null)
         stopReadingTouchEvents()
         try { unregisterReceiver(editReceiver); unregisterReceiver(resetTotalReceiver) } catch (e: Exception) {}
@@ -1585,19 +1584,43 @@ class OverlayService : Service() {
         isOverlayShowing = false
     }
 
+    private fun recordClick() {
+        synchronized(kpsLock) {
+            if (kpsStopped) return
+            // Capture time under the lock so concurrent producers remain ordered.
+            kpsTimestamps[kpsHead] = SystemClock.uptimeMillis()
+            kpsHead = (kpsHead + 1) and 255
+            if (kpsHead == kpsTail) kpsTail = (kpsTail + 1) and 255
+            totalClicks++
+
+            if (!kpsUpdateScheduled) {
+                kpsUpdateScheduled = true
+                mainHandler.post(kpsUpdateRunnable)
+            }
+        }
+    }
+
     private val kpsUpdateRunnable = object : Runnable {
         override fun run() {
-            val currentTime = SystemClock.uptimeMillis()
-            while (kpsTail != kpsHead && currentTime - kpsTimestamps[kpsTail] > 1000) {
-                kpsTail = (kpsTail + 1) and 255
+            val currentKps: Int
+            val currentTotal: Int
+            synchronized(kpsLock) {
+                if (kpsStopped) return
+                val currentTime = SystemClock.uptimeMillis()
+                while (kpsTail != kpsHead && currentTime - kpsTimestamps[kpsTail] > 1000) {
+                    kpsTail = (kpsTail + 1) and 255
+                }
+                currentKps = (kpsHead - kpsTail) and 255
+                currentTotal = totalClicks
+                // Check emptiness and disarm atomically with producers: no lost wakeup.
+                if (kpsTail != kpsHead) {
+                    mainHandler.postDelayed(this, 100)
+                } else {
+                    kpsUpdateScheduled = false
+                }
             }
-            val currentKps = if (kpsHead >= kpsTail) {
-                kpsHead - kpsTail
-            } else {
-                kpsHead + 256 - kpsTail
-            }
-            updateKpsTotalUI(currentKps, totalClicks)
-            mainHandler.postDelayed(this, 100)
+            // Only the main thread renders; never hold the producer lock for UI work.
+            updateKpsTotalUI(currentKps, currentTotal)
         }
     }
 

@@ -21,6 +21,9 @@ class FastCounterView @JvmOverloads constructor(
     private var charCount = 0
     private var isUnderline = false
     private var colorStateList: ColorStateList? = null
+    private var cachedTextWidth = 0f
+    private var cachedFontAscent = textPaint.ascent()
+    private var cachedFontDescent = textPaint.descent()
 
     // Bỏ qua bộ đệm nháp GPU, tăng tốc độ render phần cứng
     override fun hasOverlappingRendering(): Boolean = false
@@ -30,8 +33,12 @@ class FastCounterView @JvmOverloads constructor(
     fun setCount(value: Int) {
         if (this.currentValue == value) return
         this.currentValue = value
+        rebuildDigits()
+        invalidate()
+    }
 
-        var temp = value
+    private fun rebuildDigits() {
+        var temp = currentValue
         charCount = 0
 
         if (temp == 0) {
@@ -55,34 +62,50 @@ class FastCounterView @JvmOverloads constructor(
                 digitChars[charCount - 1 - i] = t
             }
         }
-        invalidate()
+        refreshTextMetrics()
+    }
+
+    private fun refreshTextMetrics() {
+        cachedTextWidth = if (charCount > 0) {
+            textPaint.measureText(digitChars, 0, charCount)
+        } else {
+            0f
+        }
+        cachedFontAscent = textPaint.ascent()
+        cachedFontDescent = textPaint.descent()
     }
 
     fun setTypeface(tf: Typeface) {
+        if (textPaint.typeface == tf) return
         textPaint.typeface = tf
+        refreshTextMetrics()
         invalidate()
     }
 
     // THÊM API NHẬN KÍCH CỠ CHỮ
     fun setTextSize(sizePx: Float) {
+        if (textPaint.textSize == sizePx) return
         textPaint.textSize = sizePx
+        refreshTextMetrics()
         invalidate()
     }
 
     fun setTextColor(colors: ColorStateList) {
+        if (colorStateList === colors) return
         colorStateList = colors
         updateTextColor()
     }
 
     fun setUnderline(underline: Boolean) {
+        if (this.isUnderline == underline) return
         this.isUnderline = underline
         textPaint.isUnderlineText = underline
         invalidate()
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        val desiredWidth = if (charCount > 0) textPaint.measureText(digitChars, 0, charCount).toInt() else 0
-        val desiredHeight = (textPaint.descent() - textPaint.ascent()).toInt()
+        val desiredWidth = cachedTextWidth.toInt()
+        val desiredHeight = (cachedFontDescent - cachedFontAscent).toInt()
         
         val width = resolveSize(desiredWidth, widthMeasureSpec)
         val height = resolveSize(desiredHeight, heightMeasureSpec)
@@ -106,6 +129,7 @@ class FastCounterView @JvmOverloads constructor(
 
     var textAlignment: Paint.Align = Paint.Align.CENTER
         set(value) {
+            if (field == value) return
             field = value
             textPaint.textAlign = value
             invalidate()
@@ -118,13 +142,13 @@ class FastCounterView @JvmOverloads constructor(
         val viewHeight = height.toFloat()
 
         // 1. TÍNH TOÁN CHỐNG TRÀN CHỮ
-        val textWidth = textPaint.measureText(digitChars, 0, charCount)
+        val textWidth = cachedTextWidth
         val maxWidth = viewWidth * 0.9f // Giữ lại 10% làm lề an toàn
 
         canvas.save()
 
         // 2. Dịch trục vẽ ra đúng lề
-        val y = viewHeight / 2f - (textPaint.descent() + textPaint.ascent()) / 2f
+        val y = viewHeight / 2f - (cachedFontDescent + cachedFontAscent) / 2f
         val x = when (textAlignment) {
             Paint.Align.LEFT -> viewWidth * 0.05f
             Paint.Align.RIGHT -> viewWidth * 0.95f

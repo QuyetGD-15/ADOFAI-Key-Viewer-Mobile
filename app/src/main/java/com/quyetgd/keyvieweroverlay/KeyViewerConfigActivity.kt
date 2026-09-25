@@ -878,7 +878,6 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                 if (v is MaterialCardView) {
                     v.setCardBackgroundColor(selectedColor)
                 }
-                updateLivePreview()
             }
         }
 

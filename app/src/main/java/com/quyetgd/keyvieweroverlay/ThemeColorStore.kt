@@ -76,7 +76,8 @@ object ThemeColorStore {
     // ==============================================================
     // 1. SLOT 0: PRESET MINHLE
     // ==============================================================
-    private val PRESET_MINHLE: Map<Int, SystemThemePreset> = mapOf(
+    // Initialize each preset table only on first use; default lazy is synchronized.
+    private val PRESET_MINHLE: Map<Int, SystemThemePreset> by lazy { mapOf(
         4 to SystemThemePreset(
             name = SYSTEM_NAMES[0],
             keys = arrayOf(
@@ -175,13 +176,13 @@ object ThemeColorStore {
             kps = kps(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#CF203E", bgNormal = "#3FCF203E"),
             total = total(0).copy(textNormal = "#FFFFFFFF", borderNormal = "#505DA0", bgNormal = "#3F505DA0")
         )
-    )
+    ) }
 
 
     // ==============================================================
     // 2. SLOT 1: PRESET UNDNAME 2
     // ==============================================================
-    private val PRESET_UNDNAME2: Map<Int, SystemThemePreset> = mapOf(
+    private val PRESET_UNDNAME2: Map<Int, SystemThemePreset> by lazy { mapOf(
         4 to SystemThemePreset(
             name = SYSTEM_NAMES[1],
             keys = arrayOf(
@@ -280,13 +281,13 @@ object ThemeColorStore {
             kps = kps(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC"),
             total = total(1).copy(textNormal = "#FFFFFFFF", borderNormal = "#E85C90", bgNormal = "#3FE85C90")
         )
-    )
+    ) }
 
 
     // ==============================================================
     // 3. SLOT 2: PRESET UNDNAME 3
     // ==============================================================
-    private val PRESET_UNDNAME3: Map<Int, SystemThemePreset> = mapOf(
+    private val PRESET_UNDNAME3: Map<Int, SystemThemePreset> by lazy { mapOf(
         4 to SystemThemePreset(
             name = SYSTEM_NAMES[2],
             keys = arrayOf(
@@ -385,7 +386,7 @@ object ThemeColorStore {
             kps = kps(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF"),
             total = total(2).copy(textNormal = "#FFFFFFFF", borderNormal = "#4FFF54", bgNormal = "#3F4FFF54")
         )
-    )
+    ) }
 
     // ==============================================================
 // 4. PRESET JIPPER
@@ -407,7 +408,7 @@ object ThemeColorStore {
         shadow = "#FF989898"
     )
 
-    private val PRESET_JIPPER: Map<Int, SystemThemePreset> = listOf(4, 6, 8, 10, 12, 16).associateWith { mode ->
+    private val PRESET_JIPPER: Map<Int, SystemThemePreset> by lazy { listOf(4, 6, 8, 10, 12, 16).associateWith { mode ->
         SystemThemePreset(
             name = "Jipper",
             keys = Array(mode) { index ->
@@ -416,7 +417,7 @@ object ThemeColorStore {
             kps = JIPPER_BASE,       // Áp dụng màu gốc cho KPS
             total = JIPPER_BASE      // Áp dụng màu gốc cho Total
         )
-    }
+    } }
 
     fun jipperPreset(keyMode: Int): SystemThemePreset = PRESET_JIPPER[keyMode]
         ?: SystemThemePreset(
@@ -430,7 +431,7 @@ object ThemeColorStore {
     // ==============================================================
     // 4. SLOT 3: PRESET TIKI
     // ==============================================================
-    private val PRESET_TIKI: Map<Int, SystemThemePreset> = mapOf(
+    private val PRESET_TIKI: Map<Int, SystemThemePreset> by lazy { mapOf(
         4 to SystemThemePreset(
             name = SYSTEM_NAMES[3],
             keys = arrayOf(
@@ -529,7 +530,7 @@ object ThemeColorStore {
             kps = ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#8C3EFF", bgNormal = "#3F8C3EFF", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#8C3EFF", shadow = "#8C3EFF"),
             total = ThemeColorSet(textNormal = "#FFFFFFFF", borderNormal = "#58EFEC", bgNormal = "#3F58EFEC", textPressed = "#FF000000", borderPressed = "#FFFFFFFF", bgPressed = "#FFFFFFFF", trail = "#58EFEC", shadow = "#58EFEC")
         )
-    )
+    ) }
 
     fun systemPreset(keyMode: Int, slot: Int, fallback: ThemeColorSet): SystemThemePreset {
         return when (slot.coerceIn(0, SYSTEM_PRESET_COUNT - 1)) {

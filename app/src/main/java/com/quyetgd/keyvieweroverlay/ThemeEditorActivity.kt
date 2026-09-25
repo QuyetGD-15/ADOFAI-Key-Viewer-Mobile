@@ -23,6 +23,7 @@ import com.google.android.material.tabs.TabLayout
 
 class ThemeEditorActivity : AppCompatActivity() {
     private lateinit var preview: ThemePreviewView
+    private var resumeAutoPreview = true
     private lateinit var host: LinearLayout
     private lateinit var editorScroll: ScrollView
     private var targetListScroll: HorizontalScrollView? = null
@@ -75,8 +76,8 @@ class ThemeEditorActivity : AppCompatActivity() {
         editorScroll.requestFocus()
         tabs = findViewById(R.id.themeTabs)
         preview = findViewById(R.id.themePreview)
+        preview.autoPreview = false
         preview.keyMode = keyMode
-        preview.autoPreview = true
         // Dữ liệu đang áp dụng đã có trong draft; không đọc lại màu preset từ code khi mở editor.
         // Chỉ dựng preset từ definition khi người dùng chủ động chọn trong danh sách.
         findViewById<View>(R.id.btnThemeBack).setOnClickListener { cancelEditing() }
@@ -389,24 +390,26 @@ class ThemeEditorActivity : AppCompatActivity() {
             mode == ThemeColorStore.ADVANCED -> drafts["key_$i"] ?: ThemeColorStore.advanced(pref, keyMode, "key_$i", basicSet)
             else -> if (keyMode > 8 && i >= 8) basicSet.copy(trail = trail2(), shadow = shadow2()) else basicSet
         } }
-        preview.usePerKeyTrails = system != null || mode == ThemeColorStore.ADVANCED
-        preview.row2Trail = trail2()
-        preview.row2Shadow = shadow2()
-        preview.colors = sets
-        preview.kpsColors = system?.kps ?: if (mode == ThemeColorStore.ADVANCED) drafts["kps"] ?: basicSet else basicSet
-        preview.totalColors = system?.total ?: if (mode == ThemeColorStore.ADVANCED) drafts["total"] ?: basicSet else basicSet
-        preview.applyStyle(draftBold, draftItalic, draftUnderline, draftShowCounters)
-        val draft = ThemeDraftBridge.draft
-        preview.applyPreviewConfig(
-            draft?.keySpacing ?: pref.getInt("key_spacing", 7),
-            draft?.borderWidth ?: pref.getInt("theme_border_width", 2),
-            draft?.cornerRadius ?: pref.getInt("theme_corner_radius", 6),
-            draft?.keyRainEnabled ?: pref.getBoolean("theme_keyrain_enabled", true),
-            draft?.trailSpeed ?: pref.getFloat("trail_speed", .8f),
-            draft?.trailLimitPx ?: pref.getInt("trail_limit_px", 300),
-            draftShadowEnabled,
-            draftPerformanceShadow
-        )
+        preview.batchThemeUpdates {
+            usePerKeyTrails = system != null || mode == ThemeColorStore.ADVANCED
+            row2Trail = trail2()
+            row2Shadow = shadow2()
+            colors = sets
+            kpsColors = system?.kps ?: if (mode == ThemeColorStore.ADVANCED) drafts["kps"] ?: basicSet else basicSet
+            totalColors = system?.total ?: if (mode == ThemeColorStore.ADVANCED) drafts["total"] ?: basicSet else basicSet
+            applyStyle(draftBold, draftItalic, draftUnderline, draftShowCounters)
+            val draft = ThemeDraftBridge.draft
+            applyPreviewConfig(
+                draft?.keySpacing ?: pref.getInt("key_spacing", 7),
+                draft?.borderWidth ?: pref.getInt("theme_border_width", 2),
+                draft?.cornerRadius ?: pref.getInt("theme_corner_radius", 6),
+                draft?.keyRainEnabled ?: pref.getBoolean("theme_keyrain_enabled", true),
+                draft?.trailSpeed ?: pref.getFloat("trail_speed", .8f),
+                draft?.trailLimitPx ?: pref.getInt("trail_limit_px", 300),
+                draftShadowEnabled,
+                draftPerformanceShadow
+            )
+        }
     }
     private fun parse(v: String) = try { Color.parseColor(v) } catch (_: Exception) { Color.WHITE }
     private fun save() {
@@ -453,6 +456,17 @@ class ThemeEditorActivity : AppCompatActivity() {
         draftSubmitted = false
         setResult(RESULT_CANCELED)
         finish()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        preview.autoPreview = resumeAutoPreview
+    }
+
+    override fun onStop() {
+        resumeAutoPreview = preview.autoPreview
+        preview.autoPreview = false
+        super.onStop()
     }
 
     override fun onDestroy() {

@@ -64,29 +64,50 @@ class ThemePreviewView @JvmOverloads constructor(
     private var trailSpeedValue = pref.getFloat("trail_speed", .8f)
     private var trailLimitPx = pref.getInt("trail_limit_px", 300)
 
+    private var themeUpdateDepth = 0
+    private var themeUpdatePending = false
+
+    /** Defers theme application until the outermost preview update completes. */
+    fun batchThemeUpdates(update: ThemePreviewView.() -> Unit) {
+        themeUpdateDepth++
+        try {
+            update()
+        } finally {
+            themeUpdateDepth--
+            if (themeUpdateDepth == 0 && themeUpdatePending) {
+                themeUpdatePending = false
+                applyTheme()
+            }
+        }
+    }
+
+    private fun requestApplyTheme() {
+        if (themeUpdateDepth > 0) themeUpdatePending = true else applyTheme()
+    }
+
     var keyMode: Int = 6
         set(value) {
             val next = value.coerceIn(4, 16)
             if (field != next || keyViews.isEmpty()) { field = next; buildOverlay() }
         }
     var colors: Array<ThemeColorSet> = emptyArray()
-        set(value) { if (!field.contentEquals(value)) { field = value; applyTheme() } }
+        set(value) { if (!field.contentEquals(value)) { field = value; requestApplyTheme() } }
     var kpsColors: ThemeColorSet = ThemeColorSet()
-        set(value) { if (field != value) { field = value; applyTheme() } }
+        set(value) { if (field != value) { field = value; requestApplyTheme() } }
     var totalColors: ThemeColorSet = ThemeColorSet()
-        set(value) { if (field != value) { field = value; applyTheme() } }
+        set(value) { if (field != value) { field = value; requestApplyTheme() } }
     var usePerKeyTrails = false
-        set(value) { if (field != value) { field = value; applyTheme() } }
+        set(value) { if (field != value) { field = value; requestApplyTheme() } }
     var row2Trail: String = pref.getString("theme_rain_color_2", "#FFA78BFA") ?: "#FFA78BFA"
-        set(value) { if (field != value) { field = value; applyTheme() } }
+        set(value) { if (field != value) { field = value; requestApplyTheme() } }
     var row2Shadow: String = pref.getString("theme_rain_shadow_2", "#FF7C3AED") ?: "#FF7C3AED"
-        set(value) { if (field != value) { field = value; applyTheme() } }
+        set(value) { if (field != value) { field = value; requestApplyTheme() } }
 
     fun applyShadowConfig(enabled: Boolean, lightweight: Boolean) {
         shadowEnabled = enabled
         performanceShadow = lightweight
         trailView.setShadowConfig(enabled, lightweight)
-        applyTheme()
+        requestApplyTheme()
     }
 
     fun applyPreviewConfig(
@@ -108,7 +129,7 @@ class ThemePreviewView @JvmOverloads constructor(
         performanceShadow = lightweightShadow
         if (rebuild) buildOverlay() else {
             if (trailChanged) configureTrail(dp(trailLimitPx))
-            if (appearanceChanged) applyTheme()
+            if (appearanceChanged) requestApplyTheme()
         }
         trailView.visibility = if (keyRainEnabled) VISIBLE else INVISIBLE
     }
@@ -125,13 +146,13 @@ class ThemePreviewView @JvmOverloads constructor(
         textTypeface = Typeface.create(base, style)
         underline = underlined
         showCounters = counters
-        applyTheme()
+        requestApplyTheme()
     }
 
     fun applyOverlayMetrics(borderWidth: Int, cornerRadius: Float) {
         borderWidthDp = borderWidth.coerceAtLeast(0)
         cornerRadiusDp = cornerRadius.coerceAtLeast(0f)
-        applyTheme()
+        requestApplyTheme()
     }
 
     var autoPreview = true
@@ -226,7 +247,7 @@ class ThemePreviewView @JvmOverloads constructor(
         workspace.layoutParams = LinearLayout.LayoutParams(naturalWidth, workspaceParams.height)
         overlayRoot.layoutParams = LayoutParams(naturalWidth, naturalHeight)
         configureTrail(trailLimit)
-        applyTheme()
+        requestApplyTheme()
         requestLayout()
         if (autoPreview && isAttachedToWindow) scheduleNext()
     }

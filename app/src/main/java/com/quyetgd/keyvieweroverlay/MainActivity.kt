@@ -35,6 +35,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -162,14 +163,19 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
     
     private val exportLogLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
         if (uri != null) {
-            try {
-                contentResolver.openOutputStream(uri)?.use { outputStream ->
-                    val logData = AppLogger.getLog(this)
-                    outputStream.write(logData.toByteArray())
+            lifecycleScope.launch {
+                try {
+                    withContext(Dispatchers.IO) {
+                        contentResolver.openOutputStream(uri)?.use { outputStream ->
+                            AppLogger.copyLogTo(applicationContext, outputStream)
+                        }
+                    }
+                    Toast.makeText(this@MainActivity, getString(R.string.log_save_success), Toast.LENGTH_SHORT).show()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Toast.makeText(this@MainActivity, getString(R.string.log_save_error, e.message), Toast.LENGTH_SHORT).show()
                 }
-                Toast.makeText(this, getString(R.string.log_save_success), Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                Toast.makeText(this, getString(R.string.log_save_error, e.message), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -204,9 +210,10 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
             // 2. Kiểm tra trạng thái Shizuku (Nếu đang bật chế độ Cảm ứng)
             if (isShizukuPollingActive) {
-                updateShizukuStatusUI()
+                // The unconditional accessibility refresh below updates both permission cards.
+                updateShizukuStatusUI(refreshPermissionUi = false)
             }
-            
+
             // 3. Kiểm tra trạng thái Trợ năng
             updateAccessibilityStatusUI()
 
@@ -897,13 +904,15 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         try { unregisterReceiver(shizukuReceiver) } catch (e: Exception) { }
     }
 
-    private fun updateShizukuStatusUI() {
+    private fun updateShizukuStatusUI(refreshPermissionUi: Boolean = true) {
         if (getSharedPreferences("KeyViewerPrefs", MODE_PRIVATE).getString("input_source", "touch") != "touch") return
         if (!TouchAccessibilitySetup.hasPermission() && OverlayService.isRunning) {
             stopService(Intent(this, OverlayService::class.java))
         }
-        touchSetup.updateCards()
-        updateSwitchEnableState()
+        if (refreshPermissionUi) {
+            touchSetup.updateCards()
+            updateSwitchEnableState()
+        }
         switchOverlay.text = getString(if (OverlayService.isRunning) R.string.overlay_use_notification else R.string.overlay_start_hint)
     }
 
