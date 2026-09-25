@@ -1,6 +1,5 @@
 package com.quyetgd.keyvieweroverlay
 
-import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -24,8 +23,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
@@ -199,13 +196,7 @@ class SetupActivity : AppCompatActivity() {
         }
 
         // Step 7: Final
-        findViewById<Button>(R.id.btnStepSelectApps).setOnClickListener {
-            if (!hasUsageStatsPermission()) {
-                startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
-            } else {
-                checkXiaomiAndOpenAppList()
-            }
-        }
+        findViewById<Button>(R.id.btnStepSelectApps).setOnClickListener { AutoAppsDialog.show(this) }
 
         findViewById<Button>(R.id.btnAccessibility).setOnClickListener {
             TouchAccessibilitySetup.openSettings(this)
@@ -463,205 +454,6 @@ class SetupActivity : AppCompatActivity() {
     }
 
     private fun dpToPx(dp: Int): Int = (dp * resources.displayMetrics.density).toInt()
-
-    private fun hasUsageStatsPermission(): Boolean {
-        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            appOps.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), packageName)
-        } else {
-            @Suppress("DEPRECATION")
-            appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), packageName)
-        }
-        return mode == AppOpsManager.MODE_ALLOWED
-    }
-
-    private fun checkXiaomiAndOpenAppList() {
-        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
-        val isXiaomiWarningDismissed = pref.getBoolean("xiaomi_warning_dismissed", false)
-        val manufacturer = Build.MANUFACTURER.lowercase()
-        
-        if (!isXiaomiWarningDismissed && (manufacturer.contains("xiaomi") || manufacturer.contains("poco") || manufacturer.contains("redmi"))) {
-            val dialogView = layoutInflater.inflate(R.layout.dialog_xiaomi_warning, null)
-            val dialog = android.app.AlertDialog.Builder(this)
-                .setView(dialogView)
-                .setCancelable(false)
-                .create()
-                
-            dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
-
-            val btnSettings = dialogView.findViewById<android.widget.Button>(R.id.btnXiaomiSettings)
-            val btnCancel = dialogView.findViewById<android.widget.Button>(R.id.btnXiaomiCancel)
-            val btnDone = dialogView.findViewById<android.widget.Button>(R.id.btnXiaomiDone)
-
-            btnSettings.setOnClickListener {
-                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
-            }
-
-            btnCancel.setOnClickListener { dialog.dismiss() }
-
-            btnDone.setOnClickListener {
-                pref.edit().putBoolean("xiaomi_warning_dismissed", true).apply()
-                dialog.dismiss()
-                openAppSelectionScreen()
-            }
-
-            dialog.show()
-        } else {
-            openAppSelectionScreen()
-        }
-    }
-
-    private fun openAppSelectionScreen() {
-        val pbLoading = findViewById<ProgressBar>(R.id.pbStepLoading)
-        val btnSelectApps = findViewById<Button>(R.id.btnStepSelectApps)
-        
-        pbLoading.visibility = View.VISIBLE
-        btnSelectApps.visibility = View.GONE
-        
-        lifecycleScope.launch {
-            val result = withContext(Dispatchers.IO) {
-                loadAndCategorizeApps()
-            }
-            pbLoading.visibility = View.GONE
-            btnSelectApps.visibility = View.VISIBLE
-            showAppSelectionDialog(result.first, result.second)
-        }
-    }
-
-    private data class AppItem(
-        val label: String,
-        val packageName: String,
-        val icon: android.graphics.drawable.Drawable?,
-        var isChecked: Boolean = false,
-        val isHeader: Boolean = false,
-        val headerTitle: String = ""
-    )
-
-    private inner class AppAdapter(
-        val items: List<AppItem>,
-        val onCheckedChange: (Int, Boolean) -> Unit
-    ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-
-        override fun getItemViewType(position: Int): Int = if (items[position].isHeader) 0 else 1
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-            return if (viewType == 0) {
-                val tv = TextView(parent.context).apply {
-                    layoutParams = ViewGroup.LayoutParams(-1, -2)
-                    setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(8))
-                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-                    setTypeface(null, android.graphics.Typeface.BOLD)
-                    setTextColor(Color.YELLOW)
-                }
-                object : RecyclerView.ViewHolder(tv) {}
-            } else {
-                val layout = LinearLayout(parent.context).apply {
-                    layoutParams = ViewGroup.LayoutParams(-1, -2)
-                    orientation = LinearLayout.HORIZONTAL
-                    gravity = Gravity.CENTER_VERTICAL
-                    setPadding(dpToPx(16), dpToPx(8), dpToPx(16), dpToPx(8))
-                    isClickable = true; isFocusable = true
-                    val outValue = TypedValue()
-                    context.theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
-                    setBackgroundResource(outValue.resourceId)
-                }
-                val icon = ImageView(parent.context).apply { layoutParams = LinearLayout.LayoutParams(dpToPx(40), dpToPx(40)) }
-                val name = TextView(parent.context).apply {
-                    layoutParams = LinearLayout.LayoutParams(0, -2, 1f).apply { marginStart = dpToPx(12) }
-                    setTextColor(Color.WHITE)
-                }
-                val cb = CheckBox(parent.context).apply { isFocusable = false; isClickable = false }
-                layout.addView(icon); layout.addView(name); layout.addView(cb)
-                
-                layout.setTag(R.id.hitbox1, icon)
-                layout.setTag(R.id.hitbox2, name)
-                layout.setTag(R.id.hitbox3, cb)
-                
-                object : RecyclerView.ViewHolder(layout) {}
-            }
-        }
-
-        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-            val item = items[position]
-            if (item.isHeader) {
-                (holder.itemView as TextView).text = item.headerTitle
-            } else {
-                val icon = holder.itemView.getTag(R.id.hitbox1) as ImageView
-                val name = holder.itemView.getTag(R.id.hitbox2) as TextView
-                val cb = holder.itemView.getTag(R.id.hitbox3) as CheckBox
-                icon.setImageDrawable(item.icon)
-                name.text = item.label
-                cb.isChecked = item.isChecked
-                holder.itemView.setOnClickListener {
-                    item.isChecked = !item.isChecked
-                    cb.isChecked = item.isChecked
-                    onCheckedChange(position, item.isChecked)
-                }
-            }
-        }
-        override fun getItemCount(): Int = items.size
-    }
-
-    private fun loadAndCategorizeApps(): Pair<List<AppItem>, List<AppItem>> {
-        val pm = packageManager
-        val mainIntent = Intent(Intent.ACTION_MAIN, null).apply { addCategory(Intent.CATEGORY_LAUNCHER) }
-        val resolvedInfos = pm.queryIntentActivities(mainIntent, 0)
-        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
-        val savedApps = pref.getStringSet("allowed_apps", emptySet()) ?: emptySet()
-        val recommendedKeywords = listOf("adofai", "a dance of fire and ice", "geometry dash")
-        val allApps = resolvedInfos
-            .filter { it.activityInfo.packageName != packageName }
-            .map { 
-                AppItem(
-                    label = it.loadLabel(pm).toString(),
-                    packageName = it.activityInfo.packageName,
-                    icon = it.loadIcon(pm),
-                    isChecked = savedApps.contains(it.activityInfo.packageName)
-                )
-            }
-        val recommended = allApps.filter { item -> recommendedKeywords.any { kw -> item.label.contains(kw, ignoreCase = true) } }.sortedBy { it.label }
-        val others = allApps.filter { item -> !recommendedKeywords.any { kw -> item.label.contains(kw, ignoreCase = true) } }.sortedBy { it.label }
-        return recommended to others
-    }
-
-    private fun showAppSelectionDialog(recommended: List<AppItem>, others: List<AppItem>) {
-        val finalItems = mutableListOf<AppItem>()
-        if (recommended.isNotEmpty()) {
-            finalItems.add(AppItem("", "", null, isHeader = true, headerTitle = getString(R.string.header_recommended)))
-            finalItems.addAll(recommended)
-        }
-        finalItems.add(AppItem("", "", null, isHeader = true, headerTitle = getString(R.string.header_others)))
-        finalItems.addAll(others)
-
-        val dialog = BottomSheetDialog(this, R.style.RoundedBottomSheetDialog)
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dpToPx(16), dpToPx(24), dpToPx(16), dpToPx(24))
-            backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#1E1E1E"))
-        }
-        val title = TextView(this).apply {
-            text = getString(R.string.dialog_select_apps_title); textSize = 20f; setTypeface(null, android.graphics.Typeface.BOLD)
-            setTextColor(Color.WHITE); setPadding(0, 0, 0, dpToPx(16))
-        }
-        val rv = RecyclerView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(-1, 0, 1f)
-            layoutManager = LinearLayoutManager(this@SetupActivity)
-        }
-        rv.adapter = AppAdapter(finalItems) { _, _ -> }
-        val btnOk = MaterialButton(this).apply {
-            layoutParams = LinearLayout.LayoutParams(-1, dpToPx(56)).apply { topMargin = dpToPx(16) }
-            text = getString(android.R.string.ok); cornerRadius = dpToPx(16)
-            setOnClickListener {
-                val selectedSet = finalItems.filter { !it.isHeader && it.isChecked }.map { it.packageName }.toSet()
-                getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE).edit().putStringSet("allowed_apps", selectedSet).apply()
-                dialog.dismiss()
-            }
-        }
-        root.addView(title); root.addView(rv); root.addView(btnOk)
-        dialog.setContentView(root)
-        root.layoutParams.height = (resources.displayMetrics.heightPixels * 0.7).toInt()
-        dialog.show()
-    }
 
     override fun onResume() {
         super.onResume()

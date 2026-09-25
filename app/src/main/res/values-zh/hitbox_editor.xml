@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hitbox_editor_title">编辑触控区域</string>
+    <string name="hitbox_editor_status">正在编辑区域 %1$s</string>
+    <string name="hitbox_editor_unsaved">有未保存的更改</string>
+    <string name="hitbox_editor_close">关闭</string>
+    <string name="hitbox_editor_reset_title">要重置触控区域吗？</string>
+    <string name="hitbox_editor_reset_message">仅在当前草稿中恢复默认布局。点击“保存”之前不会保存任何更改。</string>
+    <string name="hitbox_editor_discard_title">要放弃更改吗？</string>
+    <string name="hitbox_editor_discard_message">未保存的更改将会丢失。</string>
+    <string name="hitbox_editor_discard">放弃</string>
+    <string name="hitbox_editor_cancel">取消</string>
+</resources>

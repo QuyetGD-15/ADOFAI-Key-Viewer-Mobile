@@ -1,0 +1,21 @@
+<resources>
+    <string name="auto_apps_title">Ứng dụng tự động hiển thị</string>
+    <string name="auto_apps_cancel">Hủy</string>
+    <string name="auto_apps_save">Lưu</string>
+    <string name="auto_apps_usage">Quyền truy cập dữ liệu sử dụng giúp Key Viewer nhận biết ứng dụng đang mở để tự động hiển thị. Hãy bật quyền này cho Key Viewer trong cài đặt hệ thống rồi quay lại đây. Thao tác này không khởi động lớp phủ.</string>
+    <string name="auto_apps_denied">Chưa bật quyền truy cập dữ liệu sử dụng. Thử lại để mở cài đặt hoặc Hủy để giữ nguyên lựa chọn đã lưu.</string>
+    <string name="auto_apps_open_usage">Mở cài đặt quyền sử dụng</string>
+    <string name="auto_apps_retry">Thử lại</string>
+    <string name="auto_apps_battery">Lời khuyên về pin trên Xiaomi\n\nMIUI và HyperOS có thể hạn chế hoạt động nền. Trong cài đặt ứng dụng, tìm mục Tiết kiệm pin và chọn Không hạn chế nếu có. Bạn cũng có thể cần cho phép tự khởi động trong nền. Tên và tùy chọn khác nhau tùy thiết bị.\n\nKey Viewer không thể xác minh các cài đặt này của nhà sản xuất. Mở cài đặt hoặc tiếp tục không có nghĩa là đã tắt hạn chế. Bạn có thể tiếp tục mà không thay đổi chúng.</string>
+    <string name="auto_apps_open_settings">Mở cài đặt ứng dụng</string>
+    <string name="auto_apps_continue">Tiếp tục</string>
+    <string name="auto_apps_settings_error">Không thể mở cài đặt. Hãy mở thủ công trong cài đặt thiết bị.</string>
+    <string name="auto_apps_explanation">Hãy khởi động lớp phủ trước. Tự động hiển thị hoạt động khi ứng dụng đã chọn đang mở ở phía trước và thiết bị ở chế độ ngang. Nếu không chọn ứng dụng nào, lớp phủ sẽ không tự động hiện; bạn vẫn có thể điều khiển thủ công qua thông báo. Sau khi lưu, chuyển ứng dụng hoặc xoay thiết bị để cập nhật tự động hiển thị.</string>
+    <string name="auto_apps_count">Đã chọn: %1$d</string>
+    <string name="auto_apps_search">Tìm theo tên ứng dụng hoặc tên gói</string>
+    <string name="auto_apps_empty">Không có ứng dụng có thể khởi chạy. Các lựa chọn hiện có được giữ nguyên.</string>
+    <string name="auto_apps_no_results">Không có ứng dụng phù hợp. Hãy thử từ khóa khác.</string>
+    <string name="auto_apps_loading">Đang tải ứng dụng…</string>
+    <string name="auto_apps_load_error">Không thể tải ứng dụng. Thử lại hoặc Hủy; lựa chọn đã lưu chưa thay đổi.</string>
+    <string name="auto_apps_dont_show_again">Không hiển thị lại</string>
+</resources>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hitbox_editor_title">히트박스 편집</string>
+    <string name="hitbox_editor_status">히트박스 %1$s 편집 중</string>
+    <string name="hitbox_editor_unsaved">저장하지 않은 변경사항</string>
+    <string name="hitbox_editor_close">닫기</string>
+    <string name="hitbox_editor_reset_title">히트박스를 초기화할까요?</string>
+    <string name="hitbox_editor_reset_message">이 초안에서만 기본 배치로 되돌립니다. 저장을 누르기 전까지 아무것도 저장되지 않습니다.</string>
+    <string name="hitbox_editor_discard_title">변경사항을 버릴까요?</string>
+    <string name="hitbox_editor_discard_message">저장하지 않은 변경사항이 사라집니다.</string>
+    <string name="hitbox_editor_discard">버리기</string>
+    <string name="hitbox_editor_cancel">취소</string>
+</resources>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hitbox_editor_title">Настройка хитбоксов</string>
+    <string name="hitbox_editor_status">Настройка области %1$s</string>
+    <string name="hitbox_editor_unsaved">Есть несохранённые изменения</string>
+    <string name="hitbox_editor_close">Закрыть</string>
+    <string name="hitbox_editor_reset_title">Сбросить хитбоксы?</string>
+    <string name="hitbox_editor_reset_message">Восстановить стандартную раскладку только в этом черновике. Изменения не сохранятся, пока вы не нажмёте «Сохранить».</string>
+    <string name="hitbox_editor_discard_title">Отменить изменения?</string>
+    <string name="hitbox_editor_discard_message">Несохранённые изменения будут потеряны.</string>
+    <string name="hitbox_editor_discard">Отменить</string>
+    <string name="hitbox_editor_cancel">Отмена</string>
+</resources>

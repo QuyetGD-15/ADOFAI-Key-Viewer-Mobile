@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hitbox_editor_title">ヒットボックスを編集</string>
+    <string name="hitbox_editor_status">ヒットボックス %1$s を編集中</string>
+    <string name="hitbox_editor_unsaved">未保存の変更</string>
+    <string name="hitbox_editor_close">閉じる</string>
+    <string name="hitbox_editor_reset_title">ヒットボックスをリセットしますか？</string>
+    <string name="hitbox_editor_reset_message">この下書きだけを初期レイアウトに戻します。「保存」を押すまで変更は保存されません。</string>
+    <string name="hitbox_editor_discard_title">変更を破棄しますか？</string>
+    <string name="hitbox_editor_discard_message">保存していない変更は失われます。</string>
+    <string name="hitbox_editor_discard">破棄</string>
+    <string name="hitbox_editor_cancel">キャンセル</string>
+</resources>

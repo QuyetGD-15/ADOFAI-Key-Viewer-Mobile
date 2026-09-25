@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hitbox_editor_title">Editar áreas de pulsación</string>
+    <string name="hitbox_editor_status">Editando el área %1$s</string>
+    <string name="hitbox_editor_unsaved">Cambios sin guardar</string>
+    <string name="hitbox_editor_close">Cerrar</string>
+    <string name="hitbox_editor_reset_title">¿Restablecer las áreas?</string>
+    <string name="hitbox_editor_reset_message">Restablece la distribución predeterminada solo en este borrador. No se guardará nada hasta pulsar Guardar.</string>
+    <string name="hitbox_editor_discard_title">¿Descartar cambios?</string>
+    <string name="hitbox_editor_discard_message">Se perderán los cambios sin guardar.</string>
+    <string name="hitbox_editor_discard">Descartar</string>
+    <string name="hitbox_editor_cancel">Cancelar</string>
+</resources>

@@ -1,0 +1,21 @@
+<resources>
+    <string name="auto_apps_title">Aplicaciones para mostrar automáticamente</string>
+    <string name="auto_apps_cancel">Cancelar</string>
+    <string name="auto_apps_save">Guardar</string>
+    <string name="auto_apps_usage">El acceso de uso permite a Key Viewer identificar la aplicación en primer plano para mostrarse automáticamente. Actívalo para Key Viewer en los ajustes del sistema y vuelve aquí. Esto no inicia la superposición.</string>
+    <string name="auto_apps_denied">El acceso de uso no está activado. Reintenta para abrir los ajustes o cancela para mantener la selección guardada.</string>
+    <string name="auto_apps_open_usage">Abrir ajustes de acceso de uso</string>
+    <string name="auto_apps_retry">Reintentar</string>
+    <string name="auto_apps_battery">Consejos de batería para Xiaomi\n\nMIUI y HyperOS pueden limitar el funcionamiento en segundo plano. En los ajustes de la aplicación, busca Ahorro de batería y elige Sin restricciones si está disponible. También puede ser necesario permitir el inicio automático en segundo plano. Los nombres y las opciones varían según el dispositivo.\n\nKey Viewer no puede verificar estos ajustes del fabricante. Abrir los ajustes o continuar no confirma que las restricciones estén desactivadas. Puedes continuar sin cambiarlos.</string>
+    <string name="auto_apps_open_settings">Abrir ajustes de la aplicación</string>
+    <string name="auto_apps_continue">Continuar</string>
+    <string name="auto_apps_settings_error">No se pudieron abrir los ajustes. Ábrelos manualmente desde los ajustes del dispositivo.</string>
+    <string name="auto_apps_explanation">Inicia primero la superposición. Se muestra automáticamente cuando una aplicación seleccionada está en primer plano y el dispositivo está en horizontal. Si no seleccionas ninguna aplicación, no se mostrará automáticamente; los controles manuales de la notificación seguirán disponibles. Tras guardar, cambia de aplicación o gira el dispositivo para actualizar la visualización automática.</string>
+    <string name="auto_apps_count">Seleccionadas: %1$d</string>
+    <string name="auto_apps_search">Buscar por nombre o paquete</string>
+    <string name="auto_apps_empty">No hay aplicaciones con lanzador disponibles. Se conservan las selecciones existentes.</string>
+    <string name="auto_apps_no_results">No hay coincidencias. Prueba otra búsqueda.</string>
+    <string name="auto_apps_loading">Cargando aplicaciones…</string>
+    <string name="auto_apps_load_error">No se pudieron cargar las aplicaciones. Reintenta o cancela; la selección guardada no ha cambiado.</string>
+    <string name="auto_apps_dont_show_again">No volver a mostrar</string>
+</resources>

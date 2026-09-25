@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hitbox_editor_title">Vuruş alanlarını düzenle</string>
+    <string name="hitbox_editor_status">%1$s alanı düzenleniyor</string>
+    <string name="hitbox_editor_unsaved">Kaydedilmemiş değişiklikler</string>
+    <string name="hitbox_editor_close">Kapat</string>
+    <string name="hitbox_editor_reset_title">Vuruş alanları sıfırlansın mı?</string>
+    <string name="hitbox_editor_reset_message">Yalnızca bu taslakta varsayılan düzene dönülür. Kaydet düğmesine dokunana kadar hiçbir şey kaydedilmez.</string>
+    <string name="hitbox_editor_discard_title">Değişiklikler silinsin mi?</string>
+    <string name="hitbox_editor_discard_message">Kaydedilmemiş değişiklikler kaybolacak.</string>
+    <string name="hitbox_editor_discard">Sil</string>
+    <string name="hitbox_editor_cancel">İptal</string>
+</resources>

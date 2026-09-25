@@ -1,0 +1,21 @@
+<resources>
+    <string name="auto_apps_title">Auto-show apps</string>
+    <string name="auto_apps_cancel">Cancel</string>
+    <string name="auto_apps_save">Save</string>
+    <string name="auto_apps_usage">Usage Access lets Key Viewer identify the foreground app for automatic showing. Enable it for Key Viewer in system settings, then return here. This does not start the overlay.</string>
+    <string name="auto_apps_denied">Usage Access is not enabled. Retry to open settings, or Cancel to leave your saved selection unchanged.</string>
+    <string name="auto_apps_open_usage">Open Usage Access settings</string>
+    <string name="auto_apps_retry">Retry</string>
+    <string name="auto_apps_battery">Xiaomi battery advice\n\nMIUI and HyperOS may restrict background operation. In app settings, look for Battery saver and choose No restrictions if available. You may also need to allow background autostart. Names and availability vary by device.\n\nKey Viewer cannot verify these manufacturer settings. Opening settings or continuing does not confirm that restrictions are disabled. You can continue without changing them.</string>
+    <string name="auto_apps_open_settings">Open app settings</string>
+    <string name="auto_apps_continue">Continue</string>
+    <string name="auto_apps_settings_error">Could not open settings. Open them manually from your device settings.</string>
+    <string name="auto_apps_explanation">Start the overlay first. Auto-show works when a selected app is in the foreground and the device is in landscape. With no apps selected, nothing is shown automatically; manual notification controls remain available. After saving, switch apps or rotate the device for auto-show to update.</string>
+    <string name="auto_apps_count">Selected: %1$d</string>
+    <string name="auto_apps_search">Search by app name or package</string>
+    <string name="auto_apps_empty">No launcher apps are available. Existing selections are preserved.</string>
+    <string name="auto_apps_no_results">No matching apps. Try another search.</string>
+    <string name="auto_apps_loading">Loading apps…</string>
+    <string name="auto_apps_load_error">Could not load apps. Retry or Cancel; your saved selection has not changed.</string>
+    <string name="auto_apps_dont_show_again">Don\'t show again</string>
+</resources>
