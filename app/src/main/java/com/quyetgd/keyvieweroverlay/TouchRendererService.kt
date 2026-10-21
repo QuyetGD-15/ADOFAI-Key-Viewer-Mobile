@@ -120,10 +120,14 @@ class TouchRendererService : AccessibilityService(), SharedPreferences.OnSharedP
         if (keyIndex != null) {
             if (event.action == KeyEvent.ACTION_DOWN) {
                 if (event.repeatCount == 0) { // Tránh bị lặp phím khi giữ
-                    OverlayService.instance?.triggerKeyPressFromKeyboard(keyIndex, true)
+                    OverlayService.instance?.triggerKeyPressFromKeyboard(
+                        keyIndex, true, event.eventTime
+                    )
                 }
             } else if (event.action == KeyEvent.ACTION_UP) {
-                OverlayService.instance?.triggerKeyPressFromKeyboard(keyIndex, false)
+                OverlayService.instance?.triggerKeyPressFromKeyboard(
+                    keyIndex, false, event.eventTime
+                )
             }
         }
         

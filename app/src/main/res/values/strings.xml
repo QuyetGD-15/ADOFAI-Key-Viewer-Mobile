@@ -58,6 +58,14 @@
     <string name="toast_config_saved">Đã lưu cấu hình</string>
     <string name="toast_hitbox_reset">Đã đưa về mặc định chuẩn</string>
     <string name="hitbox_config_hint">Kéo thả vùng giữa để di chuyển, kéo 4 góc để thay đổi kích thước</string>
+    <string name="hitbox_mode_custom">Tùy chỉnh</string>
+    <string name="hitbox_mode_auto">Tự động</string>
+    <string name="hitbox_mode_custom_status">Đang chỉnh vùng tùy chỉnh</string>
+    <string name="hitbox_mode_auto_status">Chế độ Tự động • Kéo vạch để chia vùng</string>
+    <string name="hitbox_auto_left_hand">TAY TRÁI</string>
+    <string name="hitbox_auto_right_hand">TAY PHẢI</string>
+    <string name="hitbox_auto_drag_hint">Kéo vạch phân cách sang trái hoặc phải</string>
+    <string name="hitbox_auto_preview_description">Xem trước vùng tay trái và tay phải</string>
     <string name="reset_default">Đặt lại mặc định</string>
     <string name="save">Lưu</string>
 

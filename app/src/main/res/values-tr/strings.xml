@@ -259,4 +259,12 @@
     <string name="counter_zero">0</string>
     <string name="key_mode_format">%d TUŞ</string>
     <string name="select_language">Dil seçin</string>
+    <string name="hitbox_mode_custom">Özel</string>
+    <string name="hitbox_mode_auto">Otomatik</string>
+    <string name="hitbox_mode_custom_status">Özel alanlar düzenleniyor</string>
+    <string name="hitbox_mode_auto_status">Otomatik mod • Alanları bölmek için çizgiyi sürükleyin</string>
+    <string name="hitbox_auto_left_hand">SOL EL</string>
+    <string name="hitbox_auto_right_hand">SAĞ EL</string>
+    <string name="hitbox_auto_drag_hint">Çizgiyi sola veya sağa sürükleyin</string>
+    <string name="hitbox_auto_preview_description">Sol ve sağ el alanlarının önizlemesi</string>
 </resources>

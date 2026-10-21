@@ -259,4 +259,12 @@
     <string name="counter_zero">0</string>
     <string name="key_mode_format">%d KEY</string>
     <string name="select_language">选择语言</string>
+    <string name="hitbox_mode_custom">自定义</string>
+    <string name="hitbox_mode_auto">自动</string>
+    <string name="hitbox_mode_custom_status">正在编辑自定义区域</string>
+    <string name="hitbox_mode_auto_status">自动模式 • 拖动分隔线来划分区域</string>
+    <string name="hitbox_auto_left_hand">左手</string>
+    <string name="hitbox_auto_right_hand">右手</string>
+    <string name="hitbox_auto_drag_hint">向左或向右拖动分隔线</string>
+    <string name="hitbox_auto_preview_description">左右手区域预览</string>
 </resources>

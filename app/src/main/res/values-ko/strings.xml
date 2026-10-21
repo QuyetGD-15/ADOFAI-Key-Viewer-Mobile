@@ -259,4 +259,12 @@
     <string name="counter_zero">0</string>
     <string name="key_mode_format">%d KEY</string>
     <string name="select_language">언어 선택</string>
+    <string name="hitbox_mode_custom">사용자 지정</string>
+    <string name="hitbox_mode_auto">자동</string>
+    <string name="hitbox_mode_custom_status">사용자 지정 영역 편집 중</string>
+    <string name="hitbox_mode_auto_status">자동 모드 • 선을 드래그하여 영역을 나눕니다</string>
+    <string name="hitbox_auto_left_hand">왼손</string>
+    <string name="hitbox_auto_right_hand">오른손</string>
+    <string name="hitbox_auto_drag_hint">선을 왼쪽 또는 오른쪽으로 드래그</string>
+    <string name="hitbox_auto_preview_description">왼손 및 오른손 영역 미리보기</string>
 </resources>

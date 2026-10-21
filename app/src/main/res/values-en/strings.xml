@@ -259,4 +259,12 @@
     <string name="counter_zero">0</string>
     <string name="key_mode_format">%d KEY</string>
     <string name="select_language">Select language</string>
+    <string name="hitbox_mode_custom">Custom</string>
+    <string name="hitbox_mode_auto">Automatic</string>
+    <string name="hitbox_mode_custom_status">Editing custom hitboxes</string>
+    <string name="hitbox_mode_auto_status">Automatic mode • Drag the divider to split areas</string>
+    <string name="hitbox_auto_left_hand">LEFT HAND</string>
+    <string name="hitbox_auto_right_hand">RIGHT HAND</string>
+    <string name="hitbox_auto_drag_hint">Drag the divider left or right</string>
+    <string name="hitbox_auto_preview_description">Preview of left-hand and right-hand areas</string>
 </resources>

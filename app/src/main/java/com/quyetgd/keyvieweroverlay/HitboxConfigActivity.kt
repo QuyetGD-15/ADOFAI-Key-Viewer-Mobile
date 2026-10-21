@@ -28,6 +28,15 @@ class HitboxConfigActivity : AppCompatActivity() {
     private var dirty = false
     private var draftReady = false
     private var selectedIndex = 0
+    private var isAutoMode = false
+    private lateinit var autoPreview: AutoHitboxPreviewView
+    private lateinit var gridOverlay: View
+
+    companion object {
+        private const val HITBOX_PREFS = "HitboxPrefs"
+        private const val PREF_AUTO_MODE = "hitbox_auto_mode"
+        private const val PREF_AUTO_DIVIDER = "hitbox_auto_divider_fraction"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,6 +65,20 @@ class HitboxConfigActivity : AppCompatActivity() {
         keyMode = savedInstanceState?.getInt("draft_mode") ?: pref.getInt("current_key_mode", 6)
 
         setupHitboxesAndGrid()
+        autoPreview = findViewById(R.id.auto_hitbox_preview)
+        val hitboxPrefs = getSharedPreferences(HITBOX_PREFS, Context.MODE_PRIVATE)
+        isAutoMode = hitboxPrefs.getBoolean(PREF_AUTO_MODE, false)
+        autoPreview.dividerFraction = hitboxPrefs.getFloat(PREF_AUTO_DIVIDER, 0.5f)
+        findViewById<android.widget.RadioButton>(R.id.radio_hitbox_auto).isChecked = isAutoMode
+        findViewById<android.widget.RadioButton>(R.id.radio_hitbox_custom).isChecked = !isAutoMode
+        autoPreview.onDividerChanged = {
+            dirty = true
+            hitboxPrefs.edit().putFloat(PREF_AUTO_DIVIDER, autoPreview.dividerFraction).apply()
+            updateStatus()
+        }
+        findViewById<android.widget.RadioButton>(R.id.radio_hitbox_custom).setOnClickListener { setHitboxMode(false) }
+        findViewById<android.widget.RadioButton>(R.id.radio_hitbox_auto).setOnClickListener { setHitboxMode(true) }
+        setHitboxMode(isAutoMode)
         val toolbar = findViewById<View>(R.id.hitbox_toolbar)
         val margin = (8 * resources.displayMetrics.density).toInt()
         ViewCompat.setOnApplyWindowInsetsListener(toolbar) { view, insets ->
@@ -100,28 +123,52 @@ class HitboxConfigActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.btnResetHitbox).setOnClickListener {
-            MaterialAlertDialogBuilder(this)
-                .setTitle(R.string.hitbox_editor_reset_title)
-                .setMessage(R.string.hitbox_editor_reset_message)
-                .setNegativeButton(R.string.hitbox_editor_cancel, null)
-                .setPositiveButton(R.string.reset) { _, _ ->
-                    resetHitboxesToDefault()
-                    dirty = true
-                    updateStatus()
-                }
-                .show()
+            if (isAutoMode) {
+                autoPreview.dividerFraction = 0.5f
+                hitboxPrefs.edit().putFloat(PREF_AUTO_DIVIDER, 0.5f).apply()
+                dirty = true
+                updateStatus()
+            } else {
+                MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.hitbox_editor_reset_title)
+                    .setMessage(R.string.hitbox_editor_reset_message)
+                    .setNegativeButton(R.string.hitbox_editor_cancel, null)
+                    .setPositiveButton(R.string.reset) { _, _ ->
+                        resetHitboxesToDefault()
+                        dirty = true
+                        updateStatus()
+                    }
+                    .show()
+            }
         }
         // Báo cho OverlayService biết để mở chế độ chỉnh sửa
         sendBroadcast(Intent(OverlayService.ACTION_START_EDIT).setPackage(packageName))
     }
 
+    private fun setHitboxMode(auto: Boolean) {
+        isAutoMode = auto
+        findViewById<android.widget.RadioButton>(R.id.radio_hitbox_auto).isChecked = auto
+        findViewById<android.widget.RadioButton>(R.id.radio_hitbox_custom).isChecked = !auto
+        autoPreview.visibility = if (auto) View.VISIBLE else View.GONE
+        hitboxes.forEach { it.visibility = if (auto) View.GONE else View.VISIBLE }
+        gridOverlay.visibility = if (auto) View.GONE else View.VISIBLE
+        getSharedPreferences(HITBOX_PREFS, Context.MODE_PRIVATE).edit()
+            .putBoolean(PREF_AUTO_MODE, auto)
+            .apply()
+
+        findViewById<TextView>(R.id.hitbox_status).text = getString(
+            if (auto) R.string.hitbox_mode_auto_status else R.string.hitbox_mode_custom_status
+        )
+    }
+
     private fun setupHitboxesAndGrid() {
         val root = findViewById<FrameLayout>(R.id.hitbox_root)
+        root.setBackgroundColor(Color.parseColor("#151515"))
 
         // Thêm Grid lines mờ làm nền
-        val gridOverlay = object : View(this) {
+        gridOverlay = object : View(this) {
             private val paint = Paint().apply {
-                color = Color.parseColor("#33FFFFFF")
+                color = Color.parseColor("#252525")
                 strokeWidth = 2f
             }
             override fun onDraw(canvas: Canvas) {
@@ -253,6 +300,8 @@ class HitboxConfigActivity : AppCompatActivity() {
                 putInt(getHitboxKey(index, "w"), view.layoutParams.width)
                 putInt(getHitboxKey(index, "h"), view.layoutParams.height)
             }
+            putBoolean(PREF_AUTO_MODE, isAutoMode)
+            putFloat(PREF_AUTO_DIVIDER, autoPreview.dividerFraction)
             apply()
         }
         Toast.makeText(this, getString(R.string.toast_config_saved), Toast.LENGTH_SHORT).show()
@@ -262,7 +311,7 @@ class HitboxConfigActivity : AppCompatActivity() {
     }
 
     private fun loadHitboxCoordinates() {
-        val sharedPref = getSharedPreferences("HitboxPrefs", Context.MODE_PRIVATE)
+        val sharedPref = getSharedPreferences(HITBOX_PREFS, Context.MODE_PRIVATE)
         
         // KIỂM TRA LẦN ĐẦU CHO CHẾ ĐỘ NÀY
         val checkKey = getHitboxKey(0, "x")

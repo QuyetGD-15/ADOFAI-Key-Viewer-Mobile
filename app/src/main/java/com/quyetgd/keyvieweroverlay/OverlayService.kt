@@ -135,6 +135,8 @@ class OverlayService : Service() {
     private lateinit var keyUpRunnables: Array<Runnable>
     private lateinit var pendingKeyDownTimes: LongArray
     private lateinit var pendingKeyUpTimes: LongArray
+    private lateinit var queuedKeyDownTimes: Array<java.util.ArrayDeque<Long>>
+    private lateinit var queuedKeyUpTimes: Array<java.util.ArrayDeque<Long>>
 
     private fun dpToPx(dp: Float): Float = dp * resources.displayMetrics.density
     private fun dpToPxInt(dp: Int): Int = (dp * resources.displayMetrics.density).toInt()
@@ -269,6 +271,8 @@ class OverlayService : Service() {
     private lateinit var hitboxRight: FloatArray
     private lateinit var hitboxTop: FloatArray
     private lateinit var hitboxBottom: FloatArray
+    private var autoHitboxEnabled = false
+    private var autoHitboxDividerFraction = 0.5f
     private lateinit var keyTrailView: KeyTrailView
     private lateinit var activeTrails: Array<KeyTrailView.Trail?>
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -426,16 +430,23 @@ class OverlayService : Service() {
 
         pendingKeyDownTimes = LongArray(keyMode)
         pendingKeyUpTimes = LongArray(keyMode)
+        queuedKeyDownTimes = Array(keyMode) { java.util.ArrayDeque<Long>() }
+        queuedKeyUpTimes = Array(keyMode) { java.util.ArrayDeque<Long>() }
 
         keyDownRunnables = Array(keyMode) { lane ->
             Runnable {
                 val container = keyContainers[lane] ?: return@Runnable
 
                 // 1. ĐỒNG BỘ HỆ QUY CHIẾU THỜI GIAN (FIX LỖI BÀN PHÍM VẬT LÝ)
-                var pressTime = pendingKeyDownTimes[lane]
+                var pressTime = synchronized(queuedKeyDownTimes[lane]) {
+                    if (queuedKeyDownTimes[lane].isEmpty()) pendingKeyDownTimes[lane]
+                    else queuedKeyDownTimes[lane].removeFirst()
+                }
                 val uptimeNow = SystemClock.uptimeMillis()
-                // Nếu pressTime = 0 hoặc lệch quá 10 giây -> Ép về thời gian thực
-                if (pressTime == 0L || Math.abs(uptimeNow - pressTime) > 10000) {
+                // eventTime is from the uptime clock and remains valid even when
+                // the main thread was blocked for a long time. Only zero means
+                // that no source timestamp was supplied.
+                if (pressTime == 0L) {
                     pressTime = uptimeNow
                 }
 
@@ -498,9 +509,14 @@ class OverlayService : Service() {
                 keyContainers[lane]?.isPressed = false
 
                 // ĐỒNG BỘ HỆ THỜI GIAN NHẢ PHÍM
-                var releaseTime = pendingKeyUpTimes[lane]
+                var releaseTime = synchronized(queuedKeyUpTimes[lane]) {
+                    if (queuedKeyUpTimes[lane].isEmpty()) pendingKeyUpTimes[lane]
+                    else queuedKeyUpTimes[lane].removeFirst()
+                }
                 val uptimeNow = SystemClock.uptimeMillis()
-                if (releaseTime == 0L || Math.abs(uptimeNow - releaseTime) > 10000) {
+                // Keep the original input timestamp even after a long main-thread
+                // stall; only zero means that no source timestamp was supplied.
+                if (releaseTime == 0L) {
                     releaseTime = uptimeNow
                 }
 
@@ -750,6 +766,61 @@ class OverlayService : Service() {
         }
     }
 
+    private fun getAutoLanePriority(leftSide: Boolean): IntArray {
+        return when (keyMode) {
+            4 -> if (leftSide) intArrayOf(1, 0) else intArrayOf(2, 3)
+            6 -> if (leftSide) intArrayOf(2, 1, 0) else intArrayOf(3, 4, 5)
+            8 -> if (leftSide) intArrayOf(3, 2, 1, 0) else intArrayOf(4, 5, 6, 7)
+            10 -> if (leftSide) intArrayOf(3, 2, 1, 0, 8) else intArrayOf(4, 5, 6, 7, 9)
+            12 -> if (leftSide) intArrayOf(5, 4, 3, 2, 1, 0) else intArrayOf(6, 7, 8, 9, 10, 11)
+            16 -> if (leftSide) intArrayOf(7, 6, 5, 4, 3, 2, 1, 0) else intArrayOf(8, 9, 10, 11, 12, 13, 14, 15)
+            else -> {
+                val half = keyMode / 2
+                if (leftSide) (half - 1 downTo 0).toList().toIntArray()
+                else (half until keyMode).toList().toIntArray()
+            }
+        }
+    }
+
+    private fun chooseAutoLane(x: Float): Int {
+        val dividerX = cachedPhysWidth * autoHitboxDividerFraction
+        val leftSide = x < dividerX
+        return getAutoLanePriority(leftSide).firstOrNull { lane ->
+            lane in laneOccupants.indices && laneOccupants[lane] == 0
+        } ?: -1
+    }
+
+    private fun chooseCustomLane(x: Float, y: Float): Int {
+        var directHitLane = -1
+        for (j in 0 until keyMode) {
+            if (x >= hitboxLeft[j] && x < hitboxRight[j] &&
+                y >= hitboxTop[j] && y < hitboxBottom[j]) {
+                directHitLane = j
+                break
+            }
+        }
+        if (directHitLane == -1) return -1
+        if (laneOccupants[directHitLane] == 0) return directHitLane
+
+        var nearestEmptyLane = -1
+        var minDistanceSq = Float.MAX_VALUE
+        val half = keyMode / 2
+        val startLane = if (directHitLane < half) 0 else half
+        val endLane = if (directHitLane < half) half else keyMode
+        for (j in startLane until endLane) {
+            if (j == directHitLane || laneOccupants[j] != 0) continue
+            if (hitboxRight[j] <= hitboxLeft[j] || hitboxBottom[j] <= hitboxTop[j]) continue
+            val dx = x - hitboxCentersX[j]
+            val dy = y - hitboxCentersY[j]
+            val distSq = dx * dx + dy * dy
+            if (distSq < minDistanceSq) {
+                minDistanceSq = distSq
+                nearestEmptyLane = j
+            }
+        }
+        return nearestEmptyLane
+    }
+
     private fun processSync(hwMaxX: Float, hwMaxY: Float) {
         val rotation = currentHardwareRotation
 
@@ -775,41 +846,10 @@ class OverlayService : Service() {
                 finalMappedY = rawMappedY - cachedOffsetY
 
                 if (!slot.isActive) {
-                    var directHitLane = -1
-                    for (j in 0 until keyMode) {
-                        if (finalMappedX >= hitboxLeft[j] && finalMappedX < hitboxRight[j] &&
-                            finalMappedY >= hitboxTop[j] && finalMappedY < hitboxBottom[j]) {
-                            directHitLane = j
-                            break
-                        }
-                    }
-
-                    var finalLaneToActivate = -1
-                    if (directHitLane != -1) {
-                        if (laneOccupants[directHitLane] == 0) {
-                            finalLaneToActivate = directHitLane
-                        } else {
-                            var nearestEmptyLane = -1
-                            var minDistanceSq = Float.MAX_VALUE
-                            val half = keyMode / 2
-                            val startLane = if (directHitLane < half) 0 else half
-                            val endLane = if (directHitLane < half) half else keyMode
-
-                            for (j in startLane until endLane) {
-                                if (j == directHitLane) continue
-                                if (laneOccupants[j] == 0) {
-                                    if (hitboxRight[j] <= hitboxLeft[j] || hitboxBottom[j] <= hitboxTop[j]) continue
-                                    val dx = finalMappedX - hitboxCentersX[j]
-                                    val dy = finalMappedY - hitboxCentersY[j]
-                                    val distSq = dx * dx + dy * dy
-                                    if (distSq < minDistanceSq) {
-                                        minDistanceSq = distSq
-                                        nearestEmptyLane = j
-                                    }
-                                }
-                            }
-                            if (nearestEmptyLane != -1) finalLaneToActivate = nearestEmptyLane
-                        }
+                    val finalLaneToActivate = if (autoHitboxEnabled) {
+                        chooseAutoLane(finalMappedX)
+                    } else {
+                        chooseCustomLane(finalMappedX, finalMappedY)
                     }
 
                     if (finalLaneToActivate != -1) {
@@ -817,7 +857,7 @@ class OverlayService : Service() {
                         slot.isActive = true
                         laneOccupants[finalLaneToActivate]++
                         pendingKeyDownTimes[finalLaneToActivate] = SystemClock.uptimeMillis()
-                        onKeyDown(finalLaneToActivate)
+                        onKeyDown(finalLaneToActivate, pendingKeyDownTimes[finalLaneToActivate])
 
                         recordClick()
                     }
@@ -827,7 +867,7 @@ class OverlayService : Service() {
                     laneOccupants[slot.mappedLane]--
                     if (laneOccupants[slot.mappedLane] < 0) laneOccupants[slot.mappedLane] = 0
                     pendingKeyUpTimes[slot.mappedLane] = SystemClock.uptimeMillis()
-                    onKeyUp(slot.mappedLane)
+                    onKeyUp(slot.mappedLane, pendingKeyUpTimes[slot.mappedLane])
                     slot.mappedLane = -1
                     slot.isActive = false
                 }
@@ -849,30 +889,43 @@ class OverlayService : Service() {
         }
     }
 
-    private fun onKeyDown(lane: Int) = mainHandler.post(keyDownRunnables[lane])
+    private fun onKeyDown(lane: Int, eventTime: Long) {
+        synchronized(queuedKeyDownTimes[lane]) {
+            queuedKeyDownTimes[lane].addLast(eventTime)
+        }
+        mainHandler.post(keyDownRunnables[lane])
+    }
 
-    private fun onKeyUp(lane: Int) {
+    private fun onKeyUp(lane: Int, eventTime: Long) {
         if (laneOccupants[lane] > 0) return
+        synchronized(queuedKeyUpTimes[lane]) {
+            queuedKeyUpTimes[lane].addLast(eventTime)
+        }
         mainHandler.post(keyUpRunnables[lane])
     }
 
-    fun triggerKeyPressFromKeyboard(lane: Int, isDown: Boolean) {
+    fun triggerKeyPressFromKeyboard(lane: Int, isDown: Boolean, eventTime: Long) {
         if (currentInputSource != "keyboard" || lane !in 0 until keyMode) return
 
         if (Looper.myLooper() == Looper.getMainLooper()) {
-            executeKeyPress(lane, isDown)
+            executeKeyPress(lane, isDown, eventTime)
         } else {
-            mainHandler.post { executeKeyPress(lane, isDown) }
+            mainHandler.post { executeKeyPress(lane, isDown, eventTime) }
         }
     }
 
-    private fun executeKeyPress(lane: Int, isDown: Boolean) {
+    private fun executeKeyPress(lane: Int, isDown: Boolean, eventTime: Long) {
+        // KeyEvent.eventTime uses the same uptime clock as SystemClock.uptimeMillis().
+        // Keep the original input timestamp instead of timestamping when the main
+        // thread finally runs this callback; otherwise UI/game stalls shift the trail.
         if (isDown) {
+            pendingKeyDownTimes[lane] = eventTime
             laneOccupants[lane]++
             keyDownRunnables[lane].run()
             recordClick()
             updateKpsTotalUI(lastRenderedKps, totalClicks)
         } else {
+            pendingKeyUpTimes[lane] = eventTime
             laneOccupants[lane]--
             if (laneOccupants[lane] < 0) laneOccupants[lane] = 0
             if (laneOccupants[lane] == 0) keyUpRunnables[lane].run()
@@ -1332,6 +1385,8 @@ class OverlayService : Service() {
 
     private fun loadHitboxesFromPrefs() {
         val pref = getSharedPreferences("HitboxPrefs", Context.MODE_PRIVATE)
+        autoHitboxEnabled = pref.getBoolean("hitbox_auto_mode", false)
+        autoHitboxDividerFraction = pref.getFloat("hitbox_auto_divider_fraction", 0.5f).coerceIn(0.12f, 0.88f)
         val checkKey = getHitboxKey(0, "x")
 
         if (!pref.contains(checkKey)) {
