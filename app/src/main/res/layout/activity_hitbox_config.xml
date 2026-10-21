@@ -4,7 +4,8 @@
     android:id="@+id/hitbox_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/md3_background">
+    android:background="#151515"
+    android:clipChildren="false">
 
     <com.quyetgd.keyvieweroverlay.AutoHitboxPreviewView
         android:id="@+id/auto_hitbox_preview"
@@ -18,75 +19,105 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|end"
-        app:cardBackgroundColor="@color/md3_surface"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="2dp"
-        app:strokeWidth="0dp">
+        app:cardBackgroundColor="#E61E1E1E"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="6dp"
+        app:strokeColor="#3326B9B0"
+        app:strokeWidth="1dp">
+
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:padding="4dp">
+            android:paddingStart="10dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="4dp"
+            android:paddingBottom="6dp">
+
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="8dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="12dp"
+                android:gravity="center_vertical"
+                android:minWidth="190dp"
                 android:orientation="vertical">
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/hitbox_editor_title"
                     android:textColor="@android:color/white"
-                    android:textStyle="bold"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
                 <TextView
                     android:id="@+id/hitbox_status"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:maxWidth="220dp"
-                    android:textColor="@android:color/white"
-                    android:textSize="12sp"
-                    android:accessibilityLiveRegion="none" />
+                    android:maxWidth="230dp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:textColor="#B8B8C2"
+                    android:textSize="11sp"
+                    android:accessibilityLiveRegion="polite" />
             </LinearLayout>
+
             <RadioGroup
                 android:id="@+id/hitbox_mode_group"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="4dp"
+                android:layout_marginEnd="8dp"
                 android:orientation="horizontal">
                 <RadioButton
                     android:id="@+id/radio_hitbox_custom"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="48dp"
                     android:checked="true"
+                    android:minWidth="48dp"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="8dp"
                     android:text="@string/hitbox_mode_custom"
                     android:textColor="@android:color/white"
-                    android:textSize="12sp" />
+                    android:textSize="13sp" />
                 <RadioButton
                     android:id="@+id/radio_hitbox_auto"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="48dp"
+                    android:minWidth="48dp"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="4dp"
                     android:text="@string/hitbox_mode_auto"
                     android:textColor="@android:color/white"
-                    android:textSize="12sp" />
+                    android:textSize="13sp" />
             </RadioGroup>
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnResetHitbox"
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="48dp"
+                android:minWidth="48dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
                 android:text="@string/reset_default"
+                android:textColor="#D8C7FF"
                 android:textSize="12sp"
-                app:cornerRadius="8dp" />
+                android:insetTop="0dp"
+                android:insetBottom="0dp" />
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSaveHitbox"
                 style="@style/CompactNeonButtonStyle"
-                android:layout_width="wrap_content"
+                android:layout_width="92dp"
                 android:layout_height="48dp"
+                android:layout_marginStart="2dp"
                 android:text="@string/save"
-                android:textSize="12sp"
-                app:cornerRadius="8dp" />
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="10dp" />
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnCloseHitbox"
                 style="@style/Widget.Material3.Button.TextButton"
@@ -94,7 +125,11 @@
                 android:layout_height="48dp"
                 android:contentDescription="@string/hitbox_editor_close"
                 android:text="×"
-                android:textSize="22sp" />
+                android:textColor="#D8C7FF"
+                android:textSize="24sp"
+                android:minWidth="48dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 </FrameLayout>

@@ -10,7 +10,7 @@
     <string name="auto_apps_open_settings">Open app settings</string>
     <string name="auto_apps_continue">Continue</string>
     <string name="auto_apps_settings_error">Could not open settings. Open them manually from your device settings.</string>
-    <string name="auto_apps_explanation">Start the overlay first. Auto-show works when a selected app is in the foreground and the device is in landscape. With no apps selected, nothing is shown automatically; manual notification controls remain available. After saving, switch apps or rotate the device for auto-show to update.</string>
+    <string name="auto_apps_explanation">This feature automatically shows Key Viewer when target apps are open. You no longer need to turn Key Viewer on manually every time you open a game. You can still turn Key Viewer on or off yourself in other apps.</string>
     <string name="auto_apps_count">Selected: %1$d</string>
     <string name="auto_apps_search">Search by app name or package</string>
     <string name="auto_apps_empty">No launcher apps are available. Existing selections are preserved.</string>
@@ -18,4 +18,8 @@
     <string name="auto_apps_loading">Loading apps…</string>
     <string name="auto_apps_load_error">Could not load apps. Retry or Cancel; your saved selection has not changed.</string>
     <string name="auto_apps_dont_show_again">Don\'t show again</string>
+    <string name="auto_apps_info_title">How it works</string>
+    <string name="auto_apps_xiaomi_short">MIUI/HyperOS may restrict background activity. Choose “No restrictions” for Key Viewer if auto-show does not work.</string>
+    <string name="auto_apps_picker_hint">Select the apps that should show the overlay automatically</string>
+    <string name="auto_apps_xiaomi_title">Note for Xiaomi/POCO devices</string>
 </resources>

@@ -5,34 +5,36 @@ import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Process
 import android.provider.Settings
 import android.text.InputType
+import android.text.SpannableString
+import android.text.TextUtils
+import android.text.style.ForegroundColorSpan
+import android.text.style.RelativeSizeSpan
+import android.text.style.StyleSpan
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
-import android.graphics.Typeface
-import android.graphics.drawable.Drawable
-import android.text.SpannableString
-import android.text.style.ForegroundColorSpan
-import android.text.style.RelativeSizeSpan
-import android.text.style.StyleSpan
+import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
-import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
@@ -44,7 +46,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
 
-/** Only Save writes the app selection; only Continue can dismiss future battery advice. */
+/** Auto-start app picker. Draft selection is written only when the user taps Save. */
 class AutoAppsDialog : DialogFragment() {
     companion object {
         private const val TAG = "auto_apps"
@@ -54,20 +56,25 @@ class AutoAppsDialog : DialogFragment() {
                 AutoAppsDialog().showNow(activity.supportFragmentManager, TAG)
             }
         }
+
         private fun isXiaomi(): Boolean = listOf("xiaomi", "redmi", "poco", "blackshark", "black shark").any {
-            Build.MANUFACTURER.lowercase(Locale.ROOT).contains(it) || Build.BRAND.lowercase(Locale.ROOT).contains(it)
+            Build.MANUFACTURER.lowercase(Locale.ROOT).contains(it) ||
+                Build.BRAND.lowercase(Locale.ROOT).contains(it)
         }
     }
 
     private data class App(val label: String, val pkg: String, val icon: Drawable?)
-    private var hideAdvice = false
+
     private lateinit var root: LinearLayout
+    private lateinit var content: LinearLayout
+    private lateinit var footer: LinearLayout
     private var phase = "permission"
     private var query = ""
+    private var hideAdvice = false
     private val draft = linkedSetOf<String>()
     private var apps: List<App>? = null
     private var loadJob: Job? = null
-    private lateinit var body: LinearLayout
+
     private val usageSettings = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         phase = if (hasUsageAccess()) nextPhase() else "denied"
         render()
@@ -83,46 +90,56 @@ class AutoAppsDialog : DialogFragment() {
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
         outState.putStringArrayList("draft", ArrayList(draft))
         outState.putString("query", query)
         outState.putString("phase", phase)
         outState.putBoolean("hideAdvice", hideAdvice)
+        super.onSaveInstanceState(outState)
     }
 
     override fun onCreateDialog(state: Bundle?): Dialog {
-        val context = requireContext()
-        root = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
-        body = root
-        return MaterialAlertDialogBuilder(context)
-            .setTitle(R.string.auto_apps_title)
+        root = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.parseColor("#211F26"))
+        }
+        content = LinearLayout(requireContext())
+        footer = LinearLayout(requireContext())
+        return MaterialAlertDialogBuilder(requireContext())
             .setView(root)
-            .setNegativeButton(R.string.auto_apps_cancel, null)
-            .setPositiveButton(R.string.auto_apps_save, null)
             .create()
     }
 
     override fun onStart() {
         super.onStart()
-        val alert = dialog as AlertDialog
-        alert.window?.apply {
-            setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-            setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        dialog?.window?.apply {
+            setSoftInputMode(
+                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
+                    WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN
+            )
+            val metrics = resources.displayMetrics
+            setLayout(
+                (metrics.widthPixels * 0.94f).toInt().coerceAtMost(dp(660)),
+                (metrics.heightPixels * 0.90f).toInt().coerceAtMost(dp(860))
+            )
         }
-        alert.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-            requireContext().getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
-                .edit().putStringSet("allowed_apps", draft.toSet()).apply()
-            dismiss()
-        }
-        // A restarted window may have replaced the views captured by the loader.
         loadJob?.cancel()
         loadJob = null
         render()
+        root.post { resizeWindowToContent() }
     }
 
-    private fun nextPhase() = if (isXiaomi() && !requireContext()
-        .getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
-        .getBoolean("xiaomi_warning_dismissed", false)) "advice" else "picker"
+    private fun resizeWindowToContent() {
+        val window = dialog?.window ?: return
+        val metrics = resources.displayMetrics
+        val width = (metrics.widthPixels * 0.94f).toInt().coerceAtMost(dp(660))
+        val maxHeight = (metrics.heightPixels * 0.82f).toInt().coerceAtMost(dp(760))
+        window.setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
+    }
+
+    private fun nextPhase(): String = if (
+        isXiaomi() && !requireContext().getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+            .getBoolean("xiaomi_warning_dismissed", false)
+    ) "advice" else "picker"
 
     private fun hasUsageAccess(): Boolean = try {
         val context = requireContext()
@@ -136,114 +153,188 @@ class AutoAppsDialog : DialogFragment() {
         mode == AppOpsManager.MODE_ALLOWED
     } catch (_: Exception) { false }
 
-    private fun text(id: Int) = TextView(requireContext()).also {
-        it.setText(id)
-        it.setPadding(0, 8, 0, 16)
-        body.addView(it)
-    }
-
-    private fun button(id: Int, action: () -> Unit) {
-        body.addView(Button(requireContext()).apply {
-            setText(id)
-            isAllCaps = false
-            setOnClickListener { action() }
-        }, LinearLayout.LayoutParams(-1, -2))
-    }
-
     private fun render() {
-        if (!isAdded || !::body.isInitialized) return
+        if (!isAdded || !::root.isInitialized) return
         root.removeAllViews()
-        body = LinearLayout(requireContext()).apply {
+        content = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
-            val padding = (20 * resources.displayMetrics.density).toInt()
-            setPadding(padding, padding, padding, padding)
+            setPadding(dp(22), 0, dp(22), 0)
         }
+        footer = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(18), dp(8), dp(18), dp(14))
+        }
+
+        addHeader()
         if (phase == "picker") {
-            dialog?.window?.setLayout(
-                minOf(resources.displayMetrics.widthPixels, dp(640)),
-                minOf(resources.displayMetrics.heightPixels, dp(860))
-            )
-            root.addView(body, LinearLayout.LayoutParams(-1, -1))
+            root.addView(content, LinearLayout.LayoutParams(-1, -2))
         } else {
-            root.addView(ScrollView(requireContext()).apply { addView(body) }, LinearLayout.LayoutParams(-1, -1))
+            root.addView(ScrollView(requireContext()).apply {
+                isFillViewport = true
+                addView(content)
+            }, LinearLayout.LayoutParams(-1, 0, 1f))
         }
-        val save = (dialog as? AlertDialog)?.getButton(AlertDialog.BUTTON_POSITIVE)
-        save?.visibility = if (phase == "picker") View.VISIBLE else View.GONE
-        save?.isEnabled = apps != null
+        root.addView(footer, LinearLayout.LayoutParams(-1, -2))
+
         when (phase) {
-            "permission", "denied", "settings" -> {
-                text(if (phase == "permission") R.string.auto_apps_usage else R.string.auto_apps_denied)
-                button(if (phase == "permission") R.string.auto_apps_open_usage else R.string.auto_apps_retry) {
-                    if (hasUsageAccess()) {
-                        phase = nextPhase()
-                        render()
-                    } else {
-                        phase = "settings"
-                        try {
-                            usageSettings.launch(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
-                        } catch (_: Exception) {
-                            phase = "denied"
-                            render()
-                            settingsError()
-                        }
-                    }
-                }
-            }
-            "advice" -> {
-                text(R.string.auto_apps_battery)
-                button(R.string.auto_apps_open_settings) {
-                    val context = requireContext()
-                    try {
-                        startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
-                    } catch (_: Exception) {
-                        try { startActivity(Intent(Settings.ACTION_SETTINGS)) }
-                        catch (_: Exception) { settingsError() }
-                    }
-                }
-                body.addView(CheckBox(requireContext()).apply {
-                    setText(R.string.auto_apps_dont_show_again)
-                    isChecked = hideAdvice
-                    setOnCheckedChangeListener { _, checked -> hideAdvice = checked }
-                })
-                button(R.string.auto_apps_continue) {
-                    if (hideAdvice) requireContext().getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
-                        .edit().putBoolean("xiaomi_warning_dismissed", true).apply()
-                    phase = "picker"
-                    render()
-                }
-            }
+            "permission", "denied", "settings" -> renderPermission()
+            "advice" -> renderXiaomiAdvice()
             "picker" -> renderPicker()
         }
     }
 
-    private fun settingsError() = Toast.makeText(requireContext(), R.string.auto_apps_settings_error, Toast.LENGTH_LONG).show()
+    private fun addHeader() {
+        val header = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(22), dp(20), dp(22), dp(10))
+        }
+        val top = LinearLayout(requireContext()).apply {
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        val titleBlock = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
+        }
+        titleBlock.addView(TextView(requireContext()).apply {
+            setText(R.string.auto_apps_title)
+            setTextColor(Color.WHITE)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 23f)
+            setTypeface(typeface, Typeface.BOLD)
+        })
+        titleBlock.addView(TextView(requireContext()).apply {
+            text = when (phase) {
+                "permission", "denied", "settings" -> getString(R.string.usage_stats_required)
+                "advice" -> getString(R.string.xiaomi_warning_title)
+                "picker" -> getString(R.string.auto_apps_picker_hint)
+                else -> getString(R.string.usage_stats_required)
+            }
+            setTextColor(if (phase == "advice") 0xFFFFC857.toInt() else 0xFFBDB8C8.toInt())
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+            maxLines = 2
+            ellipsize = TextUtils.TruncateAt.END
+            setPadding(0, dp(4), 0, 0)
+        })
+        top.addView(titleBlock)
+        if (phase == "picker") {
+            top.addView(TextView(requireContext()).apply {
+                text = "ⓘ"
+                contentDescription = getString(R.string.auto_apps_explanation)
+                gravity = Gravity.CENTER
+                setTextColor(0xFFD8C7FF.toInt())
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 25f)
+                setOnClickListener { showInfoDialog() }
+                layoutParams = LinearLayout.LayoutParams(dp(48), dp(48))
+            })
+        }
+        top.addView(TextView(requireContext()).apply {
+            text = "×"
+            contentDescription = getString(R.string.auto_apps_cancel)
+            gravity = Gravity.CENTER
+            setTextColor(0xFFD8C7FF.toInt())
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 27f)
+            setOnClickListener { dismiss() }
+            layoutParams = LinearLayout.LayoutParams(dp(48), dp(48))
+        })
+        header.addView(top)
+        root.addView(header, LinearLayout.LayoutParams(-1, -2))
+    }
 
-    private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
+    private fun showInfoDialog() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.auto_apps_info_title)
+            .setMessage(R.string.auto_apps_explanation)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
+    }
+
+    private fun renderPermission() {
+        val card = card(0x3326B9B0, R.color.md3_primary_variant)
+        val box = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(18), dp(18), dp(18))
+        }
+        box.addView(TextView(requireContext()).apply {
+            text = if (phase == "permission") "①  Quyền Truy cập dữ liệu sử dụng" else "①  Quyền chưa được cấp"
+            setTextColor(Color.WHITE)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
+            setTypeface(typeface, Typeface.BOLD)
+        })
+        box.addView(TextView(requireContext()).apply {
+            setText(if (phase == "permission") R.string.auto_apps_usage else R.string.auto_apps_denied)
+            setTextColor(0xFFD0CBD7.toInt())
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            setLineSpacing(dp(2).toFloat(), 1f)
+            setPadding(0, dp(10), 0, dp(14))
+        })
+        val action = button(if (phase == "permission") R.string.auto_apps_open_usage else R.string.auto_apps_retry, true) {
+            if (hasUsageAccess()) {
+                phase = nextPhase()
+                render()
+            } else {
+                phase = "settings"
+                try { usageSettings.launch(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) }
+                catch (_: Exception) { phase = "denied"; render(); settingsError() }
+            }
+        }
+        box.addView(action)
+        card.addView(box)
+        content.addView(card, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        addFooterCancel()
+    }
+
+    private fun renderXiaomiAdvice() {
+        val warning = card(0x332F2612, null).apply { strokeColor = 0xFFFFC857.toInt() }
+        val box = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(16), dp(18), dp(16))
+        }
+        box.addView(TextView(requireContext()).apply {
+            text = getString(R.string.auto_apps_xiaomi_title)
+            setTextColor(0xFFFFD166.toInt())
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+            setTypeface(typeface, Typeface.BOLD)
+        })
+        box.addView(TextView(requireContext()).apply {
+            setText(R.string.auto_apps_xiaomi_short)
+            setTextColor(0xFFFFE7A6.toInt())
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            setLineSpacing(dp(2).toFloat(), 1f)
+            setPadding(0, dp(8), 0, 0)
+        })
+        warning.addView(box)
+        content.addView(warning, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+
+        val open = button(R.string.auto_apps_open_settings, true) {
+            val context = requireContext()
+            try { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}"))) }
+            catch (_: Exception) { try { startActivity(Intent(Settings.ACTION_SETTINGS)) } catch (_: Exception) { settingsError() } }
+        }
+        content.addView(open, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) })
+        content.addView(CheckBox(requireContext()).apply {
+            setText(R.string.auto_apps_dont_show_again)
+            setTextColor(0xFFD0CBD7.toInt())
+            isChecked = hideAdvice
+            setOnCheckedChangeListener { _, checked -> hideAdvice = checked }
+        })
+        addFooterCancel()
+        addFooterAction(R.string.auto_apps_continue, true) {
+            if (hideAdvice) requireContext().getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+                .edit().putBoolean("xiaomi_warning_dismissed", true).apply()
+            phase = "picker"
+            render()
+        }
+    }
 
     private fun renderPicker() {
-        val explanation = MaterialCardView(requireContext()).apply {
-            setCardBackgroundColor(resources.getColor(R.color.md3_surface, null))
-            radius = dp(12).toFloat()
-            strokeWidth = dp(1)
-            strokeColor = resources.getColor(R.color.md3_primary_variant, null)
-            val copy = TextView(context).apply {
-                setText(R.string.auto_apps_explanation)
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
-                setTextColor(resources.getColor(R.color.md3_primary, null))
-                setPadding(dp(14), dp(10), dp(14), dp(10))
-            }
-            addView(ScrollView(context).apply { addView(copy) })
-        }
-        body.addView(explanation, LinearLayout.LayoutParams(-1, dp(if (resources.configuration.screenHeightDp < 500) 56 else 104)).apply { bottomMargin = dp(10) })
-
         val count = TextView(requireContext()).apply {
             text = getString(R.string.auto_apps_count, draft.size)
+            setTextColor(0xFFD8C7FF.toInt())
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
             setTypeface(typeface, Typeface.BOLD)
-            setTextColor(resources.getColor(R.color.md3_primary, null))
-            accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
-            setPadding(dp(2), 0, dp(2), dp(8))
+            setPadding(dp(2), 0, 0, dp(8))
         }
-        body.addView(count)
+        content.addView(count)
         fun updateCount() { count.text = getString(R.string.auto_apps_count, draft.size) }
 
         val searchLayout = TextInputLayout(requireContext()).apply {
@@ -256,19 +347,26 @@ class AutoAppsDialog : DialogFragment() {
             setSingleLine(true)
             setText(query)
             contentDescription = getString(R.string.auto_apps_search)
+            isFocusableInTouchMode = true
+            showSoftInputOnFocus = true
+            setOnTouchListener { view, event ->
+                if (event.actionMasked == android.view.MotionEvent.ACTION_UP) {
+                    focusAndShowKeyboard(view)
+                }
+                true
+            }
+            setOnFocusChangeListener { view, focused -> if (focused) focusAndShowKeyboard(view) }
         }
-        searchLayout.addView(search, LinearLayout.LayoutParams(-1, -2))
-        body.addView(searchLayout, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
+        searchLayout.addView(search)
+        content.addView(searchLayout, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
 
         val status = TextView(requireContext()).apply {
             setText(R.string.auto_apps_loading)
             gravity = Gravity.CENTER
-            accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
-            setPadding(dp(16), dp(20), dp(16), dp(20))
+            setTextColor(0xFFBDB8C8.toInt())
+            setPadding(dp(16), dp(24), dp(16), dp(24))
         }
-        val progress = ProgressBar(requireContext()).apply {
-            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-        }
+        val progress = ProgressBar(requireContext())
         val statePanel = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
@@ -279,83 +377,130 @@ class AutoAppsDialog : DialogFragment() {
         val rows = RecyclerView(requireContext()).apply {
             layoutManager = LinearLayoutManager(context)
             this.adapter = adapter
-            setPadding(dp(2), dp(4), dp(2), dp(4))
+            setPadding(dp(4), dp(4), dp(4), dp(4))
             clipToPadding = false
         }
-        val listSurface = MaterialCardView(requireContext()).apply {
-            setCardBackgroundColor(resources.getColor(R.color.md3_surface, null))
-            radius = dp(12).toFloat()
-            strokeWidth = dp(1)
-            strokeColor = resources.getColor(R.color.md3_primary_variant, null)
-            addView(FrameLayout(context).apply {
-                addView(rows, FrameLayout.LayoutParams(-1, -1))
-                addView(ScrollView(context).apply { addView(statePanel) }, FrameLayout.LayoutParams(-1, -2, Gravity.CENTER))
-            }, ViewGroup.LayoutParams(-1, -1))
-        }
-        body.addView(listSurface, LinearLayout.LayoutParams(-1, 0, 1f))
+        val listSurface = card(0x331E1E1E, R.color.md3_primary_variant)
+        listSurface.addView(FrameLayout(requireContext()).apply {
+            addView(rows, FrameLayout.LayoutParams(-1, -1))
+            addView(statePanel, FrameLayout.LayoutParams(-1, -2, Gravity.CENTER))
+        }, ViewGroup.LayoutParams(-1, -1))
+        val listHeight = minOf(dp(360), (resources.displayMetrics.heightPixels * 0.40f).toInt())
+        content.addView(listSurface, LinearLayout.LayoutParams(-1, listHeight))
 
         fun filter() {
             val loaded = apps ?: return
             val visible = loaded.filter { it.label.contains(query, true) || it.pkg.contains(query, true) }
             progress.visibility = View.GONE
             statePanel.visibility = if (visible.isEmpty()) View.VISIBLE else View.GONE
-            status.visibility = if (visible.isEmpty()) View.VISIBLE else View.GONE
-            status.setText(if (loaded.isEmpty()) R.string.auto_apps_empty else R.string.auto_apps_no_results)
+            status.text = if (loaded.isEmpty()) getString(R.string.auto_apps_empty) else getString(R.string.auto_apps_no_results)
             adapter.submitList(visible)
         }
         search.doAfterTextChanged { query = it.toString(); filter() }
+        addFooterCancel()
+        addFooterAction(R.string.auto_apps_save, true) {
+            requireContext().getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
+                .edit().putStringSet("allowed_apps", draft.toSet()).apply()
+            dismiss()
+        }
+
         if (apps != null) {
             filter()
-            if (apps!!.isEmpty()) button(R.string.auto_apps_retry) { apps = null; render() }
-        } else {
-            if (loadJob?.isActive == true) return
+            if (apps!!.isEmpty()) addFooterAction(R.string.auto_apps_retry, false) { apps = null; render() }
+        } else if (loadJob?.isActive != true) {
             val context = requireContext().applicationContext
             loadJob = lifecycleScope.launch {
                 try {
-                    val loaded = withContext(Dispatchers.IO) {
+                    apps = withContext(Dispatchers.IO) {
                         val pm = context.packageManager
                         pm.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0)
                             .filter { it.activityInfo.packageName != context.packageName }
                             .distinctBy { it.activityInfo.packageName }
                             .map {
                                 val pkg = it.activityInfo.packageName
-                                App(runCatching { it.loadLabel(pm).toString() }.getOrDefault(pkg), pkg,
-                                    runCatching { it.loadIcon(pm) }.getOrNull())
+                                App(runCatching { it.loadLabel(pm).toString() }.getOrDefault(pkg), pkg, runCatching { it.loadIcon(pm) }.getOrNull())
                             }
                             .sortedWith(compareBy<App> { it.label.lowercase(Locale.ROOT) }.thenBy { it.pkg })
                     }
-                    apps = loaded
                     filter()
-                    (dialog as? AlertDialog)?.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = true
-                    if (loaded.isEmpty()) button(R.string.auto_apps_retry) { apps = null; render() }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (_: Exception) {
                     progress.visibility = View.GONE
                     status.setText(R.string.auto_apps_load_error)
-                    status.visibility = View.VISIBLE
-                    button(R.string.auto_apps_retry) { apps = null; render() }
                 } finally { loadJob = null }
             }
         }
     }
 
-    private inner class AppAdapter(private val changed: () -> Unit) :
-        ListAdapter<App, AppHolder>(object : DiffUtil.ItemCallback<App>() {
-            override fun areItemsTheSame(old: App, new: App) = old.pkg == new.pkg
-            override fun areContentsTheSame(old: App, new: App) = old == new
-        }) {
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppHolder =
-            AppHolder(CheckBox(parent.context).apply {
-                layoutParams = RecyclerView.LayoutParams(-1, -2).apply {
-                    setMargins(dp(6), dp(4), dp(6), dp(4))
-                }
-                minHeight = dp(80)
-                setPadding(dp(12), dp(12), dp(12), dp(12))
-                setBackgroundResource(R.drawable.auto_apps_row)
-                buttonTintList = ColorStateList.valueOf(resources.getColor(R.color.md3_primary, null))
-                compoundDrawablePadding = dp(12)
-            })
+    private fun focusAndShowKeyboard(view: View) {
+        view.isFocusable = true
+        view.isFocusableInTouchMode = true
+        view.requestFocus()
+        val window = dialog?.window
+        window?.setSoftInputMode(
+            WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
+                WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE
+        )
+        view.postDelayed({
+            val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.restartInput(view)
+            val shown = imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
+            if (!shown) imm.showSoftInput(view, InputMethodManager.SHOW_FORCED)
+        }, 180L)
+    }
+
+    private fun addFooterCancel() = addFooterAction(R.string.auto_apps_cancel, false) { dismiss() }
+
+    private fun addFooterAction(label: Int, primary: Boolean, action: () -> Unit) {
+        val b = Button(requireContext()).apply {
+            setText(label)
+            isAllCaps = false
+            minHeight = dp(48)
+            setOnClickListener { action() }
+            if (primary) {
+                setTextColor(0xFFE5D9FF.toInt())
+                backgroundTintList = ColorStateList.valueOf(0xFF49356D.toInt())
+            } else setTextColor(0xFFD8C7FF.toInt())
+        }
+        footer.addView(b, LinearLayout.LayoutParams(0, dp(48), if (primary) 1f else 0f).apply {
+            if (!primary) { width = dp(104); marginEnd = dp(8) }
+        })
+    }
+
+    private fun button(label: Int, primary: Boolean, action: () -> Unit): Button = Button(requireContext()).apply {
+        setText(label)
+        isAllCaps = false
+        minHeight = dp(48)
+        setOnClickListener { action() }
+        if (primary) {
+            setTextColor(0xFFE5D9FF.toInt())
+            backgroundTintList = ColorStateList.valueOf(0xFF49356D.toInt())
+        }
+    }
+
+    private fun card(background: Int, stroke: Int?): MaterialCardView = MaterialCardView(requireContext()).apply {
+        setCardBackgroundColor(background)
+        radius = dp(14).toFloat()
+        strokeWidth = dp(1)
+        strokeColor = stroke?.let { resources.getColor(it, null) } ?: 0xFFFFC857.toInt()
+    }
+
+    private fun settingsError() = Toast.makeText(requireContext(), R.string.auto_apps_settings_error, Toast.LENGTH_LONG).show()
+    private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
+
+    private inner class AppAdapter(private val changed: () -> Unit) : ListAdapter<App, AppHolder>(object : DiffUtil.ItemCallback<App>() {
+        override fun areItemsTheSame(old: App, new: App) = old.pkg == new.pkg
+        override fun areContentsTheSame(old: App, new: App) = old == new
+    }) {
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppHolder = AppHolder(CheckBox(parent.context).apply {
+            layoutParams = RecyclerView.LayoutParams(-1, -2).apply { setMargins(dp(4), dp(4), dp(4), dp(4)) }
+            minHeight = dp(72)
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+            setBackgroundResource(R.drawable.auto_apps_row)
+            buttonTintList = ColorStateList.valueOf(resources.getColor(R.color.md3_primary, null))
+            compoundDrawablePadding = dp(12)
+        })
 
         override fun onBindViewHolder(holder: AppHolder, position: Int) {
             val app = getItem(position)
@@ -364,10 +509,7 @@ class AutoAppsDialog : DialogFragment() {
                 text = SpannableString("${app.label}\n${app.pkg}").apply {
                     setSpan(StyleSpan(Typeface.BOLD), 0, app.label.length, 0)
                     setSpan(RelativeSizeSpan(0.78f), app.label.length + 1, length, 0)
-                    val secondary = TypedValue()
-                    context.theme.resolveAttribute(android.R.attr.textColorSecondary, secondary, true)
-                    val color = if (secondary.resourceId != 0) context.getColorStateList(secondary.resourceId).defaultColor else secondary.data
-                    setSpan(ForegroundColorSpan(color), app.label.length + 1, length, 0)
+                    setSpan(ForegroundColorSpan(0xFFBDB8C8.toInt()), app.label.length + 1, length, 0)
                 }
                 isChecked = app.pkg in draft
                 val size = (40 * resources.displayMetrics.density).toInt()
@@ -381,7 +523,6 @@ class AutoAppsDialog : DialogFragment() {
         }
     }
 
-    // A full-row native checkable node: label, package and checked state; icon is decorative.
     private class AppHolder(val row: CheckBox) : RecyclerView.ViewHolder(row)
 
     override fun onDestroyView() {

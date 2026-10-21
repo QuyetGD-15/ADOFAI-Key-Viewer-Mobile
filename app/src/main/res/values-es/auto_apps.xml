@@ -10,7 +10,7 @@
     <string name="auto_apps_open_settings">Abrir ajustes de la aplicación</string>
     <string name="auto_apps_continue">Continuar</string>
     <string name="auto_apps_settings_error">No se pudieron abrir los ajustes. Ábrelos manualmente desde los ajustes del dispositivo.</string>
-    <string name="auto_apps_explanation">Inicia primero la superposición. Se muestra automáticamente cuando una aplicación seleccionada está en primer plano y el dispositivo está en horizontal. Si no seleccionas ninguna aplicación, no se mostrará automáticamente; los controles manuales de la notificación seguirán disponibles. Tras guardar, cambia de aplicación o gira el dispositivo para actualizar la visualización automática.</string>
+    <string name="auto_apps_explanation">Esta función muestra automáticamente Key Viewer cuando las aplicaciones objetivo están abiertas. Ya no tendrás que activar Key Viewer manualmente cada vez que abras un juego. Aun así, puedes activar o desactivar Key Viewer manualmente en otras aplicaciones.</string>
     <string name="auto_apps_count">Seleccionadas: %1$d</string>
     <string name="auto_apps_search">Buscar por nombre o paquete</string>
     <string name="auto_apps_empty">No hay aplicaciones con lanzador disponibles. Se conservan las selecciones existentes.</string>
@@ -18,4 +18,5 @@
     <string name="auto_apps_loading">Cargando aplicaciones…</string>
     <string name="auto_apps_load_error">No se pudieron cargar las aplicaciones. Reintenta o cancela; la selección guardada no ha cambiado.</string>
     <string name="auto_apps_dont_show_again">No volver a mostrar</string>
+    <string name="auto_apps_info_title">Cómo funciona</string>    <string name="auto_apps_xiaomi_short">MIUI/HyperOS puede limitar la actividad en segundo plano. Elige Sin restricciones para Key Viewer si la visualización automática no funciona.</string>    <string name="auto_apps_picker_hint">Selecciona las aplicaciones que deben mostrar la superposición automáticamente</string>    <string name="auto_apps_xiaomi_title">Aviso para dispositivos Xiaomi/POCO</string>
 </resources>

@@ -10,7 +10,7 @@
     <string name="auto_apps_open_settings">Mở cài đặt ứng dụng</string>
     <string name="auto_apps_continue">Tiếp tục</string>
     <string name="auto_apps_settings_error">Không thể mở cài đặt. Hãy mở thủ công trong cài đặt thiết bị.</string>
-    <string name="auto_apps_explanation">Hãy khởi động lớp phủ trước. Tự động hiển thị hoạt động khi ứng dụng đã chọn đang mở ở phía trước và thiết bị ở chế độ ngang. Nếu không chọn ứng dụng nào, lớp phủ sẽ không tự động hiện; bạn vẫn có thể điều khiển thủ công qua thông báo. Sau khi lưu, chuyển ứng dụng hoặc xoay thiết bị để cập nhật tự động hiển thị.</string>
+    <string name="auto_apps_explanation">Tính năng này sẽ tự động kích hoạt hiển thị Keyviewer khi các ứng dụng mục tiêu đang mở. Giúp cho không cần thao tác bật Keyviewer thủ công mỗi khi mở game nữa. Điều này không ngăn chặn bạn chủ động bật tắt Keyviewer ở các ứng dụng khác.</string>
     <string name="auto_apps_count">Đã chọn: %1$d</string>
     <string name="auto_apps_search">Tìm theo tên ứng dụng hoặc tên gói</string>
     <string name="auto_apps_empty">Không có ứng dụng có thể khởi chạy. Các lựa chọn hiện có được giữ nguyên.</string>
@@ -18,4 +18,8 @@
     <string name="auto_apps_loading">Đang tải ứng dụng…</string>
     <string name="auto_apps_load_error">Không thể tải ứng dụng. Thử lại hoặc Hủy; lựa chọn đã lưu chưa thay đổi.</string>
     <string name="auto_apps_dont_show_again">Không hiển thị lại</string>
+    <string name="auto_apps_info_title">Cách hoạt động</string>
+    <string name="auto_apps_xiaomi_short">MIUI/HyperOS có thể hạn chế ứng dụng chạy nền. Hãy chọn “Không hạn chế” cho Key Viewer nếu tính năng tự động bật không hoạt động.</string>
+    <string name="auto_apps_picker_hint">Chọn các ứng dụng cần tự động hiển thị lớp phủ</string>
+    <string name="auto_apps_xiaomi_title">Lưu ý cho máy Xiaomi/POCO</string>
 </resources>
