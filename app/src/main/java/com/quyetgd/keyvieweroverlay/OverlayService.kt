@@ -357,7 +357,9 @@ class OverlayService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
-        android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_DISPLAY)
+        // Do not raise the service main/UI looper to URGENT_DISPLAY. The overlay
+        // is rendered by this looper and must cooperate with SurfaceFlinger and
+        // vendor compositor threads on devices with aggressive scheduling.
         super.onCreate()
         AppLogger.i(this, "OverlayService", "=== BẮT ĐẦU KHỞI TẠO SERVICE ===")
         isRunning = true
@@ -672,7 +674,10 @@ class OverlayService : Service() {
         val hwMaxY = maxRawY
 
         eventReaderThread = Thread {
-            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO)
+            // Keep the reader responsive, but do not starve the UI/compositor.
+            // URGENT_AUDIO is inappropriate for a text getevent parser and can
+            // make the overlay appear frozen on some vendor ROMs.
+            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_DISPLAY)
             var inputStream: java.io.InputStream? = null
             try {
                 val cmd = arrayOf("sh", "-c", "getevent $devicePath")
@@ -761,7 +766,10 @@ class OverlayService : Service() {
                 isReadingEvents = false
             }
         }.apply {
-            priority = Thread.MAX_PRIORITY
+            // Java MAX_PRIORITY combined with a native realtime-like priority can
+            // starve the main looper on some devices. Use the normal Java priority;
+            // the native DISPLAY priority above is sufficient for low-latency input.
+            priority = Thread.NORM_PRIORITY
             start()
         }
     }
