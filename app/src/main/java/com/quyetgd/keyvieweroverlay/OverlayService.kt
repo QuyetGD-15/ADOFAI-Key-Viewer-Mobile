@@ -1149,6 +1149,8 @@ class OverlayService : Service() {
         val isKeyRainEnabled = pref.getBoolean("theme_keyrain_enabled", true)
         val isShadowEnabled = pref.getBoolean("theme_shadow_enabled", true)
         val isPerformanceShadow = pref.getBoolean("theme_performance_shadow", false)
+        val isEdgeFadeRain = pref.getBoolean("theme_edge_fade_rain", false)
+        val edgeFadePx = pref.getInt("theme_edge_fade_px", 40).coerceIn(0, 2000)
         val borderWidthDp = pref.getInt("theme_border_width", 2)
         val cornerRadiusDp = pref.getInt("theme_corner_radius", 6)
         val borderPx = (borderWidthDp * resources.displayMetrics.density).toInt()
@@ -1285,6 +1287,10 @@ class OverlayService : Service() {
             // THÊM 1 DÒNG NÀY: Truyền màu và kích hoạt bóng cho hàng 2!
             keyTrailView.setRow2ThemeColors(rainColor2, shadowColor2)
             keyTrailView.setShadowConfig(isShadowEnabled, isPerformanceShadow)
+            keyTrailView.setEdgeFadeRain(isEdgeFadeRain)
+            keyTrailView.setEdgeFadePixels(edgeFadePx.toFloat())
+            // trail_limit_px is stored in dp; KeyTrailView renders in physical px.
+            keyTrailView.setParameters(speed, dpToPx(limitPx.toFloat()))
             viewerContainer.requestLayout()
         }
     }

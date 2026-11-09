@@ -4,6 +4,8 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.LinearGradient
+import android.graphics.Shader
 import android.os.SystemClock
 import android.util.AttributeSet
 import android.view.Choreographer
@@ -43,12 +45,15 @@ class KeyTrailView @JvmOverloads constructor(
     // ================= TỐI ƯU CỌ VẼ (HỖ TRỢ CẢ 3 CHẾ ĐỘ ĐỔ BÓNG) =================
     private val trailPaintRow1 = Paint().apply { style = Paint.Style.FILL; isAntiAlias = true }
     private val shadowPaintRow1 = Paint().apply { style = Paint.Style.FILL; isAntiAlias = true }
+    private val fadePaintRow1 = Paint().apply { style = Paint.Style.FILL; isAntiAlias = true }
     private val trailPaintRow2 = Paint().apply { style = Paint.Style.FILL; isAntiAlias = true }
     private val shadowPaintRow2 = Paint().apply { style = Paint.Style.FILL; isAntiAlias = true }
+    private val fadePaintRow2 = Paint().apply { style = Paint.Style.FILL; isAntiAlias = true }
 
     // Trạng thái bật tắt từ Cài đặt
     private var isGlobalShadowEnabled = true
     private var isPerformanceShadow = false
+    private var edgeFadeRain = false
     private val GLOW_SPREAD = 12f // Độ tràn viền 4 hướng
 
     // ShadowLayer is expensive to mutate. Keep one small cache per row/paint and only
@@ -73,6 +78,7 @@ class KeyTrailView @JvmOverloads constructor(
 
     var trailSpeed: Float = 1.0f
     var trailLimit: Float = 1.0f
+    private var edgeFadePx = 40f
 
     @Volatile private var activeTrailCount = 0
     private var isRendering = false
@@ -172,7 +178,7 @@ class KeyTrailView @JvmOverloads constructor(
                 }
             }
             configureLanePaint(trailPaintRow1, laneShadow, isShadowEnabled1, 0)
-            drawSingleTrail(canvas, trail, trailPaintRow1, shadowPaint, currentTimeMs, actualSpeedPerMs, screenHeight)
+            drawSingleTrail(canvas, trail, trailPaintRow1, fadePaintRow1, shadowPaint, currentTimeMs, actualSpeedPerMs, screenHeight)
         }
 
         // PASS 2: Vẽ Hàng 2 (Đè lên trên)
@@ -195,7 +201,7 @@ class KeyTrailView @JvmOverloads constructor(
                 }
             }
             configureLanePaint(trailPaintRow2, laneShadow, isShadowEnabled2, 1)
-            drawSingleTrail(canvas, trail, trailPaintRow2, shadowPaint, currentTimeMs, actualSpeedPerMs, screenHeight)
+            drawSingleTrail(canvas, trail, trailPaintRow2, fadePaintRow2, shadowPaint, currentTimeMs, actualSpeedPerMs, screenHeight)
         }
 
         canvas.restore()
@@ -221,7 +227,7 @@ class KeyTrailView @JvmOverloads constructor(
     }
 
     private fun drawSingleTrail(
-        canvas: Canvas, trail: Trail, paint: Paint, shadowPaint: Paint?,
+        canvas: Canvas, trail: Trail, paint: Paint, fadePaint: Paint, shadowPaint: Paint?,
         currentTimeMs: Long, actualSpeedPerMs: Float, screenHeight: Float
     ) {
         val timeSincePressed = currentTimeMs - trail.timePressed
@@ -242,19 +248,54 @@ class KeyTrailView @JvmOverloads constructor(
             return
         }
 
-        // Đổ bóng giả tràn 4 hướng (chỉ vẽ khi chế độ nhẹ máy được bật)
+        val visibleTop = topY.coerceAtLeast(0f)
+        val visibleBottom = bottomY.coerceAtMost(screenHeight)
+        if (visibleBottom <= visibleTop) return
+
         if (shadowPaint != null) {
             canvas.drawRect(
                 trail.x - GLOW_SPREAD,
-                topY - GLOW_SPREAD,
+                visibleTop - GLOW_SPREAD,
                 trail.x + trail.width + GLOW_SPREAD,
-                bottomY + GLOW_SPREAD,
+                visibleBottom + GLOW_SPREAD,
                 shadowPaint
             )
         }
 
-        // Preserve the alpha supplied by the theme's rain color.
-        canvas.drawRect(trail.x, topY, trail.x + trail.width, bottomY, paint)
+        if (!edgeFadeRain || !edgeFadePx.isFinite() || edgeFadePx <= 0f) {
+            canvas.drawRect(trail.x, visibleTop, trail.x + trail.width, visibleBottom, paint)
+            return
+        }
+
+        val trackHeight = trailLimit.takeIf { it.isFinite() && it > 0f } ?: 1f
+        val fadePx = edgeFadePx.coerceIn(0f, trackHeight)
+        if (fadePx <= 0f) {
+            canvas.drawRect(trail.x, visibleTop, trail.x + trail.width, visibleBottom, paint)
+            return
+        }
+
+        val fadeStartDistance = trackHeight - fadePx
+        val zeroAlphaY = screenHeight - trackHeight
+        val fullAlphaY = screenHeight - fadeStartDistance
+        val fadeTopY = minOf(zeroAlphaY, fullAlphaY)
+        val fadeBottomY = maxOf(zeroAlphaY, fullAlphaY)
+        val fadeEnd = fadeBottomY.coerceAtLeast(fadeTopY + 0.001f)
+        val baseColor = paint.color
+        val transparent = Color.argb(0, Color.red(baseColor), Color.green(baseColor), Color.blue(baseColor))
+        val opaque = Color.argb(Color.alpha(baseColor), Color.red(baseColor), Color.green(baseColor), Color.blue(baseColor))
+
+        val solidTop = maxOf(visibleTop, fadeBottomY - 0.5f)
+        if (visibleBottom > solidTop) {
+            canvas.drawRect(trail.x, solidTop, trail.x + trail.width, visibleBottom, paint)
+        }
+
+        val fadeDrawTop = maxOf(visibleTop, fadeTopY)
+        val fadeDrawBottom = minOf(visibleBottom, fadeBottomY + 0.5f)
+        if (fadeDrawBottom > fadeDrawTop) {
+            fadePaint.shader = LinearGradient(0f, fadeTopY, 0f, fadeEnd, transparent, opaque, Shader.TileMode.CLAMP)
+            canvas.drawRect(trail.x, fadeDrawTop, trail.x + trail.width, fadeDrawBottom, fadePaint)
+            fadePaint.shader = null
+        }
     }
 
     // --- CÁC HÀM CẬP NHẬT MÀU VÀ ĐỔ BÓNG TỪ CONFIG ---
@@ -264,6 +305,16 @@ class KeyTrailView @JvmOverloads constructor(
         this.isPerformanceShadow = performanceShadow
         updatePaintsRow1()
         updatePaintsRow2()
+        invalidate()
+    }
+
+    fun setEdgeFadeRain(enabled: Boolean) {
+        edgeFadeRain = enabled
+        invalidate()
+    }
+
+    fun setEdgeFadePixels(value: Float) {
+        edgeFadePx = if (value.isFinite()) value.coerceIn(0f, 2000f) else 0f
         invalidate()
     }
 

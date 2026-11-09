@@ -238,6 +238,8 @@
     <!-- Tùy chỉnh đổ bóng -->
 ffffffffdaad    <string name="pref_enable_shadow">Bóng Rain</string>
     <string name="pref_performance_shadow">Đổ bóng tối ưu</string>
+    <string name="pref_edge_fade_rain">Edge Fade Rain</string>
+    <string name="pref_edge_fade_distance">Khoảng fade: %d px</string>
 
     <!-- Theme editor -->
     <string name="theme_editor_basic_desc">Áp dụng một bảng màu chung cho toàn bộ phím, KPS và Total.</string>

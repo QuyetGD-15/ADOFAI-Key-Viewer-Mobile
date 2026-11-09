@@ -83,6 +83,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
     private lateinit var swShowKeyCounters: com.google.android.material.switchmaterial.SwitchMaterial
     private lateinit var swEnableShadow: com.google.android.material.switchmaterial.SwitchMaterial
     private lateinit var swPerformanceShadow: com.google.android.material.switchmaterial.SwitchMaterial
+    private lateinit var swEdgeFadeRain: com.google.android.material.switchmaterial.SwitchMaterial
+    private lateinit var seekEdgeFade: Slider
     private lateinit var cbBold: CheckBox
     private lateinit var cbItalic: CheckBox
     private lateinit var cbUnderline: CheckBox
@@ -333,7 +335,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         layoutThemeContent = findViewById(R.id.layoutThemeContent)
         swShowKeyCounters = findViewById(R.id.swShowKeyCounters)
         swEnableShadow = findViewById(R.id.swEnableShadow)
-        swPerformanceShadow = findViewById(R.id.swPerformanceShadow)
+        swPerformanceShadow = findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.swPerformanceShadow)
+        swEdgeFadeRain = findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.swEdgeFadeRain)
         swEnableKeyRain = findViewById(R.id.swEnableKeyRain)
         tvThemeHeader = findViewById(R.id.tvThemeHeader)
         cbBold = findViewById(R.id.cbBold)
@@ -387,6 +390,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         seekKeySpacing = findViewById(R.id.seekKeySpacing)
         seekBorderWidth = findViewById(R.id.seekBorderWidth)
         seekCornerRadius = findViewById(R.id.seekCornerRadius)
+        seekEdgeFade = findViewById(R.id.seekEdgeFade)
 
         val dm = resources.displayMetrics
         val centerX = dm.widthPixels
@@ -415,6 +419,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                 advanced,
                 cbBold.isChecked, cbItalic.isChecked, cbUnderline.isChecked,
                 swShowKeyCounters.isChecked, swPerformanceShadow.isChecked,
+                swEdgeFadeRain.isChecked,
+                seekEdgeFade.value.toInt().coerceIn(0, 200),
                 seekKeySpacing.value.toInt(), seekBorderWidth.value.toInt(), seekCornerRadius.value.toInt(),
                 swEnableKeyRain.isChecked, currentSpeed, currentLimit, swEnableShadow.isChecked,
                 getSharedPreferences("KeyViewerPrefs", MODE_PRIVATE).getInt("theme_editor_preset_${currentKeyMode()}_$colorMode", 0)
@@ -760,6 +766,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         cbUnderline.isChecked = draft.underline
         swShowKeyCounters.isChecked = draft.showCounters
         swPerformanceShadow.isChecked = draft.performanceShadow
+        swEdgeFadeRain.isChecked = draft.edgeFadeRain
+        seekEdgeFade.value = draft.edgeFadePx.coerceIn(0, 200).toFloat()
         suppressColorEditorEvents = false
         updateLivePreview()
     }
@@ -803,6 +811,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         swShowKeyCounters.isChecked = sharedPref.getBoolean("show_key_counters", false)
         swEnableShadow.isChecked = sharedPref.getBoolean("theme_shadow_enabled", true)
         swPerformanceShadow.isChecked = sharedPref.getBoolean("theme_performance_shadow", false)
+        swEdgeFadeRain.isChecked = sharedPref.getBoolean("theme_edge_fade_rain", false)
+        seekEdgeFade.value = sharedPref.getInt("theme_edge_fade_px", 40).coerceIn(0, 200).toFloat()
         cbBold.isChecked = sharedPref.getBoolean("theme_text_bold", false)
         cbItalic.isChecked = sharedPref.getBoolean("theme_text_italic", false)
         cbUnderline.isChecked = sharedPref.getBoolean("theme_text_underline", false)
@@ -931,10 +941,10 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             renderKeyPreview()
             updateLivePreview()
         }
-        swEnableShadow.setOnCheckedChangeListener { _, _ -> updateLivePreview() }
-        swPerformanceShadow.setOnCheckedChangeListener { _, _ -> updateLivePreview() }
-        cbBold.setOnCheckedChangeListener { _, _ -> updateLivePreview() }
-        cbItalic.setOnCheckedChangeListener { _, _ -> updateLivePreview() }
+        swEdgeFadeRain.setOnCheckedChangeListener { _, _ -> updateLivePreview() }
+        seekEdgeFade.addOnChangeListener { _, _, fromUser ->
+            if (fromUser) updateLivePreview()
+        }
         cbUnderline.setOnCheckedChangeListener { _, _ -> updateLivePreview() }
         seekThemeTextSize.addOnChangeListener { _, value, fromUser ->
             tvThemeTextSizeLabel.text = getString(R.string.theme_text_size, value.toInt() + 10)
@@ -1205,12 +1215,14 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         }
 
         keyTrailView.layoutParams.height = limitPx
-        keyTrailView.setParameters(currentSpeed, currentLimit.toFloat())
+        keyTrailView.setParameters(currentSpeed, limitPx.toFloat())
         keyTrailView.setThemeColors(rainColor, rainShadow)
         keyTrailView.setAdvancedColors(if (colorMode == ThemeColorStore.ADVANCED) Array(keyMode) { colorsFor("key_$it") } else null)
         keyTrailView.setRow2ThemeColors(rainColor2, rainShadow2)
         // Gửi trạng thái bật/tắt bóng xuống cho KeyTrailView
         keyTrailView.setShadowConfig(swEnableShadow.isChecked, swPerformanceShadow.isChecked)
+        keyTrailView.setEdgeFadeRain(swEdgeFadeRain.isChecked)
+        keyTrailView.setEdgeFadePixels(seekEdgeFade.value)
 
         updateLabels()
     }
@@ -1352,6 +1364,8 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             putBoolean("show_key_counters", swShowKeyCounters.isChecked)
             putBoolean("theme_shadow_enabled", swEnableShadow.isChecked)
             putBoolean("theme_performance_shadow", swPerformanceShadow.isChecked)
+            putBoolean("theme_edge_fade_rain", swEdgeFadeRain.isChecked)
+            putInt("theme_edge_fade_px", seekEdgeFade.value.toInt().coerceIn(0, 2000))
             putBoolean("theme_text_bold", cbBold.isChecked)
             putBoolean("theme_text_italic", cbItalic.isChecked)
             putBoolean("theme_text_underline", cbUnderline.isChecked)
@@ -1371,6 +1385,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
                 putString("theme_rain_color_2", it.trail2)
                 putString("theme_rain_shadow_2", it.shadow2)
                 putBoolean("theme_performance_shadow", it.performanceShadow)
+                putBoolean("theme_edge_fade_rain", it.edgeFadeRain)
                 putBoolean("theme_text_bold", it.bold)
                 putBoolean("theme_text_italic", it.italic)
                 putBoolean("theme_text_underline", it.underline)

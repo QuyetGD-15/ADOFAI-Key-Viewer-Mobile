@@ -241,6 +241,8 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
         toggleInputSource.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked) {
+                val wasEnabled = switchOverlay.isChecked || OverlayService.isRunning ||
+                    prefs.getBoolean(KEY_OVERLAY_WANTED, false)
                 val newSource = if (checkedId == R.id.btnSourceKeyboard) "keyboard" else "touch"
 
                 // ================= BẮT ĐẦU LOGIC FALLBACK =================
@@ -256,9 +258,9 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
                 touchSetup.cancel()
                 mainHandler.removeCallbacks(startOverlayAfterModeChange)
-                pref.edit().putString("input_source", newSource).apply()
+                pref.edit().putString("input_source", newSource)
+                    .putBoolean(KEY_OVERLAY_WANTED, wasEnabled).apply()
 
-                // LOAD LẠI MENU DROPDOWN ĐỂ THÊM/BỚT 12K VÀ 16K
                 setupKeyModeDropdown()
 
                 if (newSource == "keyboard") {
@@ -273,9 +275,14 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                     startShizukuPolling()
                 }
 
-                switchOverlay.isChecked = false
+                // Đổi nguồn là một thay đổi quyền: kiểm tra lại ngay và chỉ tự bật khi đủ quyền.
                 stopService(Intent(this, OverlayService::class.java))
+                setOverlaySwitchChecked(false)
                 updateAccessibilityStatusUI()
+                updateSwitchEnableState()
+                if (wasEnabled && allOverlayPermissionsReady()) {
+                    startOverlayService()
+                }
             }
         }
 

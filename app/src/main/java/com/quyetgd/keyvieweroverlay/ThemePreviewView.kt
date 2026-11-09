@@ -59,6 +59,8 @@ class ThemePreviewView @JvmOverloads constructor(
     private var cornerRadiusDp = 6f
     private var shadowEnabled = true
     private var performanceShadow = false
+    private var edgeFadeRain = pref.getBoolean("theme_edge_fade_rain", false)
+    private var edgeFadePx = pref.getInt("theme_edge_fade_px", 40).coerceIn(0, 2000)
     private var keySpacing = pref.getInt("key_spacing", 7)
     private var keyRainEnabled = pref.getBoolean("theme_keyrain_enabled", true)
     private var trailSpeedValue = pref.getFloat("trail_speed", .8f)
@@ -112,13 +114,15 @@ class ThemePreviewView @JvmOverloads constructor(
 
     fun applyPreviewConfig(
         spacing: Int, borderWidth: Int, cornerRadius: Int, rainEnabled: Boolean,
-        speed: Float, limitPx: Int, shadow: Boolean, lightweightShadow: Boolean
+        speed: Float, limitPx: Int, shadow: Boolean, lightweightShadow: Boolean,
+        edgeFade: Boolean = edgeFadeRain,
+        edgeFadePx: Int = 40
     ) {
         val safeSpacing = spacing.coerceAtLeast(0)
         val safeLimit = limitPx.coerceAtLeast(1)
         val rebuild = keySpacing != safeSpacing || trailLimitPx != safeLimit
         val appearanceChanged = borderWidthDp != borderWidth || cornerRadiusDp != cornerRadius.toFloat()
-        val trailChanged = keyRainEnabled != rainEnabled || trailSpeedValue != speed || shadowEnabled != shadow || performanceShadow != lightweightShadow
+        val trailChanged = keyRainEnabled != rainEnabled || trailSpeedValue != speed || shadowEnabled != shadow || performanceShadow != lightweightShadow || edgeFadeRain != edgeFade
         keySpacing = safeSpacing
         trailLimitPx = safeLimit
         keyRainEnabled = rainEnabled
@@ -127,6 +131,9 @@ class ThemePreviewView @JvmOverloads constructor(
         cornerRadiusDp = cornerRadius.coerceAtLeast(0).toFloat()
         shadowEnabled = shadow
         performanceShadow = lightweightShadow
+        edgeFadeRain = edgeFade
+        this.edgeFadePx = edgeFadePx.coerceIn(0, 200)
+        trailView.setEdgeFadePixels(this.edgeFadePx.toFloat())
         if (rebuild) buildOverlay() else {
             if (trailChanged) configureTrail(dp(trailLimitPx))
             if (appearanceChanged) requestApplyTheme()
@@ -290,6 +297,8 @@ class ThemePreviewView @JvmOverloads constructor(
     private fun configureTrail(limit: Int) {
         trailView.setParameters(trailSpeedValue, limit.toFloat())
         trailView.setShadowConfig(shadowEnabled, performanceShadow)
+        trailView.setEdgeFadeRain(edgeFadeRain)
+        trailView.setEdgeFadePixels(edgeFadePx.toFloat())
         trailView.visibility = if (keyRainEnabled) VISIBLE else INVISIBLE
     }
 

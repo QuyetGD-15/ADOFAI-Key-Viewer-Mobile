@@ -418,7 +418,6 @@
                                 android:textColor="@color/white"
                                 android:textSize="14sp" />
 
-                            <!-- Chọn kiểu đổ bóng: Nặng (ShadowLayer) hoặc Nhẹ (Fake Glow) -->
                             <com.google.android.material.switchmaterial.SwitchMaterial
                                 android:id="@+id/swPerformanceShadow"
                                 android:layout_width="match_parent"
@@ -427,6 +426,24 @@
                                 android:text="@string/pref_performance_shadow"
                                 android:textColor="@color/white"
                                 android:textSize="14sp" />
+
+                            <com.google.android.material.switchmaterial.SwitchMaterial
+                                android:id="@+id/swEdgeFadeRain"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/pref_edge_fade_rain"
+                                android:textColor="@color/white"
+                                android:textSize="14sp" />
+
+                            <com.google.android.material.slider.Slider
+                                android:id="@+id/seekEdgeFade"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:valueFrom="0"
+                                android:valueTo="200"
+                                android:stepSize="1"
+                                android:value="40" />
 
                             <TextView
                                 android:id="@+id/tvThemeTextSizeLabel"

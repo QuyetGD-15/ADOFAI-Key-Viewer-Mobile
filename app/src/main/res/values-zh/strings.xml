@@ -230,6 +230,8 @@
     <!-- Shadow Settings -->
     <string name="pref_enable_shadow">Rain 阴影</string>
     <string name="pref_performance_shadow">轻量阴影</string>
+    <string name="pref_edge_fade_rain">Rain 边缘渐隐</string>
+    <string name="pref_edge_fade_distance">渐隐距离：%d px</string>
 
     <!-- Theme editor -->
     <string name="theme_editor_basic_desc">所有按键、KPS 和总计共用一套配色。</string>

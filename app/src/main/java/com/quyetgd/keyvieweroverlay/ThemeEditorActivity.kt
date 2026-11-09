@@ -41,6 +41,8 @@ class ThemeEditorActivity : AppCompatActivity() {
     private var draftUnderline = false
     private var draftShowCounters = false
     private var draftPerformanceShadow = false
+    private var draftEdgeFadeRain = false
+    private var draftEdgeFadePx = 40
     private var draftShadowEnabled = true
     private var draftSubmitted = false
     private val pref by lazy { getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE) }
@@ -59,6 +61,8 @@ class ThemeEditorActivity : AppCompatActivity() {
             drafts.putAll(shared.advanced)
             draftBold = shared.bold; draftItalic = shared.italic; draftUnderline = shared.underline
             draftShowCounters = shared.showCounters; draftPerformanceShadow = shared.performanceShadow
+            draftEdgeFadeRain = shared.edgeFadeRain
+            draftEdgeFadePx = shared.edgeFadePx
             draftShadowEnabled = shared.shadowEnabled
             selectedPresets[mode] = shared.activePreset
         } else {
@@ -67,6 +71,8 @@ class ThemeEditorActivity : AppCompatActivity() {
             draftUnderline = pref.getBoolean("theme_text_underline", false)
             draftShowCounters = pref.getBoolean("show_key_counters", false)
             draftPerformanceShadow = pref.getBoolean("theme_performance_shadow", false)
+            draftEdgeFadeRain = pref.getBoolean("theme_edge_fade_rain", false)
+            draftEdgeFadePx = pref.getInt("theme_edge_fade_px", 40).coerceIn(0, 2000)
             draftShadowEnabled = pref.getBoolean("theme_shadow_enabled", true)
         }
         host = findViewById(R.id.themeEditorHost)
@@ -193,6 +199,36 @@ class ThemeEditorActivity : AppCompatActivity() {
             setOnCheckedChangeListener { _, value -> draftPerformanceShadow = value; refreshPreview() }
         }
         host.addView(shadow, LinearLayout.LayoutParams(-1, dp(58)).apply { bottomMargin = dp(8) })
+        val edgeFade = SwitchMaterial(this).apply {
+            text = getString(R.string.pref_edge_fade_rain)
+            isChecked = draftEdgeFadeRain
+            setTextColor(Color.WHITE)
+            background = surface.constantState?.newDrawable()?.mutate()
+            setPadding(dp(12), 0, dp(12), 0)
+            setOnCheckedChangeListener { _, value -> draftEdgeFadeRain = value; refreshPreview() }
+        }
+        host.addView(edgeFade, LinearLayout.LayoutParams(-1, dp(58)).apply { bottomMargin = dp(4) })
+        val edgeFadeLabel = TextView(this).apply {
+            setTextColor(Color.WHITE)
+            textSize = 13f
+            setPadding(dp(12), 0, dp(12), 0)
+            text = getString(R.string.pref_edge_fade_distance, draftEdgeFadePx)
+        }
+        val edgeFadeSlider = Slider(this).apply {
+            valueFrom = 0f
+            valueTo = 200f
+            stepSize = 1f
+            value = draftEdgeFadePx.coerceIn(0, 200).toFloat()
+            addOnChangeListener { _, value, fromUser ->
+                if (fromUser) {
+                    draftEdgeFadePx = value.toInt()
+                    edgeFadeLabel.text = getString(R.string.pref_edge_fade_distance, draftEdgeFadePx)
+                    refreshPreview()
+                }
+            }
+        }
+        host.addView(edgeFadeLabel, LinearLayout.LayoutParams(-1, dp(28)))
+        host.addView(edgeFadeSlider, LinearLayout.LayoutParams(-1, dp(42)).apply { bottomMargin = dp(8) })
     }
 
     private fun addTargetList(previousX: Int = 0) {
@@ -395,7 +431,9 @@ class ThemeEditorActivity : AppCompatActivity() {
                 draft?.trailSpeed ?: pref.getFloat("trail_speed", .8f),
                 draft?.trailLimitPx ?: pref.getInt("trail_limit_px", 300),
                 draftShadowEnabled,
-                draftPerformanceShadow
+                draftPerformanceShadow,
+                draftEdgeFadeRain,
+                draftEdgeFadePx
             )
         }
     }
@@ -425,7 +463,7 @@ class ThemeEditorActivity : AppCompatActivity() {
         val chosenPreset = selectedPresets[mode] ?: presetSelection()
         ThemeDraftBridge.draft = ThemeDraft(
             effectiveMode, basic(), trail2(), shadow2(), advanced,
-            draftBold, draftItalic, draftUnderline, draftShowCounters, draftPerformanceShadow,
+            draftBold, draftItalic, draftUnderline, draftShowCounters, draftPerformanceShadow, draftEdgeFadeRain, draftEdgeFadePx,
             previous?.keySpacing ?: pref.getInt("key_spacing", 7),
             previous?.borderWidth ?: pref.getInt("theme_border_width", 2),
             previous?.cornerRadius ?: pref.getInt("theme_corner_radius", 6),

@@ -230,6 +230,8 @@
     <!-- Shadow Settings -->
     <string name="pref_enable_shadow">KeyRain gölgesi</string>
     <string name="pref_performance_shadow">Hafif gölge</string>
+    <string name="pref_edge_fade_rain">Rain kenarını soldurma</string>
+    <string name="pref_edge_fade_distance">Soldurma mesafesi: %d px</string>
 
     <!-- Theme editor -->
     <string name="theme_editor_basic_desc">Tüm tuşlar, KPS ve Toplam için tek bir renk paleti kullanın.</string>

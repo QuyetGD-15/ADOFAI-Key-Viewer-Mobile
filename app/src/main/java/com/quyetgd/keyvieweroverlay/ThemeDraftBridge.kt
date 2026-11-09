@@ -12,6 +12,8 @@ data class ThemeDraft(
     var underline: Boolean,
     var showCounters: Boolean,
     var performanceShadow: Boolean,
+    var edgeFadeRain: Boolean,
+    var edgeFadePx: Int,
     var keySpacing: Int,
     var borderWidth: Int,
     var cornerRadius: Int,

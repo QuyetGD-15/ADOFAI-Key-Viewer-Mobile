@@ -230,6 +230,8 @@
     <!-- Shadow Settings -->
     <string name="pref_enable_shadow">Rain 그림자</string>
     <string name="pref_performance_shadow">경량 그림자</string>
+    <string name="pref_edge_fade_rain">Rain 가장자리 페이드</string>
+    <string name="pref_edge_fade_distance">페이드 거리: %d px</string>
 
     <!-- Theme editor -->
     <string name="theme_editor_basic_desc">모든 키, KPS 및 전체에 하나의 색상표를 적용합니다.</string>
