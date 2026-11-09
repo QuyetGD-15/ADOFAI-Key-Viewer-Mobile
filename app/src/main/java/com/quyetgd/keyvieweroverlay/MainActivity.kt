@@ -43,6 +43,11 @@ import rikka.shizuku.Shizuku
 
 class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListener {
 
+    companion object {
+        private const val KEY_OVERLAY_WANTED = "overlay_wanted"
+        private const val KEY_RESTORE_AFTER_CONFIG = "overlay_restore_after_config"
+    }
+
     private val touchSetup by lazy {
         TouchAccessibilitySetup(this,
             { getSharedPreferences("KeyViewerPrefs", MODE_PRIVATE).getString("input_source", "touch") == "touch" },
@@ -89,18 +94,11 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
     private var isShizukuPollingActive = false
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val prefs by lazy { getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE) }
+    private var suppressOverlaySwitchListener = false
     private val startOverlayAfterModeChange = Runnable {
-        if (!TouchRendererService.isReady(this)) return@Runnable
-        val source = getSharedPreferences("KeyViewerPrefs", MODE_PRIVATE).getString("input_source", "touch")
-        if (source == "touch" && !TouchAccessibilitySetup.hasPermission()) return@Runnable
-        val intentStart = Intent(this, OverlayService::class.java).apply {
-            action = "com.quyetgd.keyvieweroverlay.ACTION_START_FOREGROUND"
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intentStart)
-        } else {
-            startService(intentStart)
-        }
+        if (!allOverlayPermissionsReady()) return@Runnable
+        startOverlayService()
     }
 
     private val updateRunnable = object : Runnable {
@@ -318,16 +316,15 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
             if (inputSource == "keyboard") {
                 showKeyMappingDialog()
             } else {
+                pauseOverlayForConfig()
                 showLoading()
                 startActivity(Intent(this, HitboxConfigActivity::class.java))
             }
         }
 
         btnConfigKeyViewer.setOnClickListener {
+            pauseOverlayForConfig()
             showLoading()
-            if (OverlayService.isRunning) {
-                stopService(Intent(this, OverlayService::class.java))
-            }
             startActivity(Intent(this, KeyViewerConfigActivity::class.java))
         }
 
@@ -705,35 +702,65 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
         private fun setupSwitchListener() {
             switchOverlay.setOnCheckedChangeListener { _, isChecked ->
+                if (suppressOverlaySwitchListener) return@setOnCheckedChangeListener
                 if (isChecked) {
-                    if (!checkOverlayPermission()) {
-                        switchOverlay.isChecked = false
+                    // Ghi nhớ ý định bật để sau khi người dùng cấp đủ quyền có thể tự khởi động.
+                    prefs.edit().putBoolean(KEY_OVERLAY_WANTED, true).apply()
+                    if (!allOverlayPermissionsReady()) {
+                        setOverlaySwitchChecked(false)
+                        requestMissingOverlayPermission()
                         return@setOnCheckedChangeListener
                     }
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 102)
-                            switchOverlay.isChecked = false
-                            return@setOnCheckedChangeListener
-                        }
-                    }
-
-                    val intent = Intent(this, OverlayService::class.java).apply {
-                        action = "com.quyetgd.keyvieweroverlay.ACTION_START_FOREGROUND"
-                    }
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        startForegroundService(intent)
-                    } else {
-                        startService(intent)
-                    }
-
-                    switchOverlay.text = getString(R.string.overlay_use_notification)
+                    startOverlayService()
                 } else {
+                    prefs.edit().putBoolean(KEY_OVERLAY_WANTED, false)
+                        .putBoolean(KEY_RESTORE_AFTER_CONFIG, false).apply()
                     stopService(Intent(this, OverlayService::class.java))
                     switchOverlay.text = getString(R.string.overlay_start_hint)
                 }
             }
+        }
+
+        private fun setOverlaySwitchChecked(checked: Boolean) {
+            suppressOverlaySwitchListener = true
+            switchOverlay.isChecked = checked
+            suppressOverlaySwitchListener = false
+        }
+
+        private fun startOverlayService() {
+            if (!allOverlayPermissionsReady()) return
+            val intent = Intent(this, OverlayService::class.java).apply {
+                action = "com.quyetgd.keyvieweroverlay.ACTION_START_FOREGROUND"
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent) else startService(intent)
+            switchOverlay.text = getString(R.string.overlay_use_notification)
+        }
+
+        private fun allOverlayPermissionsReady(): Boolean {
+            val inputSource = prefs.getString("input_source", "touch")
+            val inputReady = inputSource != "touch" || TouchAccessibilitySetup.hasPermission()
+            val notificationReady = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            return TouchRendererService.isReady(this) && inputReady && notificationReady
+        }
+
+        private fun requestMissingOverlayPermission() {
+            if (!TouchRendererService.isReady(this)) {
+                Toast.makeText(this, getString(R.string.overlay_accessibility_required), Toast.LENGTH_LONG).show()
+                TouchAccessibilitySetup.openSettings(this)
+            } else if (prefs.getString("input_source", "touch") == "touch" && !TouchAccessibilitySetup.hasPermission()) {
+                touchSetup.request()
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 102)
+            }
+        }
+
+        private fun pauseOverlayForConfig() {
+            val wasEnabled = switchOverlay.isChecked || OverlayService.isRunning
+            prefs.edit().putBoolean(KEY_RESTORE_AFTER_CONFIG, wasEnabled).apply()
+            setOverlaySwitchChecked(false)
+            stopService(Intent(this, OverlayService::class.java))
         }
 
     override fun onStart() {
@@ -749,7 +776,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
     }
 
-    override fun onResume() {
+        override fun onResume() {
         super.onResume()
         if (!::switchOverlay.isInitialized) return
         touchSetup.resume()
@@ -758,26 +785,23 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
         updateSwitchEnableState()
 
-        // LIÊN KẾT LOGIC BẬT/TẮT TÀI NGUYÊN
-        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
-        val inputSource = pref.getString("input_source", "touch")
-        if (inputSource == "touch") {
-            startShizukuPolling()
-        } else {
-            stopShizukuPolling()
-        }
+        val inputSource = prefs.getString("input_source", "touch")
+        if (inputSource == "touch") startShizukuPolling() else stopShizukuPolling()
 
-        mainHandler.post(updateRunnable) // Bắt đầu vòng lặp cập nhật UI
+        // Khôi phục đúng trạng thái trước khi mở màn hình config, hoặc tự bật lần đầu khi đủ quyền.
+        val shouldRestore = prefs.getBoolean(KEY_RESTORE_AFTER_CONFIG, false) ||
+            prefs.getBoolean(KEY_OVERLAY_WANTED, false) ||
+            (!prefs.contains(KEY_OVERLAY_WANTED) && allOverlayPermissionsReady())
+        if (shouldRestore && allOverlayPermissionsReady() && !OverlayService.isRunning) {
+            prefs.edit().putBoolean(KEY_OVERLAY_WANTED, true).apply()
+            startOverlayService()
+        }
+        prefs.edit().putBoolean(KEY_RESTORE_AFTER_CONFIG, false).apply()
+        mainHandler.post(updateRunnable)
     }
 
     private fun updateSwitchEnableState() {
-        val pref = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE)
-        val inputSource = pref.getString("input_source", "touch")
-        val inputReady = inputSource != "touch" ||
-            TouchAccessibilitySetup.hasPermission()
-        // Keep Stop available even if a permission or the accessibility connection is lost.
-        switchOverlay.isEnabled = OverlayService.isRunning ||
-            (inputReady && TouchRendererService.isReady(this))
+        switchOverlay.isEnabled = OverlayService.isRunning || allOverlayPermissionsReady()
     }
 
     override fun onPause() {
@@ -813,20 +837,6 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                 updateAccessibilityStatusUI()
             }
         }
-    }
-
-    private fun checkOverlayPermission(): Boolean {
-        if (!TouchRendererService.isReady(this)) {
-            Toast.makeText(this, getString(R.string.overlay_accessibility_required), Toast.LENGTH_LONG).show()
-            TouchAccessibilitySetup.openSettings(this)
-            return false
-        }
-        val touch = getSharedPreferences("KeyViewerPrefs", MODE_PRIVATE).getString("input_source", "touch") == "touch"
-        if (touch && !TouchAccessibilitySetup.hasPermission()) {
-            touchSetup.request()
-            return false
-        }
-        return true
     }
 
     private fun dpToPx(dp: Int): Int = (dp * resources.displayMetrics.density).toInt()
