@@ -125,37 +125,37 @@ class ThemeEditorActivity : AppCompatActivity() {
         if (mode == ThemeColorStore.BASIC) {
             if (basicDraft == null) basicDraft = if (systemDraft != null) basic() else current("basic")
             val currentBasic = basicDraft ?: basic()
-            addColor(getString(R.string.theme_editor_text), currentBasic.textNormal) { updateBasic(currentBasic.copy(textNormal = it)) }
-            addColor(getString(R.string.theme_editor_background), currentBasic.bgNormal) { updateBasic(currentBasic.copy(bgNormal = it)) }
-            addColor(getString(R.string.theme_editor_border), currentBasic.borderNormal) { updateBasic(currentBasic.copy(borderNormal = it)) }
+            addColor(getString(R.string.theme_editor_text), currentBasic.textNormal) { updateBasic(basic().copy(textNormal = it)) }
+            addColor(getString(R.string.theme_editor_background), currentBasic.bgNormal) { updateBasic(basic().copy(bgNormal = it)) }
+            addColor(getString(R.string.theme_editor_border), currentBasic.borderNormal) { updateBasic(basic().copy(borderNormal = it)) }
             addSectionTitle(getString(R.string.theme_editor_pressed))
-            addColor(getString(R.string.theme_editor_text_pressed), currentBasic.textPressed) { updateBasic(currentBasic.copy(textPressed = it)) }
-            addColor(getString(R.string.theme_editor_background_pressed), currentBasic.bgPressed) { updateBasic(currentBasic.copy(bgPressed = it)) }
-            addColor(getString(R.string.theme_editor_border_pressed), currentBasic.borderPressed) { updateBasic(currentBasic.copy(borderPressed = it)) }
+            addColor(getString(R.string.theme_editor_text_pressed), currentBasic.textPressed) { updateBasic(basic().copy(textPressed = it)) }
+            addColor(getString(R.string.theme_editor_background_pressed), currentBasic.bgPressed) { updateBasic(basic().copy(bgPressed = it)) }
+            addColor(getString(R.string.theme_editor_border_pressed), currentBasic.borderPressed) { updateBasic(basic().copy(borderPressed = it)) }
             addSectionTitle(getString(R.string.theme_editor_rain_row1))
-            addColor(getString(R.string.theme_editor_rain_color_row1), currentBasic.trail) { updateBasic(currentBasic.copy(trail = it)) }
-            addColor(getString(R.string.theme_editor_rain_shadow_row1), currentBasic.shadow) { updateBasic(currentBasic.copy(shadow = it)) }
+            addColor(getString(R.string.theme_editor_rain_color_row1), currentBasic.trail) { updateBasic(basic().copy(trail = it)) }
+            addColor(getString(R.string.theme_editor_rain_shadow_row1), currentBasic.shadow) { updateBasic(basic().copy(shadow = it)) }
             if (keyMode > 8) {
                 addSectionTitle(getString(R.string.theme_editor_rain_row2))
-                addColor(getString(R.string.theme_rain_color_row2), trail2()) { basicTrail2 = it; updateBasic(currentBasic) }
-                addColor(getString(R.string.theme_rain_shadow_row2), shadow2()) { basicShadow2 = it; updateBasic(currentBasic) }
+                addColor(getString(R.string.theme_rain_color_row2), trail2()) { basicTrail2 = it; refreshPreview() }
+                addColor(getString(R.string.theme_rain_shadow_row2), shadow2()) { basicShadow2 = it; refreshPreview() }
             }
         } else {
             addSectionTitle(getString(R.string.theme_editor_colors))
             val c = current(selectedTarget)
-            addColor(getString(R.string.theme_editor_text), c.textNormal) { update(c.copy(textNormal = it)) }
-            addColor(getString(R.string.theme_editor_background), c.bgNormal) { update(c.copy(bgNormal = it)) }
-            addColor(getString(R.string.theme_editor_border), c.borderNormal) { update(c.copy(borderNormal = it)) }
+            addColor(getString(R.string.theme_editor_text), c.textNormal) { update(current(selectedTarget).copy(textNormal = it)) }
+            addColor(getString(R.string.theme_editor_background), c.bgNormal) { update(current(selectedTarget).copy(bgNormal = it)) }
+            addColor(getString(R.string.theme_editor_border), c.borderNormal) { update(current(selectedTarget).copy(borderNormal = it)) }
         }
         if (mode != ThemeColorStore.BASIC && selectedTarget.startsWith("key_")) {
             val c = current(selectedTarget)
             addSectionTitle(getString(R.string.theme_editor_pressed))
-            addColor(getString(R.string.theme_editor_text_pressed), c.textPressed) { update(c.copy(textPressed = it)) }
-            addColor(getString(R.string.theme_editor_background_pressed), c.bgPressed) { update(c.copy(bgPressed = it)) }
-            addColor(getString(R.string.theme_editor_border_pressed), c.borderPressed) { update(c.copy(borderPressed = it)) }
+            addColor(getString(R.string.theme_editor_text_pressed), c.textPressed) { update(current(selectedTarget).copy(textPressed = it)) }
+            addColor(getString(R.string.theme_editor_background_pressed), c.bgPressed) { update(current(selectedTarget).copy(bgPressed = it)) }
+            addColor(getString(R.string.theme_editor_border_pressed), c.borderPressed) { update(current(selectedTarget).copy(borderPressed = it)) }
             addSectionTitle(getString(R.string.theme_editor_rain))
-            addColor(getString(R.string.theme_color_rain), c.trail) { update(c.copy(trail = it)) }
-            addColor(getString(R.string.theme_color_rain_shadow), c.shadow) { update(c.copy(shadow = it)) }
+            addColor(getString(R.string.theme_color_rain), c.trail) { update(current(selectedTarget).copy(trail = it)) }
+            addColor(getString(R.string.theme_color_rain_shadow), c.shadow) { update(current(selectedTarget).copy(shadow = it)) }
         }
         refreshPreview()
         editorScroll.post { editorScroll.scrollTo(0, previousY) }

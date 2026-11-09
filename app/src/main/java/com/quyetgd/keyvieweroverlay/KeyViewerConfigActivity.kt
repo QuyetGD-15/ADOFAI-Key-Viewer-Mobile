@@ -508,27 +508,46 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         }
         host.addView(advancedTargetLayout, 1)
         val targetPairs = allColorTargets().map { it to targetLabel(it) }
+        selectedColorTarget = targetPairs.firstOrNull()?.first ?: "key_0"
         advancedTargetDropdown.setAdapter(ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, targetPairs.map { it.second }))
-        advancedTargetDropdown.setText(targetPairs.first().second, false)
+        advancedTargetDropdown.setText(targetPairs.firstOrNull()?.second.orEmpty(), false)
         advancedTargetDropdown.setOnItemClickListener { _, _, position, _ ->
-            advancedDraft[selectedColorTarget] = readEditorColors()
-            selectedColorTarget = targetPairs[position].first
-            writeEditorColors(advancedDraft.getValue(selectedColorTarget))
+            // Commit the fields of the previously selected target before switching.
+            // Without this, the last edited key could be lost when the dropdown is used.
+            if (colorMode == ThemeColorStore.ADVANCED) {
+                advancedDraft[selectedColorTarget] = readEditorColors()
+            }
+            selectedColorTarget = targetPairs.getOrNull(position)?.first ?: return@setOnItemClickListener
+            if (colorMode == ThemeColorStore.ADVANCED) {
+                writeEditorColors(advancedDraft.getValue(selectedColorTarget))
+            }
         }
 
         colorModeGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
-            if (colorMode == ThemeColorStore.ADVANCED) advancedDraft[selectedColorTarget] = readEditorColors()
+            if (colorMode == ThemeColorStore.ADVANCED) {
+                advancedDraft[selectedColorTarget] = readEditorColors()
+            }
             colorMode = if (checkedId == advancedButton.id) ThemeColorStore.ADVANCED else ThemeColorStore.BASIC
             val modeEditor = pref.edit()
             ThemeColorStore.setMode(modeEditor, currentKeyMode(), colorMode)
             modeEditor.apply()
             advancedTargetLayout.visibility = if (colorMode == ThemeColorStore.ADVANCED) View.VISIBLE else View.GONE
-            if (colorMode == ThemeColorStore.ADVANCED) writeEditorColors(advancedDraft.getValue(selectedColorTarget))
-            else writeEditorColors(ThemeColorStore.basic(pref))
-            findViewById<View>(R.id.etRainColor2Hex)?.parent?.let { (it as? View)?.visibility = if (colorMode == ThemeColorStore.BASIC) View.VISIBLE else View.GONE }
+            if (colorMode == ThemeColorStore.ADVANCED) {
+                // Always load the selected key's own saved draft; never reuse the Basic fields.
+                writeEditorColors(advancedDraft.getValue(selectedColorTarget))
+            } else {
+                writeEditorColors(ThemeColorStore.basic(pref))
+            }
+            findViewById<View>(R.id.etRainColor2Hex)?.parent?.let {
+                (it as? View)?.visibility = if (colorMode == ThemeColorStore.BASIC) View.VISIBLE else View.GONE
+            }
         }
         colorModeGroup.check(if (colorMode == ThemeColorStore.ADVANCED) advancedButton.id else basicButton.id)
+        if (colorMode == ThemeColorStore.ADVANCED) {
+            // check() may not dispatch when the button was already selected.
+            writeEditorColors(advancedDraft.getValue(selectedColorTarget))
+        }
     }
 
     private fun legacyPresetUI() {
