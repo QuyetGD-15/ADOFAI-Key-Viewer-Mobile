@@ -106,6 +106,7 @@
     <string name="limit_label">飞行限制：%d</string>
     <string name="reset">重置</string>
     <string name="save_preset">保存</string>
+    <string name="theme_editor_load_preset">加载</string>
     <string name="preset_default">默认</string>
     <string name="preset_jipper">Jipper</string>
     <string name="preset_custom_1">自定义 1</string>

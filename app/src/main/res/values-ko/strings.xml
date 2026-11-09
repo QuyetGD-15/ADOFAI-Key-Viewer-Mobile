@@ -106,6 +106,7 @@
     <string name="limit_label">비행 제한: %d</string>
     <string name="reset">초기화</string>
     <string name="save_preset">저장</string>
+    <string name="theme_editor_load_preset">불러오기</string>
     <string name="preset_default">기본값</string>
     <string name="preset_jipper">Jipper</string>
     <string name="preset_custom_1">사용자 지정 1</string>

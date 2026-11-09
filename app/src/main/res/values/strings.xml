@@ -114,6 +114,7 @@
     <string name="limit_label">Giới hạn bay: %d</string>
     <string name="reset">Đặt lại</string>
     <string name="save_preset">Lưu</string>
+    <string name="theme_editor_load_preset">Tải</string>
     <string name="preset_default">Mặc định</string>
     <string name="preset_jipper">Jipper</string>
     <string name="preset_custom_1">Tùy chỉnh 1</string>

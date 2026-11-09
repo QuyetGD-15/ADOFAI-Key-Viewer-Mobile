@@ -422,7 +422,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
             themeEditorLauncher.launch(Intent(this, ThemeEditorActivity::class.java))
         }
         layoutThemeContent.visibility = View.GONE
-        setupPresetUI()
+        // Preset selection is owned by ThemeEditorActivity; keeping a second selector here caused desynchronization.
     }
 
     private fun currentKeyMode(): Int = getSharedPreferences("KeyViewerPrefs", Context.MODE_PRIVATE).getInt("current_key_mode", 6)
@@ -754,12 +754,18 @@ class KeyViewerConfigActivity : AppCompatActivity() {
 
     private fun applyThemeDraft(draft: ThemeDraft) {
         colorMode = draft.mode
-        advancedDraft.clear(); advancedDraft.putAll(draft.advanced)
+        advancedDraft.clear()
+        advancedDraft.putAll(draft.advanced)
+        ensureAdvancedDraft()
         suppressColorEditorEvents = true
         writeEditorColors(if (colorMode == ThemeColorStore.ADVANCED) advancedDraft[selectedColorTarget] ?: draft.basic else draft.basic)
-        etRainColor2Hex.setText(draft.trail2); etRainShadow2Hex.setText(draft.shadow2)
-        cbBold.isChecked = draft.bold; cbItalic.isChecked = draft.italic; cbUnderline.isChecked = draft.underline
-        swShowKeyCounters.isChecked = draft.showCounters; swPerformanceShadow.isChecked = draft.performanceShadow
+        etRainColor2Hex.setText(draft.trail2)
+        etRainShadow2Hex.setText(draft.shadow2)
+        cbBold.isChecked = draft.bold
+        cbItalic.isChecked = draft.italic
+        cbUnderline.isChecked = draft.underline
+        swShowKeyCounters.isChecked = draft.showCounters
+        swPerformanceShadow.isChecked = draft.performanceShadow
         suppressColorEditorEvents = false
         updateLivePreview()
     }

@@ -27,6 +27,25 @@ data class ThemeColorSet(
     }
 }
 
+data class ThemePresetId(
+    val mode: String,
+    val key: String,
+    val isSystem: Boolean
+)
+
+data class ThemePresetDescriptor(
+    val id: ThemePresetId,
+    val name: String,
+    val canSave: Boolean
+)
+
+data class ThemePresetSnapshot(
+    val basic: ThemeColorSet,
+    val trail2: String,
+    val shadow2: String,
+    val advanced: LinkedHashMap<String, ThemeColorSet>
+)
+
 /** A system preset is shared by Basic and Advanced and contains a color set for every key. */
 data class SystemThemePreset(
     val name: String,
@@ -39,15 +58,17 @@ object ThemeColorStore {
     const val BASIC = "basic"
     const val ADVANCED = "advanced"
     const val SYSTEM_PRESET_COUNT = 4
-    const val BASIC_CUSTOM_FIRST = 1
-    const val ADVANCED_CUSTOM_FIRST = 4
     private const val MODE_PREFIX = "theme_color_mode_"
     private const val ADV_PREFIX = "advanced_colors_"
+    private const val NEW_PRESET_PREFIX = "theme_user_preset_"
+    private const val CUSTOM_BASIC_COUNT = 3
+    private const val CUSTOM_ADVANCED_COUNT = 3
 
     // ===== PRESET BASE COLORS =====
     private val SYSTEM_NAMES = arrayOf("minhle", "Candy Floss Delight", "Feel good", "tiki")
     private val SYSTEM_ACCENTS = arrayOf("#FF60A5FA", "#FFA78BFA", "#FF34D399")
     private val SYSTEM_BACKGROUNDS = arrayOf("#FF101827", "#FF181329", "#FF071F1A")
+
 
     private fun systemKey(slot: Int, index: Int): ThemeColorSet {
         val accent = Color.parseColor(SYSTEM_ACCENTS[slot])
@@ -601,5 +622,59 @@ object ThemeColorStore {
     fun writeAdvanced(editor: SharedPreferences.Editor, keyMode: Int, target: String, colors: ThemeColorSet) {
         val p = prefix(keyMode, target); val c = colors.normalized()
         editor.putString(p + "text", c.textNormal).putString(p + "text_pressed", c.textPressed).putString(p + "bg", c.bgNormal).putString(p + "bg_pressed", c.bgPressed).putString(p + "border", c.borderNormal).putString(p + "border_pressed", c.borderPressed).putString(p + "trail", c.trail).putString(p + "shadow", c.shadow)
+    }
+
+    /** New stable preset API. The old offset-based functions remain only for migration compatibility. */
+    fun descriptors(mode: String, keyMode: Int, fallback: ThemeColorSet): List<ThemePresetDescriptor> {
+        val system = (0 until SYSTEM_PRESET_COUNT).map { index ->
+            ThemePresetDescriptor(ThemePresetId(mode, "system_$index", true), systemPreset(keyMode, index, fallback).name, false)
+        }
+        val custom = (0 until if (mode == BASIC) CUSTOM_BASIC_COUNT else CUSTOM_ADVANCED_COUNT).map { index ->
+            ThemePresetDescriptor(ThemePresetId(mode, "custom_$index", false), "Custom ${index + 1}", true)
+        }
+        return listOf(ThemePresetDescriptor(ThemePresetId(mode, "default", true), "Default", false)) + system + custom
+    }
+
+    private fun userPresetPrefix(id: ThemePresetId, keyMode: Int): String = "$NEW_PRESET_PREFIX${keyMode}_${id.mode}_${id.key}_"
+
+    fun loadUserPreset(pref: SharedPreferences, id: ThemePresetId, keyMode: Int, fallback: ThemeColorSet): ThemePresetSnapshot? {
+        if (id.isSystem) return null
+        val p = userPresetPrefix(id, keyMode)
+        if (!pref.getBoolean(p + "saved", false)) return null
+        val basic = readSet(pref, p + "basic_", fallback)
+        val advanced = LinkedHashMap<String, ThemeColorSet>()
+        repeat(keyMode) { index -> advanced["key_$index"] = readSet(pref, p + "advanced_key_$index-", basic) }
+        advanced["kps"] = readSet(pref, p + "advanced_kps-", basic)
+        advanced["total"] = readSet(pref, p + "advanced_total-", basic)
+        return ThemePresetSnapshot(basic, pref.getString(p + "trail2", "#FFA78BFA") ?: "#FFA78BFA", pref.getString(p + "shadow2", "#FF7C3AED") ?: "#FF7C3AED", advanced)
+    }
+
+    fun saveUserPreset(editor: SharedPreferences.Editor, id: ThemePresetId, keyMode: Int, snapshot: ThemePresetSnapshot): Boolean {
+        if (id.isSystem || !id.key.startsWith("custom_")) return false
+        val p = userPresetPrefix(id, keyMode)
+        writeSet(editor, p + "basic_", snapshot.basic)
+        editor.putString(p + "trail2", normalize(snapshot.trail2)).putString(p + "shadow2", normalize(snapshot.shadow2))
+        snapshot.advanced.forEach { (target, colors) -> writeSet(editor, p + "advanced_$target-", colors) }
+        editor.putBoolean(p + "saved", true)
+        return true
+    }
+
+    private fun readSet(pref: SharedPreferences, prefix: String, fallback: ThemeColorSet): ThemeColorSet = ThemeColorSet(
+        pref.getString(prefix + "text", fallback.textNormal) ?: fallback.textNormal,
+        pref.getString(prefix + "text_pressed", fallback.textPressed) ?: fallback.textPressed,
+        pref.getString(prefix + "bg", fallback.bgNormal) ?: fallback.bgNormal,
+        pref.getString(prefix + "bg_pressed", fallback.bgPressed) ?: fallback.bgPressed,
+        pref.getString(prefix + "border", fallback.borderNormal) ?: fallback.borderNormal,
+        pref.getString(prefix + "border_pressed", fallback.borderPressed) ?: fallback.borderPressed,
+        pref.getString(prefix + "trail", fallback.trail) ?: fallback.trail,
+        pref.getString(prefix + "shadow", fallback.shadow) ?: fallback.shadow
+    ).normalized()
+
+    private fun writeSet(editor: SharedPreferences.Editor, prefix: String, colors: ThemeColorSet) {
+        val c = colors.normalized()
+        editor.putString(prefix + "text", c.textNormal).putString(prefix + "text_pressed", c.textPressed)
+            .putString(prefix + "bg", c.bgNormal).putString(prefix + "bg_pressed", c.bgPressed)
+            .putString(prefix + "border", c.borderNormal).putString(prefix + "border_pressed", c.borderPressed)
+            .putString(prefix + "trail", c.trail).putString(prefix + "shadow", c.shadow)
     }
 }
