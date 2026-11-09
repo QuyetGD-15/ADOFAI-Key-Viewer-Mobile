@@ -1,7 +1,6 @@
 package com.quyetgd.keyvieweroverlay
 
 import android.content.Context
-import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
@@ -347,19 +346,13 @@ class ThemeEditorActivity : AppCompatActivity() {
         row.addView(swatch, LinearLayout.LayoutParams(dp(50), dp(42)))
         host.addView(row, LinearLayout.LayoutParams(-1, dp(64)).apply { bottomMargin = dp(10) })
     }
-    private fun ensureEditablePreset() {
-        // Editing is kept in the draft. A preset is persisted only after the user explicitly presses Save.
-    }
-
     private fun updateBasic(value: ThemeColorSet) {
-        ensureEditablePreset()
         basicDraft = value
-        // Basic áp dụng đồng loạt cho key; riêng row 2 rain sẽ được truyền riêng qua trail2/shadow2.
+        // Basic áp dụng đồng loạt cho key; riêng row 2 rain được truyền riêng qua trail2/shadow2.
         refreshPreview()
     }
 
     private fun update(value: ThemeColorSet) {
-        ensureEditablePreset()
         val system = systemDraft
         if (system != null) {
             val target = if (mode == ThemeColorStore.BASIC) "key_0" else selectedTarget

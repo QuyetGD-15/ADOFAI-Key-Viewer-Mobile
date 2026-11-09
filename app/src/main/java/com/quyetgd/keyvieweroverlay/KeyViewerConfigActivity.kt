@@ -525,13 +525,7 @@ class KeyViewerConfigActivity : AppCompatActivity() {
         colorModeGroup.check(if (colorMode == ThemeColorStore.ADVANCED) advancedButton.id else basicButton.id)
     }
 
-    private fun saveAdvancedColors(editor: android.content.SharedPreferences.Editor) {
-        advancedDraft[selectedColorTarget] = readEditorColors()
-        for ((target, colors) in advancedDraft) ThemeColorStore.writeAdvanced(editor, currentKeyMode(), target, colors)
-        ThemeColorStore.setMode(editor, currentKeyMode(), colorMode)
-    }
-
-    private fun setupPresetUI() {
+    private fun legacyPresetUI() {
         val presetDropdown = findViewById<android.widget.AutoCompleteTextView>(R.id.presetDropdown)
         val btnSavePreset = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSavePreset)
 
